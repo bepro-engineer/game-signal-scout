@@ -50,6 +50,10 @@ python -m game_signal_scout web         # http://127.0.0.1:8720/
 - 表 `public_document`・`public_build` を読むだけです（Anime と同じ形）。検査に通らなかった回は表を変えず、画面は前の内容のまま「前の内容のまま」と出します。
 - 接続のたびに Game の DB であることを確かめます。DB に届かなければ 503 を返します。
 
+## 起動の定義（未反映）
+
+`python -m game_signal_scout launchd` は、daily-run（毎日 6:15）と Viewer の launchd の定義を `runtime/launchd` に書くだけです（Anime の `ops/launchd` の作り方を移植）。launchd への反映は、本番の稼働の承認の後に Anime の反映の処理を移して行います。
+
 ## 試験
 
 ```bash

@@ -20,8 +20,16 @@ def main(argv=None) -> int:
     w = sub.add_parser("web", help="Viewer（読むだけの画面）を動かす。待ち受けの既定は config/daily.toml [web]（自分の機械だけ）")
     w.add_argument("--host")
     w.add_argument("--port", type=int)
+    ld = sub.add_parser("launchd", help="起動の定義（launchd の plist）を書く（既定 runtime/launchd。launchd への反映はしない）")
+    ld.add_argument("--dir")
     sub.add_parser("init-author-key", help="投稿者の HMAC の鍵（runtime/author_hmac.key）を初回だけ作る（あれば作らない）")
     a = ap.parse_args(argv)
+    if a.cmd == "launchd":
+        from pathlib import Path
+        from game_signal_scout import config
+        from game_signal_scout.ops import launchd
+        print(json.dumps(launchd.write(config.REPO, Path(a.dir) if a.dir else config.RUNTIME / "launchd")))
+        return 0
     if a.cmd == "init-author-key":
         from game_signal_scout import actor_key
         print(json.dumps({"created": actor_key.create_key()}))

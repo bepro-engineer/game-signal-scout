@@ -28,3 +28,8 @@ host = "127.0.0.1"
 port = 8720
 pool_min_size = 1
 pool_max_size = 4
+
+[launchd]
+# 起動の定義（ops/launchd）。python -m game_signal_scout launchd は runtime/launchd に plist を書くだけ（反映は本人の承認の後）
+hour = 6                      # daily-run を起動する時刻（機械の時刻）
+minute = 15
