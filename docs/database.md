@@ -8,7 +8,7 @@
 |---|---|---|
 | `game_signal_scout` | 論理 DB | 所有者は `gss`。`PUBLIC` の CONNECT を外す |
 | `gss` | ロール（ログイン可） | Game の DB の所有者。移行と日次の処理が使う。他の DB には CONNECT できない |
-| `gss_viewer` | ロール（ログイン可） | 将来の画面用の読み取り専用。今は作らない（画面がないため） |
+| `gss_viewer` | ロール（ログイン可） | 画面（Viewer）用の読み取り専用（`public_document`・`public_build`・`scout_identity` の SELECT だけ）。今は作らない: Viewer は自分の機械の 127.0.0.1 だけで待ち受け、`gss` で読む。外へ出すとき（Anime の `ass_viewer` と同じ形）に作る |
 
 名前の規則: 論理 DB は `game_signal_scout` で始め、ロールは `gss` で始めます。Anime の `ass`・`ass_viewer` と重ならないようにします。ロールはクラスタ全体で共有される名前なので、同じ名前を使うと他の Scout の権限やパスワードを上書きします（Issue #1 の監査 R8）。
 
@@ -19,7 +19,7 @@
    SELECT datname FROM pg_database WHERE datname LIKE 'game_signal_scout%';
    SELECT rolname FROM pg_roles WHERE rolname LIKE 'gss%';
    ```
-2. 接続数に余裕があること（Game は日次の処理で最大 3 接続: 本体・段の排他・日の排他）。
+2. 接続数に余裕があること（Game は最大 9 接続: 日次の処理 3〔本体・段の排他・日の排他〕、常駐の受信 2〔本体・排他〕、Viewer の接続の池 1〜4）。
    ```sql
    SELECT count(*), current_setting('max_connections') FROM pg_stat_activity;
    ```
