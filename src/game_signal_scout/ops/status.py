@@ -23,6 +23,9 @@ def status(conn) -> dict:
         jobs.setdefault(job, {})["last_ok_at"] = ok_at
     sources = {s: {"items": n, "newest_occurred_at": newest, "last_received_at": rec, "cursor": cur, "cursor_updated_at": upd}
                for s, n, newest, rec, cur, upd in source_item.summary(conn)}
+    from game_signal_scout.repositories import fetch
+    for s, st in fetch.states(conn).items():           # 最後の試行・成功・失敗（データがまだない取得元も出す）
+        sources.setdefault(s, {"items": 0}).update(st)
     version = config.load_daily_config()["analysis"]["version"]
     events = dict(conn.execute("SELECT side, count(*) FROM shift_event WHERE version=%s GROUP BY side", (version,)).fetchall())
     return {"jobs": jobs, "sources": sources, "analysis": {"version": version, "events": events}, "publication": "none"}

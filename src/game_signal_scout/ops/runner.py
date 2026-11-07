@@ -54,15 +54,53 @@ class Context:
 
 
 def job_collect(ctx: Context) -> JobResult:
+    """取得元ごとに収集する。1 つの取得元の失敗で他の取得元を止めない（全部を試してから、最初の失敗を段の失敗として返す）。
+    取得元の設定 min_interval_hours（既定 0）より前に成功していれば、その取得元は今回は取りに行かない（取得の間隔の管理）。
+    通信の記録（Fetcher.log）は取得元ごとに source_fetch へ保存する。"""
     from game_signal_scout.services.collect import collect
     from game_signal_scout.sources import factory
     from game_signal_scout.sources.http import Fetcher
+    from game_signal_scout.repositories import fetch as fetch_repo
     make = ctx.reader_factory or (lambda name: factory.create(name, Fetcher(ctx.cfg["daily_run"]["user_agent"])))
-    total, read, detail = 0, 0, {}
-    for name in factory.sources():
-        r = collect(ctx.conn, make(name))
-        total, read = total + r.inserted, read + r.read
-        detail[name] = r.as_detail()
+    cfg = factory.load_sources_config()
+    total, read, detail, first_error = 0, 0, {}, None
+    for name in factory.sources(cfg):
+        now = datetime.now(timezone.utc)
+        state = fetch_repo.get_state(ctx.conn, name)
+        hours = float(cfg[name].get("min_interval_hours") or 0)
+        if hours and state.get("last_ok_at") and now - state["last_ok_at"] < timedelta(hours=hours):
+            detail[name] = {"skipped": "interval", "last_ok_at": state["last_ok_at"]}
+            continue
+        fetch_repo.mark_attempt(ctx.conn, name, now)
+        ctx.conn.commit()
+        reader = make(name)
+        try:
+            r = collect(ctx.conn, reader)
+        except Exception as e:  # noqa: BLE001 — 取得元ごとに記録して、他の取得元へ進む
+            try:
+                ctx.conn.rollback()
+            except Exception:  # noqa: BLE001
+                pass
+            if ctx.conn.closed or ctx.conn.broken:
+                raise
+            retryable, etype = classify(e)
+            fetch_repo.mark_result(ctx.conn, name, now, etype, str(e))
+            detail[name] = {"error_type": etype, "retryable": retryable, "error_message": str(e)[:300]}
+            first_error = first_error or e
+        else:
+            fetch_repo.mark_result(ctx.conn, name, datetime.now(timezone.utc))
+            total, read = total + r.inserted, read + r.read
+            detail[name] = r.as_detail()
+        finally:
+            log = getattr(getattr(reader, "http", None), "log", None)
+            if log and not (ctx.conn.closed or ctx.conn.broken):
+                fetch_repo.save_log(ctx.conn, log)
+                log.clear()
+            if not (ctx.conn.closed or ctx.conn.broken):
+                ctx.conn.commit()
+    if first_error is not None:
+        first_error.collect_detail = detail
+        raise first_error
     return JobResult(input_count=read, output_count=total, detail=detail)
 
 
@@ -111,7 +149,7 @@ def _run_job(ctx: Context, run_id: str, name: str, attempt: int) -> dict:
         retryable, etype = classify(e)
         status = "locked" if isinstance(e, LockedError) else "failed"
         job_repo.finish_run(conn, rid, status=status, finished_at=datetime.now(timezone.utc), elapsed_seconds=time.perf_counter() - t0,
-                            retryable=retryable, error_type=etype, error_message=str(e)[:2000], detail={})
+                            retryable=retryable, error_type=etype, error_message=str(e)[:2000], detail=getattr(e, "collect_detail", {}))
         conn.commit()
         e.job_status = {"job": name, "status": status, "retryable": retryable, "error_type": etype, "error_message": str(e)[:500]}
         raise

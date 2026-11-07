@@ -12,6 +12,7 @@ local_path = ""          # 取得せずに手元の配布データを読む（�
 batch_size = 2000        # 1 回の保存の件数（この区切りで続きの位置を記録する）
 min_snapshot_ratio = 0.9 # 新しい配布物が保存済みのこの割合より少なければ、壊れた配布物の疑いとして削除の追従をしない
 retention_days = 0       # 保持期限（日。0 = 無期限）。検証で使う一時の DB では短くする
+min_interval_hours = 24  # 前回の成功からこの時間は取りに行かない（配布物は月 1 回。一覧の確認も 1 日 1 回で足りる）
 
 [steam_reviews]
 adapter = "game_signal_scout.sources.steam_reviews:SteamReviews"
@@ -23,3 +24,4 @@ languages = ["all"]
 num_per_page = 100
 max_pages_per_app = 3
 retention_days = 30
+min_interval_hours = 24

@@ -18,7 +18,7 @@ import pytest
 os.environ.setdefault("GSS_RUNTIME_DIR", tempfile.mkdtemp(prefix="gss-runtime-"))
 ADMIN = os.environ.get("GSS_TEST_ADMIN_DSN")
 REPO = Path(__file__).resolve().parents[1]
-TABLES = ("shift_event", "player_report", "job_run", "source_checkpoint", "source_item")
+TABLES = ("shift_event", "player_report", "job_run", "source_checkpoint", "source_item", "source_fetch", "source_state")
 
 
 def make_dump(path: Path, records: list[dict]) -> Path:

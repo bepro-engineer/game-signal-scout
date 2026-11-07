@@ -179,6 +179,40 @@ def test_status_separates_collection_analysis_and_publication(conn, tmp_path):
     assert s["analysis"]["events"] == {"fail": 1} and s["publication"] == "none"
 
 
+def test_recent_success_skips_fetching_until_interval(conn, tmp_path):
+    path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", dump_records())
+    runner.daily_run(TARGET, only=["collect"], reader_factory=lambda name: reader_for(path))
+    code, out = runner.daily_run(TARGET, only=["collect"], reader_factory=lambda name: reader_for(path))
+    assert code == runner.EXIT_OK and out["jobs"][0]["detail"]["protondb"]["skipped"] == "interval"
+    conn.execute("UPDATE source_state SET last_ok_at = now() - interval '25 hours'")
+    conn.commit()
+    code, out = runner.daily_run(TARGET, only=["collect"], reader_factory=lambda name: reader_for(path))
+    assert "skipped" not in out["jobs"][0]["detail"]["protondb"]
+
+
+def test_one_failing_source_does_not_stop_the_others(conn, tmp_path, monkeypatch):
+    good = make_dump(tmp_path / "reports_nov1_2026.tar.gz", dump_records())
+    cfg = {n: {"adapter": "game_signal_scout.sources.protondb:ProtonDBDump", "min_interval_hours": 0} for n in ("protondb", "mirror")}
+    monkeypatch.setattr(factory, "load_sources_config", lambda: cfg)
+
+    class Log:
+        def __init__(self, name):
+            self.log = [{"ts": datetime.now(timezone.utc), "source": name, "host": "example.invalid", "endpoint": "/", "status": 200, "ok": True}]
+
+    def make(name):
+        r = reader_for(good, fail_after=1 if name == "protondb" else None)
+        r.name, r.http = name, Log(name)
+        return r
+    code, out = runner.daily_run(TARGET, only=["collect"], reader_factory=make)
+    assert code == runner.EXIT_RETRY and out["error_type"] == "network"
+    states = {s: (ok is not None, et) for s, ok, et in conn.execute("SELECT source, last_ok_at, last_error_type FROM source_state")}
+    assert states == {"protondb": (False, "network"), "mirror": (True, None)}          # 失敗した取得元の後も、次の取得元を集めた
+    assert count(conn, "source_item") == 4 + 37                                          # 失敗した側は保存済みの 1 束（4 件）だけ
+    detail = conn.execute("SELECT detail FROM job_run WHERE job='collect'").fetchone()[0]
+    assert detail["protondb"]["error_type"] == "network" and detail["mirror"]["inserted"] == 37
+    assert count(conn, "source_fetch") == 2                                               # 通信の記録を取得元ごとに保存
+
+
 def test_refuses_database_of_another_scout(test_db):
     other = f"game_signal_scout_other_{test_db['name'][-8:]}"
     with psycopg.connect(ADMIN, autocommit=True) as c:
