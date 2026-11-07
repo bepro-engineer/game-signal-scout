@@ -16,7 +16,7 @@ from pathlib import Path
 
 from game_signal_scout import config
 from game_signal_scout.errors import RetryableError
-from game_signal_scout.sources.contract import Batch, SourceItem, SourceNotConfiguredError, SourceReader
+from game_signal_scout.sources.contract import Batch, SourceCorruptError, SourceItem, SourceNotConfiguredError, SourceReader
 
 MEMBER = "reports_piiremoved.json"
 _MONTHS = {m: i for i, m in enumerate(("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"), 1)}
@@ -99,23 +99,36 @@ class ProtonDBDump(SourceReader):
     def read(self, cursor: dict | None) -> Iterator[Batch]:
         path = self._dump_path()
         dump = path.name
+        if cursor and cursor.get("dump") == dump and cursor.get("complete"):
+            yield Batch([], dict(cursor))   # この配布物は読み終えている（次の月の配布物が出るまで、読み直さない）
+            return
         skip = int(cursor.get("offset", 0)) if cursor and cursor.get("dump") == dump else 0
         size = int(self.settings.get("batch_size") or 2000)
         items: list[SourceItem] = []
         n = 0
-        with tarfile.open(path, "r:gz") as tar:
-            f = tar.extractfile(MEMBER)
-            if f is None:
-                raise ValueError(f"配布ファイルに {MEMBER} がない")
-            for record in iter_json_array(f):
-                n += 1
-                if n <= skip:
-                    continue
-                ts = record.get("timestamp")
-                if not isinstance(ts, int):
-                    continue
-                items.append(SourceItem(self.name, item_id(record), datetime.fromtimestamp(ts, timezone.utc), record))
-                if len(items) >= size:
-                    yield Batch(items, {"dump": dump, "offset": n})
-                    items = []
-        yield Batch(items, {"dump": dump, "offset": n, "complete": True})
+        pos = lambda **kw: {"dump": dump, "snapshot": dump, "offset": n, **kw}   # noqa: E731 — 配布物は全件の写し
+        try:
+            with tarfile.open(path, "r:gz") as tar:
+                f = tar.extractfile(MEMBER)
+                if f is None:
+                    raise SourceCorruptError(f"配布ファイルに {MEMBER} がない: {dump}")
+                for record in iter_json_array(f):
+                    n += 1
+                    if n <= skip:
+                        continue
+                    ts = record.get("timestamp") if isinstance(record, dict) else None
+                    if not isinstance(ts, int):
+                        continue
+                    items.append(SourceItem(self.name, item_id(record), datetime.fromtimestamp(ts, timezone.utc), record))
+                    if len(items) >= size:
+                        yield Batch(items, pos())
+                        items = []
+        except (tarfile.TarError, EOFError, OSError, ValueError) as e:
+            if isinstance(e, SourceCorruptError):
+                raise
+            # 取り直した配布物なら消して次回に取り直す（再試行で直る見込み）。手元のファイルの指定なら直らない
+            local = bool(self.settings.get("local_path"))
+            if not local:
+                path.unlink(missing_ok=True)
+            raise SourceCorruptError(f"配布ファイルが壊れている: {dump}: {type(e).__name__}: {str(e)[:120]}", retryable=not local) from e
+        yield Batch(items, pos(complete=True))

@@ -1,4 +1,5 @@
 # 取得元の記述（取得元を作る唯一の入口 sources/factory が読む。取得元の名前で分岐しない）。秘密は書かない。
+# enabled = false の取得元は収集しない。
 
 [protondb]
 adapter = "game_signal_scout.sources.protondb:ProtonDBDump"
@@ -9,3 +10,16 @@ file_url = "https://raw.githubusercontent.com/bdefore/protondb-data/master/repor
 dump = "latest"          # latest = 一覧のいちばん新しい月。月の名前（reports_nov1_2026.tar.gz）も書ける
 local_path = ""          # 取得せずに手元の配布データを読む（試験・検証）
 batch_size = 2000        # 1 回の保存の件数（この区切りで続きの位置を記録する）
+min_snapshot_ratio = 0.9 # 新しい配布物が保存済みのこの割合より少なければ、壊れた配布物の疑いとして削除の追従をしない
+retention_days = 0       # 保持期限（日。0 = 無期限）。検証で使う一時の DB では短くする
+
+[steam_reviews]
+adapter = "game_signal_scout.sources.steam_reviews:SteamReviews"
+enabled = false          # 実際の取得は本人の承認まで無効（Issue #1 6705736617 の B）。試験は偽の応答だけ
+endpoint = "https://api.steampowered.com/IUserReviewsService/GetAppReviews/v1/"
+appids = []
+filter = 1               # 1 = 新しい順（公式文書の列挙値。文字列の "recent" は解釈されない）
+languages = ["all"]
+num_per_page = 100
+max_pages_per_app = 3
+retention_days = 30

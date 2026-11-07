@@ -78,7 +78,7 @@ def test_failure_midway_is_retryable_and_resumes_without_duplicates(conn, tmp_pa
     code, out = runner.daily_run(TARGET, reader_factory=lambda name: reader_for(path, fail_after=3))
     assert code == runner.EXIT_RETRY and out["failed_job"] == "collect" and out["error_type"] == "network"
     assert count(conn, "source_item") == 12                              # 3 束（4 件ずつ）は保存済み
-    assert source_item.get_checkpoint(conn, "protondb") == {"dump": path.name, "offset": 12}
+    assert source_item.get_checkpoint(conn, "protondb") == {"dump": path.name, "snapshot": path.name, "offset": 12}
     assert conn.execute("SELECT status, retryable, error_type FROM job_run").fetchall() == [("failed", True, "network")]
     code, out = runner.daily_run(TARGET, attempt=2, reader_factory=lambda name: reader_for(path))
     assert code == runner.EXIT_OK
@@ -101,6 +101,82 @@ def test_stale_running_rows_are_abandoned(conn, tmp_path):
     path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", dump_records())
     code, out = runner.daily_run(TARGET, only=["collect"], reader_factory=lambda name: reader_for(path))
     assert code == runner.EXIT_OK and out["abandoned_runs"] == 1
+
+
+def collect_with(conn, path, **settings):
+    from game_signal_scout.services.collect import collect
+    r = reader_for(path)
+    r.settings.update(settings)
+    return collect(conn, r)
+
+
+def test_empty_source_is_reported_not_silently_ok(conn, tmp_path):
+    res = collect_with(conn, make_dump(tmp_path / "reports_nov1_2026.tar.gz", []))
+    assert (res.complete, res.inserted, res.anomalies) == (True, 0, ["source_empty"])
+
+
+def test_duplicate_reports_are_stored_once(conn, tmp_path):
+    reps = dump_records()
+    res = collect_with(conn, make_dump(tmp_path / "reports_nov1_2026.tar.gz", reps + reps[:5]))
+    assert (res.read, res.inserted, count(conn, "source_item")) == (42, 37, 37)
+
+
+def test_corrupt_dump_fails_without_moving_checkpoint(conn, tmp_path):
+    good = make_dump(tmp_path / "g.tar.gz", dump_records() * 30).read_bytes()
+    bad = tmp_path / "reports_nov1_2026.tar.gz"
+    bad.write_bytes(good[: len(good) // 3])
+    code, out = runner.daily_run(TARGET, reader_factory=lambda name: reader_for(bad, batch_size=100000))
+    assert code == runner.EXIT_FATAL and out["error_type"] == "source_corrupt" and out["failed_job"] == "collect"
+    assert source_item.get_checkpoint(conn, "protondb") is None and count(conn, "source_item") == 0
+
+
+def test_items_missing_from_the_next_dump_are_deleted(conn, tmp_path):
+    reps = dump_records()
+    collect_with(conn, make_dump(tmp_path / "reports_oct1_2026.tar.gz", reps))
+    from game_signal_scout.services.normalize import normalize
+    normalize(conn)
+    res = collect_with(conn, make_dump(tmp_path / "reports_nov1_2026.tar.gz", reps[2:]))   # 新しい月に 2 件が消えた
+    assert (res.inserted, res.deleted, res.anomalies) == (0, 2, [])
+    assert (count(conn, "source_item"), count(conn, "player_report")) == (35, 35)            # 正規化した行も一緒に消える
+
+
+def test_suspiciously_small_dump_does_not_delete(conn, tmp_path):
+    reps = dump_records()
+    collect_with(conn, make_dump(tmp_path / "reports_oct1_2026.tar.gz", reps))
+    res = collect_with(conn, make_dump(tmp_path / "reports_nov1_2026.tar.gz", reps[:3]))
+    assert (res.deleted, res.anomalies) == (0, ["snapshot_too_small"]) and count(conn, "source_item") == 37
+
+
+def test_retention_purges_old_items(conn, tmp_path):
+    path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", dump_records())
+    collect_with(conn, path)
+    conn.execute("UPDATE source_item SET received_at = now() - interval '40 days' WHERE item_id IN (SELECT item_id FROM source_item LIMIT 7)")
+    conn.commit()
+    res = collect_with(conn, path, retention_days=30)
+    assert res.purged == 7 and count(conn, "source_item") == 30
+
+
+def test_edited_items_are_replaced_and_renormalized(conn, tmp_path):
+    from game_signal_scout.services.collect import collect
+    from test_steam_reviews import FakeHttp, reader as steam_reader, review
+    collect(conn, steam_reader(FakeHttp({(10, "*"): {"response": {"reviews": [review(1, 100), review(2, 100)], "cursor": "*"}}})))
+    conn.execute("INSERT INTO player_report (source, item_id, at, failed, config_hash) SELECT source, item_id, occurred_at, false, '-' FROM source_item")
+    conn.commit()
+    res = collect(conn, steam_reader(FakeHttp({(10, "*"): {"response": {"reviews": [review(1, 100, updated=200, text="fixed now"), review(2, 100)],
+                                                                         "cursor": "*"}}})))
+    assert (res.inserted, res.updated) == (0, 1)
+    assert conn.execute("SELECT payload->>'review' FROM source_item WHERE item_id='1'").fetchone()[0] == "fixed now"
+    assert [r[0] for r in conn.execute("SELECT item_id FROM player_report")] == ["2"]          # 編集された項目は正規化をやり直す
+
+
+def test_status_separates_collection_analysis_and_publication(conn, tmp_path):
+    from game_signal_scout.ops.status import status
+    path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", dump_records())
+    runner.daily_run(TARGET, reader_factory=lambda name: reader_for(path))
+    s = status(conn)
+    assert s["jobs"]["collect"]["status"] == "ok" and s["jobs"]["collect"]["sources"]["protondb"]["inserted"] == 37
+    assert s["sources"]["protondb"]["items"] == 37 and s["sources"]["protondb"]["cursor"]["complete"] is True
+    assert s["analysis"]["events"] == {"fail": 1} and s["publication"] == "none"
 
 
 def test_refuses_database_of_another_scout(test_db):

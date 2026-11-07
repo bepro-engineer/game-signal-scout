@@ -16,6 +16,7 @@ def main(argv=None) -> int:
     e = sub.add_parser("events", help="検出した変化を表示する")
     e.add_argument("--side", default="fail", choices=["fail", "fix"])
     e.add_argument("--limit", type=int, default=10)
+    sub.add_parser("status", help="監視が読む状態（段・取得元・分析・公開を分けて返す）")
     a = ap.parse_args(argv)
     if a.cmd == "daily-run":
         from game_signal_scout.ops.runner import daily_run
@@ -25,6 +26,10 @@ def main(argv=None) -> int:
     from game_signal_scout import config, db
     from game_signal_scout.repositories import report
     with db.connect() as conn:
+        if a.cmd == "status":
+            from game_signal_scout.ops.status import status
+            print(json.dumps(status(conn), ensure_ascii=False, default=str))
+            return 0
         version = config.load_daily_config()["analysis"]["version"]
         for row in report.events(conn, version, a.side)[: a.limit]:
             print(json.dumps(dict(zip(("appid", "window_start", "n_key", "n_window", "share_prev", "share_window"), row)), default=str))

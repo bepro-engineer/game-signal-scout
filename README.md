@@ -31,7 +31,10 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 
 | 取得元 | 条件 |
 |---|---|
-| ProtonDB の公開配布データ（GitHub `bdefore/protondb-data`） | ODbL 1.0 / DbCL 1.0。本体のサイトは取得しない（robots.txt が AI のクローラーを拒否） |
+| ProtonDB の公開配布データ（GitHub `bdefore/protondb-data`） | ODbL 1.0 / DbCL 1.0。本体のサイトは取得しない（robots.txt が AI のクローラーを拒否）。新しい月の配布物を読み終えたら、そこから消えた報告を消す（配布物が保存済みの 9 割より少なければ、壊れた疑いとして消さない） |
+| Steam のユーザーレビュー（`GetAppReviews`） | **無効**（`enabled = false`）。利用条件が未解決のため、偽の応答による試験だけ |
+
+`python -m game_signal_scout status` は、段ごとの最後の結果・取得元ごとの件数とデータの鮮度・分析の結果・公開の状態を分けて出します（監視が読む形）。共有の PostgreSQL に Game の DB を作る手順は [docs/database.md](docs/database.md) です（未実行）。
 
 ## 試験
 

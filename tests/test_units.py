@@ -12,6 +12,7 @@ from game_signal_scout import config
 from game_signal_scout.errors import LockedError, classify
 from game_signal_scout.services import normalize, shift
 from game_signal_scout.sources import factory, protondb
+from game_signal_scout.sources.contract import SourceCorruptError
 from game_signal_scout.sources.http import Fetcher
 
 DAY = 86400
@@ -43,14 +44,26 @@ def test_reader_resumes_from_offset(tmp_path):
                                                       "local_path": str(path), "batch_size": 2}})
     batches = list(r.read(None))
     assert [len(b.items) for b in batches] == [2, 2, 1]
-    assert batches[-1].cursor == {"dump": path.name, "offset": 5, "complete": True}
+    assert batches[-1].cursor == {"dump": path.name, "snapshot": path.name, "offset": 5, "complete": True}
+    assert [len(b.items) for b in r.read(batches[-1].cursor)] == [0]          # 読み終えた配布物は読み直さない
     rest = list(r.read({"dump": path.name, "offset": 2}))
     assert [i.item_id for b in rest for i in b.items] == [i.item_id for b in batches[1:] for i in b.items]
     assert sum(len(b.items) for b in r.read({"dump": "reports_oct1_2026.tar.gz", "offset": 4})) == 5   # 別の月のファイルは最初から
 
 
+def test_corrupt_local_dump_is_not_retryable(tmp_path):
+    good = make_dump(tmp_path / "g.tar.gz", [report("1", T0 + i, False, i) for i in range(50)]).read_bytes()
+    bad = tmp_path / "reports_nov1_2026.tar.gz"
+    bad.write_bytes(good[: len(good) // 2])                                    # 途中で切れた配布物
+    r = factory.create("protondb", None, {"protondb": {"adapter": "game_signal_scout.sources.protondb:ProtonDBDump", "local_path": str(bad)}})
+    with pytest.raises(SourceCorruptError) as e:
+        list(r.read(None))
+    assert classify(e.value) == (False, "source_corrupt")
+    assert bad.exists()                                                        # 手元のファイルは消さない
+
+
 def test_factory_reads_adapter_from_config():
-    assert factory.sources() == ["protondb"]
+    assert factory.sources() == ["protondb"]          # steam_reviews は記述があっても enabled = false なので収集しない
     assert factory.reader_class("protondb") is protondb.ProtonDBDump
     with pytest.raises(ValueError):
         factory.reader_class("nope", {})

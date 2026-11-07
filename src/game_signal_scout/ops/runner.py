@@ -58,12 +58,12 @@ def job_collect(ctx: Context) -> JobResult:
     from game_signal_scout.sources import factory
     from game_signal_scout.sources.http import Fetcher
     make = ctx.reader_factory or (lambda name: factory.create(name, Fetcher(ctx.cfg["daily_run"]["user_agent"])))
-    total, detail = 0, {}
+    total, read, detail = 0, 0, {}
     for name in factory.sources():
         r = collect(ctx.conn, make(name))
-        total += r.inserted
-        detail[name] = {"read": r.read, "inserted": r.inserted, "complete": r.complete}
-    return JobResult(output_count=total, detail=detail)
+        total, read = total + r.inserted, read + r.read
+        detail[name] = r.as_detail()
+    return JobResult(input_count=read, output_count=total, detail=detail)
 
 
 def job_normalize(ctx: Context) -> JobResult:
