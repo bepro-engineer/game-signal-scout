@@ -32,3 +32,13 @@ def finish_run(conn, run_id: int, *, status: str, finished_at: datetime, elapsed
 
 def runs(conn, daily_run_id: str) -> list[tuple]:
     return conn.execute("SELECT job, status, retryable, error_type FROM job_run WHERE daily_run_id=%s ORDER BY id", (daily_run_id,)).fetchall()
+
+
+def is_daily_run_active(conn, within_hours: int) -> bool:
+    """日次処理が動いている最中か（running の行が within_hours 以内に始まっている）。Anime の repositories/job から移植。"""
+    return conn.execute("SELECT EXISTS (SELECT 1 FROM job_run WHERE status='running' AND started_at > now() - make_interval(hours => %s))",
+                        (within_hours,)).fetchone()[0]
+
+
+def last_ok_finished_at(conn, job: str):
+    return conn.execute("SELECT max(finished_at) FROM job_run WHERE job=%s AND status='ok'", (job,)).fetchone()[0]

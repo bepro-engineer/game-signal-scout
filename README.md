@@ -10,10 +10,10 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 
 | 層 | 場所 | 内容 |
 |---|---|---|
-| 入口（Controller） | `cli.py`、`web/app.py` | コマンドと 1 行の JSON の出力。Viewer のルート（`/` 変化の一覧、`/games/<appid>` 作品、`/api/status`） |
+| 入口（Controller） | `cli.py`、`web/app.py` | コマンドと 1 行の JSON の出力。Viewer のルート（`/` 変化の一覧、`/games/<appid>` 作品、`/api/…` 文書の JSON、`/healthz`） |
 | 画面（View） | `web/templates`、`web/static` | サーバー側で HTML にする（JavaScript なし）。根拠の記述は escape する |
-| 運用 | `ops/runner.py` | 段（collect → normalize → analyze）の実行、段ごとの排他、実行の記録（`job_run`）、再試行の可否と終了コード |
-| 業務（Service） | `services/` | 収集（束ごとの保存と続きの位置）、正規化、変化の検出、Viewer に出す形（`viewer.py`） |
+| 運用 | `ops/runner.py` | 段（collect → normalize → analyze → publish）の実行、段ごとの排他、実行の記録（`job_run`）、再試行の可否と終了コード |
+| 業務（Service） | `services/`、`publication/`、`web/public_content.py` | 収集（束ごとの保存と続きの位置）、正規化、変化の検出。公開用の文書を作って検査し、表 `public_document` に置き換える（Anime の publishing を移植）。Viewer はその文書を鍵で読むだけ |
 | データ（Repository） | `repositories/` | SQL はここだけ |
 | 取得元 | `sources/` | 取得元の契約（`SourceReader`）、記述から作る Factory、節度のある取得（`Fetcher`）、ProtonDB の配布データ |
 | LLM 枠 | `llm_gate.py` | 共有の部品（scout-infra の `scout_llm_gate`）への接続口。Game は専用の LLM・ロック・常駐を持たない |
@@ -41,12 +41,13 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 ## Viewer
 
 ```bash
-python -m game_signal_scout daily-run   # 収集 → 正規化 → 分析
+python -m game_signal_scout daily-run   # 収集 → 正規化 → 分析 → 文書の置き換え
 python -m game_signal_scout web         # http://127.0.0.1:8720/
 ```
 
 - 変化の一覧（遊べなくなった・直った作品）、取得元ごとのデータの鮮度と段の結果、作品ごとの週の推移と、変化の根拠になったプレイヤーの記述を出します。
-- DB を読むだけです。接続のたびに Game の DB であることを確かめます。DB に届かなければ 503 を返します。
+- 表 `public_document`・`public_build` を読むだけです（Anime と同じ形）。検査に通らなかった回は表を変えず、画面は前の内容のまま「前の内容のまま」と出します。
+- 接続のたびに Game の DB であることを確かめます。DB に届かなければ 503 を返します。
 
 ## 試験
 

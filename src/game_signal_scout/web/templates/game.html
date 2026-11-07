@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ g.title or g.appid }}{% endblock %}
 {% block main %}
-<p class="crumb"><a href="/">← 変化の一覧</a></p>
+<p class="crumb"><a href="/">← 変化の一覧</a>　内容を作った時刻: {{ health.built_at|ts }}</p>
 <h1>{{ g.title or g.appid }}</h1>
 <p class="lead">Steam app ID <code>{{ g.appid }}</code>（<a href="https://store.steampowered.com/app/{{ g.appid }}/">ストア</a>）</p>
 

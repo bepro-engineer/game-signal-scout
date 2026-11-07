@@ -1,4 +1,4 @@
-"""Viewer の試験（一時の DB）: 収集 → 正規化 → 分析の結果が画面に出ること、根拠の記述が escape されること、誤った入力と DB の不在。"""
+"""Viewer の試験（一時の DB）: 収集 → 正規化 → 分析 → 文書の置き換えの結果が画面に出ること、根拠の記述が escape されること、誤った入力と DB の不在。"""
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
@@ -41,7 +41,8 @@ def test_overview_shows_freshness_and_detected_change(client):
     assert "protondb" in body and "2026-06-07" in body             # 取得元と最新の報告の日（鮮度）
     assert 'href="/games/100"' in body and "Game 100" in body       # 変化した作品
     assert "/games/200" not in body                                 # 変化のない作品は一覧に出ない
-    assert "遊べなくなった 1 件" in body
+    assert "遊べなくなった 1 件" in body and "この画面の内容を作った時刻: 20" in body
+    assert "publish:" not in body                                   # 作っている最中の段は出さない
 
 
 def test_game_page_shows_weekly_trend_and_escaped_evidence(client):
@@ -55,11 +56,24 @@ def test_game_page_shows_weekly_trend_and_escaped_evidence(client):
 def test_unknown_or_invalid_game_is_404(client):
     assert client.get("/games/999").status_code == 404
     assert client.get("/games/abc").status_code == 404
+    assert client.get("/games/200").status_code == 404              # 変化のない作品の文書は作らない
 
 
-def test_status_api_matches_cli_status(client):
-    s = client.get("/api/status").json()
-    assert s["publication"] == "none" and s["sources"]["protondb"]["items"] == 37 and s["analysis"]["events"] == {"fail": 1}
+def test_api_returns_documents_without_private_fields(client):
+    o = client.get("/api/overview").json()
+    assert o["counts"] == {"fail": 1, "fix": 0} and o["sources"]["protondb"]["items"] == 37
+    g = client.get("/api/games/100").json()
+    r = g["events"][0]["reports"][0]
+    assert set(r) == {"at", "failed", "proton", "notes"}            # item_id・機材構成の hash は出さない
+    h = client.get("/healthz").json()
+    assert h["ok"] is True and h["latest"] == "2026-06-07" and h["stale"] is False
+
+
+def test_viewer_reads_only_the_document_tables(client, conn):
+    """Viewer は public_document と public_build だけを読む（分析の表を消しても画面は前の内容のまま出る）。"""
+    conn.execute("TRUNCATE shift_event, player_report, job_run, source_state")
+    conn.commit()
+    assert "Game 100" in client.get("/").text and client.get("/games/100").status_code == 200
 
 
 def test_database_unavailable_is_503(conn):

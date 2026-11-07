@@ -3,7 +3,7 @@
 - jobs: 段ごとの最後の実行（状態・再試行の可否・誤りの種類・件数）と、最後に成功した時刻
 - sources: 取得元ごとの保存件数・最新の発生時刻（データの鮮度）・最後に保存した時刻・続きの位置・最後の収集の異常
 - analysis: 規則の版ごとの事象の数
-- publication: 公開はまだない（"none"）。公開を足すときは、公開の更新時刻をここに別に持つ
+- publication: Viewer が読む文書を最後に作った回（public_build）と、外への公開（まだない: "none"）
 """
 from __future__ import annotations
 
@@ -28,4 +28,8 @@ def status(conn) -> dict:
         sources.setdefault(s, {"items": 0}).update(st)
     version = config.load_daily_config()["analysis"]["version"]
     events = dict(conn.execute("SELECT side, count(*) FROM shift_event WHERE version=%s GROUP BY side", (version,)).fetchall())
-    return {"jobs": jobs, "sources": sources, "analysis": {"version": version, "events": events}, "publication": "none"}
+    from game_signal_scout.repositories import public_document
+    last, tried = public_document.get_last_published_build(conn), public_document.get_last_finished_build(conn)
+    publication = {"documents_built_at": last["finished_at"] if last else None, "documents": last["documents"] if last else 0,
+                   "stale": bool(tried and tried["status"] != "published"), "external": "none"}
+    return {"jobs": jobs, "sources": sources, "analysis": {"version": version, "events": events}, "publication": publication}

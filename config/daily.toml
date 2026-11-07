@@ -1,7 +1,7 @@
 # 運用の設定（ops/runner）。秘密は書かない。
 
 [daily_run]
-jobs = ["collect", "normalize", "analyze"]
+jobs = ["collect", "normalize", "analyze", "publish"]   # publish = Viewer が読む表 public_document の置き換え（外への公開ではない）
 max_attempts = 3              # 再試行は呼ぶ側の 1 層だけ。上限と待ちはここに 1 か所
 retry_after_minutes = 30
 max_running_hours = 6         # running のまま残った実行を abandoned で閉じる目安

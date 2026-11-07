@@ -80,3 +80,7 @@ def reports_by_ids(conn, item_ids: list[str]) -> list[dict]:
     rows = conn.execute("SELECT source, item_id, at, failed, proton, notes FROM player_report WHERE item_id = ANY(%s) ORDER BY at",
                         (list(item_ids),)).fetchall()
     return [dict(zip(("source", "item_id", "at", "failed", "proton", "notes"), r)) for r in rows]
+
+
+def newest_report_at(conn):
+    return conn.execute("SELECT max(at) FROM player_report").fetchone()[0]

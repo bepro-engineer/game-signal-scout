@@ -1,4 +1,4 @@
-"""daily-run: 段（collect → normalize → analyze）を順に実行する（Anime の ops/runner を Game の最小の形に移植）。
+"""daily-run: 段（collect → normalize → analyze → publish）を順に実行する（Anime の ops/runner を Game の最小の形に移植）。
 
 - 排他: 段ごと・日ごとの advisory lock（Game の DB の中だけで効く。LLM の機械全体の排他は llm_gate）。
 - 記録: 段ごとに job_run（running → ok / failed / locked）。落ちて残った running は abandoned で閉じる。
@@ -128,7 +128,17 @@ def job_analyze(ctx: Context) -> JobResult:
                      detail={"fail": sum(e["side"] == "fail" for e in events), "fix": sum(e["side"] == "fix" for e in events)})
 
 
-JOBS = {"collect": job_collect, "normalize": job_normalize, "analyze": job_analyze}
+def job_publish(ctx: Context) -> JobResult:
+    """分析の結果から公開用の文書を作り、表 public_document に置き換える（Viewer が読む。外への公開ではない）。
+    検査に通らない・作れないときは、表を前の回のままにして段を失敗にする。"""
+    from game_signal_scout.publication import publishing
+    r = publishing.publish(ctx.conn, ctx.conn, ctx.cfg, "daily")
+    if r["status"] in ("rejected", "failed"):
+        raise RuntimeError(f"公開用の文書を置き換えなかった（{r['status']}）: {r.get('error')}")
+    return JobResult(output_count=r.get("documents"), detail=r)
+
+
+JOBS = {"collect": job_collect, "normalize": job_normalize, "analyze": job_analyze, "publish": job_publish}
 
 
 def _run_job(ctx: Context, run_id: str, name: str, attempt: int) -> dict:

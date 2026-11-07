@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block title %}変化の一覧{% endblock %}
 {% block main %}
-{% set s = v.status %}
 <h1>遊べなくなった・直った作品</h1>
 <p class="lead">Linux（Proton）のプレイヤーの報告で、ある時点から「遊べない」の割合が急に変わった作品です。規則の版 <code>{{ v.version }}</code>：14 日の窓に、異なる機材構成から 5 件以上の報告があり、直前 60 日より 30 ポイント以上変わったもの。</p>
 
@@ -10,16 +9,17 @@
 <table>
 <thead><tr><th>取得元</th><th>報告の数</th><th>最新の報告</th><th>最後の取得の成功</th><th>最後の失敗</th></tr></thead>
 <tbody>
-{% for name, src in s.sources.items() %}
-<tr><td>{{ name }}</td><td class="num">{{ "{:,}".format(src["items"] or 0) }}</td><td>{{ src.newest_occurred_at|day }}</td>
+{% for name, src in v.sources.items() %}
+<tr><td>{{ name }}</td><td class="num">{{ "{:,}".format(src["items"]) }}</td><td>{{ src.newest_occurred_at|day }}</td>
 <td>{{ src.last_ok_at|ts }}</td><td>{% if src.last_error_type %}<span class="bad">{{ src.last_error_type }}</span>{% else %}—{% endif %}</td></tr>
 {% else %}
 <tr><td colspan="5">まだ取得していません</td></tr>
 {% endfor %}
 </tbody>
 </table>
-<p class="jobs">{% for job, j in s.jobs.items() %}<span class="job {{ 'ok' if j.status == 'ok' else 'bad' }}">{{ job }}: {{ j.status or '—' }}{% if j.finished_at %}（{{ j.finished_at|ts }}）{% endif %}</span>{% endfor %}
-<span class="job">公開: なし</span></p>
+<p class="jobs">{% for job, j in v.jobs.items() %}<span class="job {{ 'ok' if j.status == 'ok' else 'bad' }}">{{ job }}: {{ j.status or '—' }}{% if j.finished_at %}（{{ j.finished_at|ts }}）{% endif %}</span>{% endfor %}
+<span class="job">外への公開: なし</span></p>
+<p class="built">この画面の内容を作った時刻: {{ health.built_at|ts }}{% if health.stale %} <span class="bad">（最後の作り直しに失敗し、前の内容のまま）</span>{% endif %}</p>
 </section>
 
 <section>
