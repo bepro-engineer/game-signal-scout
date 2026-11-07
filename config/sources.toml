@@ -1,0 +1,11 @@
+# 取得元の記述（取得元を作る唯一の入口 sources/factory が読む。取得元の名前で分岐しない）。秘密は書かない。
+
+[protondb]
+adapter = "game_signal_scout.sources.protondb:ProtonDBDump"
+# 公開の配布データ（GitHub bdefore/protondb-data。ODbL 1.0 / DbCL 1.0）。ProtonDB 本体のサイトは取得しない
+license = "ODbL-1.0 / DbCL-1.0"
+listing_url = "https://api.github.com/repos/bdefore/protondb-data/contents/reports"
+file_url = "https://raw.githubusercontent.com/bdefore/protondb-data/master/reports/{name}"
+dump = "latest"          # latest = 一覧のいちばん新しい月。月の名前（reports_nov1_2026.tar.gz）も書ける
+local_path = ""          # 取得せずに手元の配布データを読む（試験・検証）
+batch_size = 2000        # 1 回の保存の件数（この区切りで続きの位置を記録する）

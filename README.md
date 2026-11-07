@@ -1,0 +1,48 @@
+# Game Signal Scout（非公開の試作）
+
+PC・家庭用ゲームのプレイヤーの具体的な発言・報告から、ほかでは見えにくい変化（例: ある更新から遊べなくなった）を見つける試作です。価値の検証と経緯は [Issue #1](https://github.com/bepro-engineer/game-signal-scout/issues/1) が正本です。
+
+**本番の稼働・公開はしていません。** 常駐、定時の起動、公開の画面はありません。
+
+## 構成
+
+Anime Signal Scout の基本モデルから、Game に必要な部分だけを移植しています。
+
+| 層 | 場所 | 内容 |
+|---|---|---|
+| 入口（Controller） | `cli.py` | コマンドと 1 行の JSON の出力 |
+| 運用 | `ops/runner.py` | 段（collect → normalize → analyze）の実行、段ごとの排他、実行の記録（`job_run`）、再試行の可否と終了コード |
+| 業務（Service） | `services/` | 収集（束ごとの保存と続きの位置）、正規化、変化の検出 |
+| データ（Repository） | `repositories/` | SQL はここだけ |
+| 取得元 | `sources/` | 取得元の契約（`SourceReader`）、記述から作る Factory、節度のある取得（`Fetcher`）、ProtonDB の配布データ |
+| LLM 枠 | `llm_gate.py` | 共有の部品（scout-infra の `scout_llm_gate`）への接続口。Game は専用の LLM・ロック・常駐を持たない |
+
+- 取得元を足すときに書くのは、`SourceReader` の子クラス、`config/sources.toml` の記述、試験だけです。
+- どの段も、何度流しても同じ結果になります。収集は同じ報告を 1 件にし、途中で落ちても続きの位置から読み直します。
+
+## 他の Scout との分離
+
+- 環境変数は `GSS_` だけを読みます。Anime の `ASS_DB_DSN` が残っていても使いません。
+- 接続できるのは、名前が `game_signal_scout` で始まり、表 `scout_identity` が `game` の DB だけです。
+- advisory lock の名前には `game_signal_scout:` を付けます（DB ごとの排他で、他の Scout とは衝突しません）。機械全体で 1 つにする LLM の排他は、共有の LLM 枠を使います。
+- PostgreSQL のサーバーは共有し、論理 DB とロールを分ける前提です（本番の DB はまだ作っていません）。
+
+## 取得元
+
+| 取得元 | 条件 |
+|---|---|
+| ProtonDB の公開配布データ（GitHub `bdefore/protondb-data`） | ODbL 1.0 / DbCL 1.0。本体のサイトは取得しない（robots.txt が AI のクローラーを拒否） |
+
+## 試験
+
+```bash
+pip install -e '.[test]'
+pytest
+```
+
+DB の試験は、一時の PostgreSQL の管理用の接続 `GSS_TEST_ADMIN_DSN` があるときだけ動きます。毎回 `game_signal_scout_test_<乱数>` を作り、終わったら消します。共有の LLM 枠の試験は、`scout_llm_gate` を読み込めるときだけ動きます。
+
+## 守ること
+
+- 秘密（接続文字列のパスワード、キー）は commit しません。接続先は `GSS_DB_DSN` か `runtime/db.env`（Git の外）に置きます。
+- Anime と共有の基盤の本番を変更しません。Game の本番の起動、公開、外部の契約、費用の発生は、本人の承認が必要です。

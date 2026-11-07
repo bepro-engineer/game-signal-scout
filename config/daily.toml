@@ -1,0 +1,23 @@
+# 運用の設定（ops/runner）。秘密は書かない。
+
+[daily_run]
+jobs = ["collect", "normalize", "analyze"]
+max_attempts = 3              # 再試行は呼ぶ側の 1 層だけ。上限と待ちはここに 1 か所
+retry_after_minutes = 30
+max_running_hours = 6         # running のまま残った実行を abandoned で閉じる目安
+user_agent = "game-signal-scout/0.0.1 (private research; non-commercial)"
+
+[analysis]
+# 「遊べなくなった・直った」の検出（Issue #1 の検証P で事前に固定した規則。変えたら version を上げる）
+version = "p-2026-11-07"
+window_days = 14
+prev_days = 60
+min_key_reports = 5           # 窓の失敗（直った側は成功）の報告の下限
+min_distinct_configs = 5      # そのうち異なる機材構成の下限（投稿者の ID がないので代わりに使う）
+min_prev_reports = 5          # 直前の期間の報告の下限
+min_jump = 0.30               # 失敗の割合の変化（30 ポイント）
+
+[llm_gate]
+# 機械で 1 つの LLM 枠（scout-infra の scout_llm_gate）。Game は専用の LLM・常駐を持たない
+enabled = false
+config = ""                   # 枠の設定ファイルのパス（scout-infra の config/llm_gate.toml）

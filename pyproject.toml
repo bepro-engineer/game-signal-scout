@@ -1,0 +1,27 @@
+[project]
+name = "game-signal-scout"
+version = "0.0.1"
+description = "Game Signal Scout — PC・家庭用ゲームのプレイヤーの具体的な発言から、ほかでは見えにくい変化を見つける（非公開の試作）"
+requires-python = ">=3.12"
+dependencies = [
+  "psycopg[binary]>=3.2",
+  # データベースの表の変更の管理（Anime Signal Scout と同じ方式）
+  "alembic>=1.13",
+  "sqlalchemy>=2.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+# 機械で 1 つの LLM 枠（共有の部品。scout-infra）。[llm_gate] enabled を入れる機械にだけ入れる
+gate = ["scout-llm-gate @ git+ssh://git@github.com/bepro-engineer/scout-infra.git"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
