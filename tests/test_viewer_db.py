@@ -1,0 +1,74 @@
+"""Viewer の試験（一時の DB）: 収集 → 正規化 → 分析の結果が画面に出ること、根拠の記述が escape されること、誤った入力と DB の不在。"""
+from __future__ import annotations
+
+from datetime import date, datetime, timezone
+
+import pytest
+
+from conftest import make_dump, report
+from game_signal_scout import config
+from game_signal_scout.ops import runner
+from game_signal_scout.sources import factory
+
+DAY = 86400
+T0 = int(datetime(2026, 6, 1, tzinfo=timezone.utc).timestamp())
+
+
+@pytest.fixture
+def client(conn, tmp_path):
+    from fastapi.testclient import TestClient
+    from psycopg_pool import ConnectionPool
+    from game_signal_scout import db
+    from game_signal_scout.web.app import create_app
+    reps = [report("100", T0 - 50 * DAY + i * DAY, False, i) for i in range(10)]
+    reps += [report("100", T0 + i * DAY, True, 100 + i, note="<script>x</script> crashes after update") for i in range(7)]
+    reps += [report("200", T0 + i * 3600, False, i) for i in range(20)]
+    path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", reps)
+    cfg = {"protondb": {"adapter": "game_signal_scout.sources.protondb:ProtonDBDump", "local_path": str(path)}}
+    code, _ = runner.daily_run(date(2026, 10, 31), reader_factory=lambda name: factory.create("protondb", None, cfg))
+    assert code == runner.EXIT_OK
+    pool = ConnectionPool(config.db_dsn(), min_size=1, max_size=2, kwargs={"autocommit": True}, configure=db.verify_identity, open=True)
+    with TestClient(create_app(pool=pool)) as c:
+        yield c
+    pool.close()
+
+
+def test_overview_shows_freshness_and_detected_change(client):
+    r = client.get("/")
+    assert r.status_code == 200 and "text/html" in r.headers["content-type"]
+    assert "default-src 'none'" in r.headers["content-security-policy"] and r.headers["x-frame-options"] == "DENY"
+    body = r.text
+    assert "protondb" in body and "2026-06-07" in body             # 取得元と最新の報告の日（鮮度）
+    assert 'href="/games/100"' in body and "Game 100" in body       # 変化した作品
+    assert "/games/200" not in body                                 # 変化のない作品は一覧に出ない
+    assert "遊べなくなった 1 件" in body
+
+
+def test_game_page_shows_weekly_trend_and_escaped_evidence(client):
+    body = client.get("/games/100").text
+    assert "Game 100" in body and "2026-06-01 からの 14 日" in body
+    assert body.count("crashes after update") == 7                  # 根拠の報告 7 件
+    assert "<script>x</script>" not in body and "&lt;script&gt;" in body
+    assert "100%" in body                                            # 窓の遊べない割合
+
+
+def test_unknown_or_invalid_game_is_404(client):
+    assert client.get("/games/999").status_code == 404
+    assert client.get("/games/abc").status_code == 404
+
+
+def test_status_api_matches_cli_status(client):
+    s = client.get("/api/status").json()
+    assert s["publication"] == "none" and s["sources"]["protondb"]["items"] == 37 and s["analysis"]["events"] == {"fail": 1}
+
+
+def test_database_unavailable_is_503(conn):
+    import psycopg
+    from fastapi.testclient import TestClient
+    from game_signal_scout.web.app import create_app
+
+    class DownPool:
+        def connection(self):
+            raise psycopg.OperationalError("接続できない（試験）")
+    with TestClient(create_app(pool=DownPool())) as c:
+        assert c.get("/").status_code == 503

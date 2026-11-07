@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ g.title or g.appid }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="/">← 変化の一覧</a></p>
+<h1>{{ g.title or g.appid }}</h1>
+<p class="lead">Steam app ID <code>{{ g.appid }}</code>（<a href="https://store.steampowered.com/app/{{ g.appid }}/">ストア</a>）</p>
+
+<section>
+<h2>週ごとの報告（最新の報告から 26 週）</h2>
+<table class="weeks">
+<thead><tr><th>週の始まり</th><th class="num">報告</th><th class="num">遊べない</th><th class="num">機材構成</th><th>遊べない割合</th></tr></thead>
+<tbody>
+{% for w in g.weeks %}
+<tr><td>{{ w.week|day }}</td><td class="num">{{ w.reports }}</td><td class="num">{{ w.failed }}</td><td class="num">{{ w.configs }}</td>
+<td><span class="bar" style="width: {{ (w.share * 100)|round(0) }}%"></span> {{ w.share|pct }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</section>
+
+{% for e in g.events %}
+<section class="event">
+<h2><span class="side {{ e.side }}">{{ '遊べなくなった' if e.side == 'fail' else '直った' }}</span> {{ e.window_start|day }} からの 14 日</h2>
+<p>遊べない割合 {{ e.share_prev|pct }}（直前 60 日、{{ e.n_prev }} 件）→ <strong>{{ e.share_window|pct }}</strong>（窓の {{ e.n_window }} 件）。根拠の報告 {{ e.n_key }} 件：</p>
+<ul class="reports">
+{% for r in e.reports %}
+<li><span class="when">{{ r.at|day }}</span> <span class="side {{ 'fail' if r.failed else 'fix' }}">{{ '遊べない' if r.failed else '遊べる' }}</span>
+{% if r.proton %}<span class="proton">{{ r.proton }}</span>{% endif %}
+<div class="note">{{ r.notes or '（記述なし）' }}</div></li>
+{% endfor %}
+</ul>
+</section>
+{% else %}
+<p>この作品には、検出した変化はありません。</p>
+{% endfor %}
+{% endblock %}

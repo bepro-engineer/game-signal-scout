@@ -21,3 +21,10 @@ min_jump = 0.30               # 失敗の割合の変化（30 ポイント）
 # 機械で 1 つの LLM 枠（scout-infra の scout_llm_gate）。Game は専用の LLM・常駐を持たない
 enabled = false
 config = ""                   # 枠の設定ファイルのパス（scout-infra の config/llm_gate.toml）
+
+[web]
+# Viewer（web/app）。待ち受けは自分の機械だけ。公開はしていない
+host = "127.0.0.1"
+port = 8720
+pool_min_size = 1
+pool_max_size = 4

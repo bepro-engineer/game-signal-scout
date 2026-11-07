@@ -17,7 +17,17 @@ def main(argv=None) -> int:
     e.add_argument("--side", default="fail", choices=["fail", "fix"])
     e.add_argument("--limit", type=int, default=10)
     sub.add_parser("status", help="監視が読む状態（段・取得元・分析・公開を分けて返す）")
+    w = sub.add_parser("web", help="Viewer（読むだけの画面）を動かす。待ち受けの既定は config/daily.toml [web]（自分の機械だけ）")
+    w.add_argument("--host")
+    w.add_argument("--port", type=int)
     a = ap.parse_args(argv)
+    if a.cmd == "web":
+        import uvicorn
+        from game_signal_scout import config
+        wc = config.load_daily_config()["web"]
+        uvicorn.run("game_signal_scout.web.app:create_app", factory=True, host=a.host or wc["host"], port=a.port or int(wc["port"]),
+                    server_header=False)
+        return 0
     if a.cmd == "daily-run":
         from game_signal_scout.ops.runner import daily_run
         code, out = daily_run(a.day, a.only, a.attempt)

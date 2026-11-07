@@ -2,7 +2,7 @@
 
 PC・家庭用ゲームのプレイヤーの具体的な発言・報告から、ほかでは見えにくい変化（例: ある更新から遊べなくなった）を見つける試作です。価値の検証と経緯は [Issue #1](https://github.com/bepro-engineer/game-signal-scout/issues/1) が正本です。
 
-**本番の稼働・公開はしていません。** 常駐、定時の起動、公開の画面はありません。
+**本番の稼働・公開はしていません。** 常駐、定時の起動、公開の画面はありません（Viewer は自分の機械だけで手で動かす）。
 
 ## 構成
 
@@ -10,9 +10,10 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 
 | 層 | 場所 | 内容 |
 |---|---|---|
-| 入口（Controller） | `cli.py` | コマンドと 1 行の JSON の出力 |
+| 入口（Controller） | `cli.py`、`web/app.py` | コマンドと 1 行の JSON の出力。Viewer のルート（`/` 変化の一覧、`/games/<appid>` 作品、`/api/status`） |
+| 画面（View） | `web/templates`、`web/static` | サーバー側で HTML にする（JavaScript なし）。根拠の記述は escape する |
 | 運用 | `ops/runner.py` | 段（collect → normalize → analyze）の実行、段ごとの排他、実行の記録（`job_run`）、再試行の可否と終了コード |
-| 業務（Service） | `services/` | 収集（束ごとの保存と続きの位置）、正規化、変化の検出 |
+| 業務（Service） | `services/` | 収集（束ごとの保存と続きの位置）、正規化、変化の検出、Viewer に出す形（`viewer.py`） |
 | データ（Repository） | `repositories/` | SQL はここだけ |
 | 取得元 | `sources/` | 取得元の契約（`SourceReader`）、記述から作る Factory、節度のある取得（`Fetcher`）、ProtonDB の配布データ |
 | LLM 枠 | `llm_gate.py` | 共有の部品（scout-infra の `scout_llm_gate`）への接続口。Game は専用の LLM・ロック・常駐を持たない |
@@ -36,6 +37,16 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 | Steam のユーザーレビュー（`GetAppReviews`） | **無効**（`enabled = false`）。利用条件が未解決のため、偽の応答による試験だけ |
 
 `python -m game_signal_scout status` は、段ごとの最後の結果・取得元ごとの件数とデータの鮮度・分析の結果・公開の状態を分けて出します（監視が読む形）。共有の PostgreSQL に Game の DB を作る手順は [docs/database.md](docs/database.md) です（未実行）。
+
+## Viewer
+
+```bash
+python -m game_signal_scout daily-run   # 収集 → 正規化 → 分析
+python -m game_signal_scout web         # http://127.0.0.1:8720/
+```
+
+- 変化の一覧（遊べなくなった・直った作品）、取得元ごとのデータの鮮度と段の結果、作品ごとの週の推移と、変化の根拠になったプレイヤーの記述を出します。
+- DB を読むだけです。接続のたびに Game の DB であることを確かめます。DB に届かなければ 503 を返します。
 
 ## 試験
 
