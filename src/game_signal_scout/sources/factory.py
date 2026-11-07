@@ -12,6 +12,13 @@ from game_signal_scout.sources.contract import SourceReader
 
 
 def load_sources_config() -> dict:
+    """取得元の記述（既定は config/sources.toml。GSS_SOURCES_CONFIG で別のファイル: 検証・試験で有効にする取得元を替える）。"""
+    import os
+    import tomllib
+    alt = os.environ.get("GSS_SOURCES_CONFIG")
+    if alt:
+        with open(alt, "rb") as f:
+            return tomllib.load(f)
     return config.load_toml("sources.toml")
 
 

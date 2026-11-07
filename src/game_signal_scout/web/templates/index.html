@@ -43,4 +43,21 @@
 <p>まだ変化はありません（分析の前か、条件を満たす作品がない）。</p>
 {% endif %}
 </section>
+
+<section>
+<h2>発言の多い作品（Bluesky。最新の発言から 7 日、独立した投稿者の数の順）</h2>
+{% if v.speech %}
+<p class="lead">宣伝・配信の告知・リンクだけの投稿などの印が付いた発言は数えていません。作品は Steam のストアのリンクか題名の一致で同定しています（誤同定を含みます）。</p>
+<table>
+<thead><tr><th>作品</th><th class="num">投稿者</th><th class="num">発言</th></tr></thead>
+<tbody>
+{% for a in v.speech %}
+<tr><td><a href="/games/{{ a.appid }}">{{ a.title or a.appid }}</a></td><td class="num">{{ a.authors }}</td><td class="num">{{ a.posts }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>まだ発言を取得していません。</p>
+{% endif %}
+</section>
 {% endblock %}

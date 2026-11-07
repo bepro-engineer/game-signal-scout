@@ -5,7 +5,19 @@
 <h1>{{ g.title or g.appid }}</h1>
 <p class="lead">Steam app ID <code>{{ g.appid }}</code>（<a href="https://store.steampowered.com/app/{{ g.appid }}/">ストア</a>）</p>
 
+{% if g.posts %}
 <section>
+<h2>最近の発言（Bluesky。{{ g.posts.since|day }} から、投稿者 {{ g.posts.authors }} 人・発言 {{ g.posts.posts }} 件）</h2>
+<ul class="reports">
+{% for p in g.posts.recent %}
+<li><span class="when">{{ p.at|ts }}</span> <span class="proton">{{ p.lang or '—' }}・{{ 'ストアのリンク' if p.matched_by == 'steam_link' else '題名の一致' }}</span>
+<div class="note">{{ p.text }}</div></li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+
+{% if g.weeks %}<section>
 <h2>週ごとの報告（最新の報告から 26 週）</h2>
 <table class="weeks">
 <thead><tr><th>週の始まり</th><th class="num">報告</th><th class="num">遊べない</th><th class="num">機材構成</th><th>遊べない割合</th></tr></thead>
@@ -16,7 +28,7 @@
 {% endfor %}
 </tbody>
 </table>
-</section>
+</section>{% endif %}
 
 {% for e in g.events %}
 <section class="event">
@@ -31,6 +43,6 @@
 </ul>
 </section>
 {% else %}
-<p>この作品には、検出した変化はありません。</p>
+<p>この作品には、ProtonDB の報告から検出した変化はありません。</p>
 {% endfor %}
 {% endblock %}

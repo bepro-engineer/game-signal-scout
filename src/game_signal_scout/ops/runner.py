@@ -92,7 +92,7 @@ def job_collect(ctx: Context) -> JobResult:
             total, read = total + r.inserted, read + r.read
             detail[name] = r.as_detail()
         finally:
-            log = getattr(getattr(reader, "http", None), "log", None)
+            log = getattr(reader, "log", None) or getattr(getattr(reader, "http", None), "log", None)   # ストリームの取得元は自分で記録する
             if log and not (ctx.conn.closed or ctx.conn.broken):
                 fetch_repo.save_log(ctx.conn, log)
                 log.clear()
@@ -105,8 +105,9 @@ def job_collect(ctx: Context) -> JobResult:
 
 
 def job_normalize(ctx: Context) -> JobResult:
-    from game_signal_scout.services.normalize import normalize
-    return JobResult(output_count=normalize(ctx.conn))
+    from game_signal_scout.services.normalize import normalize_all
+    out = normalize_all(ctx.conn)
+    return JobResult(output_count=sum(out.values()), detail=out)
 
 
 def analysis_range(day: date, p: dict) -> tuple[datetime, datetime]:

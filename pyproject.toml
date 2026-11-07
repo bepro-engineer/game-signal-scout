@@ -13,6 +13,9 @@ dependencies = [
   "uvicorn>=0.30",
   "jinja2>=3.1",
   "psycopg-pool>=3.2",
+  # 発言の取得元（Bluesky Jetstream）と言語のヒント（Anime と同じ）
+  "websockets>=13",
+  "py3langid>=0.3",
 ]
 
 [project.optional-dependencies]

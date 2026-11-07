@@ -23,8 +23,10 @@ class PublishRejectedError(Exception):
 
 
 def input_version(conn, cfg: dict) -> str:
-    """材料の版: 分析の規則の版・最後に成功した分析の時刻。どちらかが変われば作り直す。"""
-    return "|".join(str(x) for x in (cfg["analysis"]["version"], job_repo.last_ok_finished_at(conn, "analyze")))
+    """材料の版: 分析の規則の版・最後に成功した正規化と分析の時刻・最新の発言の時刻。どれかが変われば作り直す。"""
+    from game_signal_scout.repositories import post
+    return "|".join(str(x) for x in (cfg["analysis"]["version"], job_repo.last_ok_finished_at(conn, "normalize"),
+                                       job_repo.last_ok_finished_at(conn, "analyze"), post.newest_at(conn)))
 
 
 def build_documents(conn, cfg: dict) -> tuple[dict[str, object], dict]:

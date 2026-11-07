@@ -4,6 +4,7 @@
 - 再開: 途中で落ちても、最後に記録した位置から読み直す（記録より後の束は保存されていないので、重複も欠落もない）。
 - 削除への追従: 全件の写し（配布物）を読み終えたら、写しにない項目を消す。写しが保存済みより極端に少なければ、
   壊れた写しの疑いとして消さずに異常（snapshot_too_small）を残す。
+- 取得元で消えた項目・投稿者（Batch.gone・actors_gone）は、その束の保存より先に消す。
 - 保持期限: 取得元の設定 retention_days（0 なら無期限）を過ぎた項目を消す。
 """
 from __future__ import annotations
@@ -37,6 +38,7 @@ def collect(conn, reader, max_batches: int | None = None, should_stop=lambda: Fa
     for batch in reader.read(res.cursor):
         snapshot = batch.cursor.get("snapshot")
         with conn.transaction():
+            res.deleted += repo.delete_items(conn, name, batch.gone) + repo.delete_by_author(conn, name, batch.actors_gone)
             ins, upd = repo.upsert_items(conn, batch.items, snapshot)
             res.inserted, res.updated = res.inserted + ins, res.updated + upd
             res.complete = bool(batch.cursor.get("complete"))

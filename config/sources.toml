@@ -13,6 +13,7 @@ batch_size = 2000        # 1 回の保存の件数（この区切りで続きの
 min_snapshot_ratio = 0.9 # 新しい配布物が保存済みのこの割合より少なければ、壊れた配布物の疑いとして削除の追従をしない
 retention_days = 0       # 保持期限（日。0 = 無期限）。検証で使う一時の DB では短くする
 min_interval_hours = 24  # 前回の成功からこの時間は取りに行かない（配布物は月 1 回。一覧の確認も 1 日 1 回で足りる）
+normalizer = "game_signal_scout.services.normalize:protondb"   # 正規化の選び方（取得元の名前で分岐しない）
 
 [steam_reviews]
 adapter = "game_signal_scout.sources.steam_reviews:SteamReviews"
@@ -25,3 +26,34 @@ num_per_page = 100
 max_pages_per_app = 3
 retention_days = 30
 min_interval_hours = 24
+
+[bluesky]
+adapter = "game_signal_scout.sources.bluesky:Bluesky"
+normalizer = "game_signal_scout.services.normalize:bluesky"
+# 役割: プレイヤーの発言（Anime の sources/bluesky を移植）。Jetstream（公式の live tail。キー不要）。本文を保存し、削除・アカウントの停止に追従する。
+# 投稿者は鍵付きの HMAC（runtime/author_hmac.key。did は持たない）。
+# 既定は無効: 発言を取りこぼさずに集めるには常駐の受信が要る（Anime は launchd の常駐）。Game の常駐は本人の承認まで動かさない。
+# 日次の 1 回の読みで受信するのは batch_seconds の間だけ（検証・試験は GSS_SOURCES_CONFIG で有効にする）。
+enabled = false
+endpoints = ["wss://jetstream.us-east.bsky.network/xrpc/network.bsky.jetstream.subscribeEvents",
+             "wss://jetstream.us-west.bsky.network/xrpc/network.bsky.jetstream.subscribeEvents"]
+subprotocol = "xrpc.v1.json"
+collections = ["app.bsky.feed.post"]
+batch_seconds = 30
+idle_seconds = 20
+switch_rewind_seconds = 60
+retention_days = 30
+min_interval_hours = 0
+# ゲームの文脈の語（検証S・T で使った語）。Steam のストアのリンクは常に対象
+context_words = ["game", "games", "gaming", "play", "playing", "played", "patch", "update", "steam", "steam deck", "ps5", "ps4", "playstation",
+                 "xbox", "game pass", "nintendo", "switch 2", "pc", "dlc", "season", "boss", "mod", "mods", "bug", "crash", "crashes", "fps",
+                 "early access", "patch notes", "indie game", "gamedev", "videogames", "video game", "ゲーム", "プレイ", "アプデ", "攻略",
+                 "神ゲー", "クソゲー", "プレステ", "任天堂", "スイッチ2", "游戏", "遊戲", "게임"]
+# 一般語と衝突する題名（文脈の語があるときだけ同定する。検証T の事前登録の一覧）
+ambiguous_titles = ["Peak", "Hunt", "Rust", "Deadlock", "Overwatch", "The Finals", "Total War", "Dressmaker", "Probably Stolen", "Wardogs",
+                    "Enshrouded", "Delta Force", "Once Human", "Black Myth", "Naraka"]
+min_title_chars = 8
+# 題名の一致に要るゲームに固有の文脈の語（"play"・"season"・"update" などスポーツや一般と共通の語は入れない。2026-11-07 の実データで誤同定の主因だった）
+title_context_words = ["game", "games", "gaming", "videogame", "video game", "steam", "steam deck", "ps5", "ps4", "playstation", "xbox",
+                       "nintendo", "switch 2", "dlc", "early access", "patch notes", "speedrun", "gamedev", "indie game", "ゲーム", "プレイ",
+                       "アプデ", "攻略", "神ゲー", "クソゲー", "プレステ", "任天堂", "游戏", "遊戲", "게임"]

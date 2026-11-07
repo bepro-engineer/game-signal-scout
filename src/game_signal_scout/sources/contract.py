@@ -29,9 +29,14 @@ class Batch:
     cursor の任意の鍵:
       complete … 取得元の全体を読み終えた
       snapshot … 取得元が全件の写し（配布物）で、その名前。全体を読み終えたら、写しにない項目を消す（削除への追従）
+
+    gone: 取得元で消えた項目の ID（ストリームの削除・更新で対象外になった投稿）。actors_gone: 消えた投稿者の参照（アカウントの削除・停止）。
+    どちらも収集の Service が、項目の保存より先に、同じ取引で消す（Anime の Listing の gone・actor_gone と同じ扱い）。
     """
     items: list[SourceItem]
     cursor: dict
+    gone: list[str] = field(default_factory=list)
+    actors_gone: list[str] = field(default_factory=list)
 
 
 class SourceNotConfiguredError(RuntimeError):

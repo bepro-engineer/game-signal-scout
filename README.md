@@ -15,7 +15,7 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 | 運用 | `ops/runner.py` | 段（collect → normalize → analyze → publish）の実行、段ごとの排他、実行の記録（`job_run`）、再試行の可否と終了コード |
 | 業務（Service） | `services/`、`publication/`、`web/public_content.py` | 収集（束ごとの保存と続きの位置）、正規化、変化の検出。公開用の文書を作って検査し、表 `public_document` に置き換える（Anime の publishing を移植）。Viewer はその文書を鍵で読むだけ |
 | データ（Repository） | `repositories/` | SQL はここだけ |
-| 取得元 | `sources/` | 取得元の契約（`SourceReader`）、記述から作る Factory、節度のある取得（`Fetcher`）、ProtonDB の配布データ |
+| 取得元 | `sources/`、`discovery/` | 取得元の契約（`SourceReader`）、記述から作る Factory、節度のある取得（`Fetcher`）、ProtonDB の配布データ、Bluesky。正規化は記述の `normalizer` で選ぶ |
 | LLM 枠 | `llm_gate.py` | 共有の部品（scout-infra の `scout_llm_gate`）への接続口。Game は専用の LLM・ロック・常駐を持たない |
 
 - 取得元を足すときに書くのは、`SourceReader` の子クラス、`config/sources.toml` の記述、試験だけです。
@@ -34,6 +34,7 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 | 取得元 | 条件 |
 |---|---|
 | ProtonDB の公開配布データ（GitHub `bdefore/protondb-data`） | ODbL 1.0 / DbCL 1.0。本体のサイトは取得しない（robots.txt が AI のクローラーを拒否）。新しい月の配布物を読み終えたら、そこから消えた報告を消す（配布物が保存済みの 9 割より少なければ、壊れた疑いとして消さない） |
+| Bluesky（Jetstream。Anime の取得元を移植） | キー不要の公式の live tail。ゲームの文脈の語か Steam のストアのリンクがある投稿だけを保存し、削除・アカウントの停止に追従する。投稿者は HMAC（`init-author-key` で鍵を作る）。**既定は無効**（取りこぼさずに集めるには常駐の受信が要り、Game の常駐は未承認）。作品の同定は正規化で行う（Steam のリンク、または題名の一致。規則は `services/identify.py`） |
 | Steam のユーザーレビュー（`GetAppReviews`） | **無効**（`enabled = false`）。利用条件が未解決のため、偽の応答による試験だけ |
 
 `python -m game_signal_scout status` は、段ごとの最後の結果・取得元ごとの件数とデータの鮮度・分析の結果・公開の状態を分けて出します（監視が読む形）。共有の PostgreSQL に Game の DB を作る手順は [docs/database.md](docs/database.md) です（未実行）。

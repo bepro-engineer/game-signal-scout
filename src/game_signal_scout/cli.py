@@ -20,7 +20,12 @@ def main(argv=None) -> int:
     w = sub.add_parser("web", help="Viewer（読むだけの画面）を動かす。待ち受けの既定は config/daily.toml [web]（自分の機械だけ）")
     w.add_argument("--host")
     w.add_argument("--port", type=int)
+    sub.add_parser("init-author-key", help="投稿者の HMAC の鍵（runtime/author_hmac.key）を初回だけ作る（あれば作らない）")
     a = ap.parse_args(argv)
+    if a.cmd == "init-author-key":
+        from game_signal_scout import actor_key
+        print(json.dumps({"created": actor_key.create_key()}))
+        return 0
     if a.cmd == "web":
         import uvicorn
         from game_signal_scout import config

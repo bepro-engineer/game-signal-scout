@@ -32,8 +32,26 @@ def upsert_items(conn, items: list[SourceItem], seen_in: str | None) -> tuple[in
         cur.executemany(UPSERT, [(i.source, i.item_id, i.occurred_at, now, json.dumps(i.payload, ensure_ascii=False), seen_in, i.version)
                                  for i in items])
     if changed:
-        conn.execute("DELETE FROM player_report WHERE source=%s AND item_id = ANY(%s)", (source, changed))
+        for table in NORMALIZED:
+            conn.execute(f"DELETE FROM {table} WHERE source=%s AND item_id = ANY(%s)", (source, changed))
     return inserted, len(changed)
+
+
+NORMALIZED = ("player_report", "player_post")   # 正規化した行の表（版が変わった項目の行を消し、次の正規化でやり直す）
+
+
+def delete_items(conn, source: str, item_ids: list[str]) -> int:
+    """取得元で消えた項目を消す（正規化した行も外部キーで一緒に消える）。"""
+    if not item_ids:
+        return 0
+    return conn.execute("DELETE FROM source_item WHERE source=%s AND item_id = ANY(%s)", (source, list(item_ids))).rowcount
+
+
+def delete_by_author(conn, source: str, authors: list[str]) -> int:
+    """消えた投稿者（アカウントの削除・停止）の項目をすべて消す。投稿者は payload の author（HMAC）。"""
+    if not authors:
+        return 0
+    return conn.execute("DELETE FROM source_item WHERE source=%s AND payload->>'author' = ANY(%s)", (source, list(authors))).rowcount
 
 
 def delete_missing(conn, source: str, snapshot: str, min_ratio: float) -> int:
