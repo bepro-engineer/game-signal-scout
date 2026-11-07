@@ -32,9 +32,11 @@ adapter = "game_signal_scout.sources.bluesky:Bluesky"
 normalizer = "game_signal_scout.services.normalize:bluesky"
 # 役割: プレイヤーの発言（Anime の sources/bluesky を移植）。Jetstream（公式の live tail。キー不要）。本文を保存し、削除・アカウントの停止に追従する。
 # 投稿者は鍵付きの HMAC（runtime/author_hmac.key。did は持たない）。
-# 既定は無効: 発言を取りこぼさずに集めるには常駐の受信が要る（Anime は launchd の常駐）。Game の常駐は本人の承認まで動かさない。
-# 日次の 1 回の読みで受信するのは batch_seconds の間だけ（検証・試験は GSS_SOURCES_CONFIG で有効にする）。
-enabled = false
+# 常駐で受信する（resident = true: launchd の collect-bluesky が `source-collect --source bluesky` を動かす。ops/collector。日次の collect は読まない）。
+# 常駐は 2026-11-08 に本人が承認（Issue #1）。1 周期 = batch_seconds の間の受信を 1 つの取引で保存。失敗は error_backoff_seconds 待って次へ。
+enabled = true
+resident = true
+error_backoff_seconds = 30
 endpoints = ["wss://jetstream.us-east.bsky.network/xrpc/network.bsky.jetstream.subscribeEvents",
              "wss://jetstream.us-west.bsky.network/xrpc/network.bsky.jetstream.subscribeEvents"]
 subprotocol = "xrpc.v1.json"

@@ -2,7 +2,7 @@
 
 PC・家庭用ゲームのプレイヤーの具体的な発言・報告から、ほかでは見えにくい変化（例: ある更新から遊べなくなった）を見つける試作です。価値の検証と経緯は [Issue #1](https://github.com/bepro-engineer/game-signal-scout/issues/1) が正本です。
 
-**本番の稼働・公開はしていません。** 常駐、定時の起動、公開の画面はありません（Viewer は自分の機械だけで手で動かす）。
+**外への公開はしていません。** 常駐（Viewer・Bluesky の受信）と定時の起動は 2026-11-08 に承認済みで、仕組みはあります（`launchd --apply`）。Game の DB（共有の PostgreSQL）がまだないので、反映はしていません。
 
 ## 構成
 
@@ -34,7 +34,7 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 | 取得元 | 条件 |
 |---|---|
 | ProtonDB の公開配布データ（GitHub `bdefore/protondb-data`） | ODbL 1.0 / DbCL 1.0。本体のサイトは取得しない（robots.txt が AI のクローラーを拒否）。新しい月の配布物を読み終えたら、そこから消えた報告を消す（配布物が保存済みの 9 割より少なければ、壊れた疑いとして消さない） |
-| Bluesky（Jetstream。Anime の取得元を移植） | キー不要の公式の live tail。ゲームの文脈の語か Steam のストアのリンクがある投稿だけを保存し、削除・アカウントの停止に追従する。投稿者は HMAC（`init-author-key` で鍵を作る）。**既定は無効**（取りこぼさずに集めるには常駐の受信が要り、Game の常駐は未承認）。作品の同定は正規化で行う（Steam のリンク、または題名の一致。規則は `services/identify.py`） |
+| Bluesky（Jetstream。Anime の取得元を移植） | キー不要の公式の live tail。ゲームの文脈の語か Steam のストアのリンクがある投稿だけを保存し、削除・アカウントの停止に追従する。投稿者は HMAC（`init-author-key` で鍵を作る）。**常駐で受信する**（`resident = true`。launchd の `collect-bluesky` が `source-collect --source bluesky` を動かし、日次の collect は読まない）。作品の同定は正規化で行う（Steam のリンク、または題名の一致。規則は `services/identify.py`） |
 | Steam のユーザーレビュー（`GetAppReviews`） | **無効**（`enabled = false`）。利用条件が未解決のため、偽の応答による試験だけ |
 
 `python -m game_signal_scout status` は、段ごとの最後の結果・取得元ごとの件数とデータの鮮度・分析の結果・公開の状態を分けて出します（監視が読む形）。共有の PostgreSQL に Game の DB を作る手順は [docs/database.md](docs/database.md) です（未実行）。
@@ -50,9 +50,19 @@ python -m game_signal_scout web         # http://127.0.0.1:8720/
 - 表 `public_document`・`public_build` を読むだけです（Anime と同じ形）。検査に通らなかった回は表を変えず、画面は前の内容のまま「前の内容のまま」と出します。
 - 接続のたびに Game の DB であることを確かめます。DB に届かなければ 503 を返します。
 
-## 起動の定義（未反映）
+## 常駐と起動の定義
 
-`python -m game_signal_scout launchd` は、daily-run（毎日 6:15）と Viewer の launchd の定義を `runtime/launchd` に書くだけです（Anime の `ops/launchd` の作り方を移植）。launchd への反映は、本番の稼働の承認の後に Anime の反映の処理を移して行います。
+Anime の `ops/launchd`（agent の形）と `sources/runner` を移植しています。
+
+| 名前 | 起動 | 中身 |
+|------|------|------|
+| `daily-run` | 毎日 6:15 | collect → normalize → analyze → publish |
+| `web` | 常駐 | Viewer（127.0.0.1:8720） |
+| `collect-bluesky` | 常駐（異常終了のときだけ起動し直す） | `source-collect --source bluesky`（30 秒ずつ受信して保存。二重起動は 75 で終わり 60 秒後に取り直す。止めの合図で周期の区切りで止まる） |
+
+- `python -m game_signal_scout launchd` は定義を `runtime/launchd` に書くだけです（見るため）。
+- `python -m game_signal_scout launchd --apply` は `~/Library/LaunchAgents` に書き、変わった・新しい定義を bootout → bootstrap し、一覧にない定義を消します。
+- 前提: `runtime/db.env` の `GSS_DB_DSN`（Game の DB）と `init-author-key`。常駐の受信の生きている印は `runtime/sources/<取得元>.heartbeat`（`status` に出る）。
 
 ## 試験
 
