@@ -27,6 +27,8 @@ HANZI_ONLY = re.compile(r"[遇到们这个吗么还没为说时会对过]")   # 
 
 READ_PROMPT = """ゲーム「{title}」のプレイヤーの発言を 1 件ずつ読んでください。発言が「自分が実際に遊んで、何をして、何が起きたか」を具体的に書いているときだけ、それを取り出します。
 感想だけ・ニュース・質問・宣伝・抽象的な評価だけのものは null にします。発言にないことは書かないでください。
+did は、ゲームの中の具体的な行動・場面・遊び方（例: 大剣で溜め攻撃を連発した・2 人で拠点を守った・設定で影を切った）。「プレイした」「遊んだ」「始めた」のような中身のない行動なら null。
+happened は、その結果ゲームの中で具体的に起きたこと（例: ボスを 1 回で倒せた・味方と連携できた・フレームレートが倍になった）。「楽しかった」「良かった」だけなら null。
 各発言について次の JSON を返します: {{"id": 番号, "exp": null または {{"did": "プレイヤーがしたこと（日本語 30 字以内）", "happened": "その結果起きたこと（日本語 40 字以内）", "verdict": "fun（面白い・良かった）/ frustration（不満・困った）/ mixed", "topic": "体験の話題を表す短い日本語（15 字以内）"}}}}
 次の形の JSON だけを返してください（前置き不要）: {{"items": [各発言の JSON, ...]}}
 
@@ -49,12 +51,15 @@ def _json_array(text: str) -> list:
         return []
 
 
+VAGUE = re.compile(r"^(ゲームを)?(プレイ|遊|始め|購入|買|触|やっ)[^、。]{0,6}$|^(ゲーム|本作|この作品)を(プレイ|遊)")   # 中身のない行動
+
+
 def _clean_exp(e) -> dict | None:
     if not isinstance(e, dict):
         return None
     v = str(e.get("verdict") or "").strip()
     out = {k: str(e.get(k) or "").strip()[:60] for k in ("did", "happened", "topic")}
-    if not out["did"] or not out["happened"] or v not in VERDICTS:
+    if not out["did"] or not out["happened"] or v not in VERDICTS or VAGUE.search(out["did"]):
         return None
     return {**out, "verdict": v}
 

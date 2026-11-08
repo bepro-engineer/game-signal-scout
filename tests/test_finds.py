@@ -57,3 +57,9 @@ def test_statements_are_one_per_author_in_each_window(conn):
     conn.commit()
     got = repo.statements_by_author(conn, "7", 14, 60, now - timedelta(days=7))
     assert sorted(r["item_id"] for r in got) == ["i2", "i3", "i4"]
+
+
+def test_vague_actions_are_not_experiences():
+    assert insight._clean_exp({"did": "ゲームをプレイした", "happened": "楽しかった", "verdict": "fun", "topic": "t"}) is None
+    assert insight._clean_exp({"did": "遊んだ", "happened": "x", "verdict": "fun", "topic": "t"}) is None
+    assert insight._clean_exp({"did": "大剣で溜め攻撃を連発した", "happened": "ボスを 1 回で倒せた", "verdict": "fun", "topic": "t"})["did"] == "大剣で溜め攻撃を連発した"
