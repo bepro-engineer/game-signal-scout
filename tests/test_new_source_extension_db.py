@@ -160,3 +160,22 @@ def test_digest_candidates_skip_works_without_profile(conn, monkeypatch):
     from game_signal_scout.ops import work
     monkeypatch.setattr(work, "publishable_works", lambda conn, ids: {1245620})
     assert [w["work_id"] for w in dd._candidate_works(conn, "x", DAY, {})] == [1245620]
+
+
+def test_no_source_has_special_structure():
+    """特定の取得元を特別視しない（CLAUDE.md）: 取得元の記述はどれも同じ形。特定の取得元だけの順位・常駐・専用の起動を持たない。
+    共通のコード・移行・設定の説明・起動の定義に、取得元の名前を書かない（取得元ごとの読み方 sources/ と、その取得元自身の記述だけ）。"""
+    import tomllib
+    from pathlib import Path
+    root = Path(__file__).parents[1]
+    m = tomllib.loads((root / "config/map_sources.toml").read_text())["sources"]
+    allowed = {"reader", "production", "label", "history"}
+    assert all(set(v) <= allowed for v in m.values()), {k: set(v) - allowed for k, v in m.items() if set(v) - allowed}
+    s = tomllib.loads((root / "config/sources.toml").read_text())
+    assert not any(isinstance(v, dict) and v.get("resident") for v in s.values())          # 専用の常駐はない。どれも同じ取得の流れ
+    from game_signal_scout.ops import launchd
+    assert set(launchd.services(root)) == {"daily-run", "web", "poll"}                    # 取得元ごとの起動の定義はない
+    names = [k for k in s if isinstance(s[k], dict) and s[k].get("adapter")]
+    texts = [p for p in list((root / "migrations").rglob("*.py")) + [root / "pyproject.toml", root / "config/daily.toml"]]
+    found = [f"{p.name}:{n}" for p in texts for n in names if n in p.read_text().lower() and len(n) > 6]
+    assert found == []

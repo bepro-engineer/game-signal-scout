@@ -13,7 +13,7 @@ depends_on = None
 
 def upgrade() -> None:
     op.execute("""CREATE TABLE IF NOT EXISTS obs_work_lang_day (
-  source      text NOT NULL,          -- Source（bluesky・ptt …）。人数は Source の中で数え、Source をまたいで足さない（ADR 0035）
+  source      text NOT NULL,          -- 取得元の名前。人数は Source の中で数え、Source をまたいで足さない（ADR 0035）
   target_day  date NOT NULL,          -- 放送日（JST 3:00〜翌 3:00）
   work_id     bigint NOT NULL,        -- 本番の Work
   lang        text NOT NULL,          -- 言語コード（投稿の言語。zh-Hant など）
