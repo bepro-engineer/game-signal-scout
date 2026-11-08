@@ -1819,3 +1819,52 @@ verification = "content"
 verdict = "rejected"
 reject_reason = "声がない（コメントのフィードが 0 件。記事のコメント欄がないと推測）"
 priority = 107
+
+# ---- 2026-11-08 の取り込みで台帳の外から見つけて採用したもの（verdict = "adopted"。設定は config/sources.toml。robots.txt を確かめ、中身を取得して確認）
+[candidates.studio_forums]
+name = "作品の公式の掲示板（Warframe・Stardew Valley・Kerbal Space Program・BeamNG.drive）"
+access = "RSS"
+verdict = "adopted"
+verified = "content"
+
+[candidates.discourse_more]
+name = "Discourse の公式の掲示板の追加（War Thunder 露・Funcom・Last Epoch・Enlisted）"
+access = "API"
+verdict = "adopted"
+verified = "content"
+
+[candidates.blizzard_more_locales]
+name = "Blizzard の掲示板の追加の言語（Diablo IV 韓・繁中、Overwatch 伊・繁中・西）"
+access = "API"
+verdict = "adopted"
+verified = "content"
+
+[candidates.forums_eu_more]
+name = "ElOtroLado（西）・SpazioGames・Tom's Hardware Italia（伊）・CD-Action（波）・PC Games（独）・Famiboards・GTPlanet（英）・Adrenaline のゲームの板（葡）"
+access = "RSS"
+verdict = "adopted"
+verified = "content"
+
+[candidates.lemmy_more]
+name = "Lemmy の追加のコミュニティ（linux_gaming・beehaw gaming・sh.itjust.works games・lemmy.world gaming / indiegaming / cyberpunk2077）"
+access = "API"
+verdict = "adopted"
+verified = "content"
+
+[candidates.ptt_more]
+name = "PTT の追加の板（Diablo・GTA・FFXIV）。Minecraft・WOW・Valorant・Hearthstone は Steam の作品でないため、H-GAME は成人向けのため、売買・機材の板は声でないため除外"
+access = "RSS"
+verdict = "adopted"
+verified = "content"
+
+[candidates.steam_store_assets_upcoming]
+name = "Steam のストアの近日発売（search/results popularcomingsoon）・画像の場所（IStoreBrowseService/GetItems）"
+access = "API"
+verdict = "adopted"
+verified = "content"
+notes = "声ではなく作品の情報（まもなく発売・縦長の表紙）"
+
+[candidates.found_not_used_2026_11_08]
+name = "見つけたが使わないもの"
+verdict = "rejected"
+notes = "Arca.live（403。Cloudflare）・Inven の総合板（ゲームの声が少ない）・Paradox の掲示板（RSS が HTML を返す）・Klei / DayZ / Bohemia / RimWorld / Factorio / Nexus の掲示板（403）・jeuxvideo.com（robots で /rss/ が Disallow）・ResetEra（規約で自動取得を禁止）・Technopat・VOZ（台帳の判断待ちのまま）・Playground・Everyeye・Gamekult のニュース（記事で声でない）"
