@@ -2,7 +2,7 @@
 
 PC・家庭用ゲームのプレイヤーの具体的な発言・報告から、ほかでは見えにくい変化（例: ある更新から遊べなくなった）を見つける試作です。価値の検証と経緯は [Issue #1](https://github.com/bepro-engineer/game-signal-scout/issues/1) が正本です。
 
-**外への公開はしていません。** 常駐（Viewer・Bluesky の受信）と定時の起動は 2026-11-08 に承認済みで、仕組みはあります（`launchd --apply`）。Game の DB（共有の PostgreSQL）がまだないので、反映はしていません。
+**外への公開はしていません。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（127.0.0.1:8720、自分の機械だけ）と Bluesky の受信、毎日 6:15 の daily-run（`launchd --apply`）。
 
 ## 構成
 
