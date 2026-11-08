@@ -80,7 +80,8 @@ def test_steam_discussions_topics_and_replies_from_html():
             '\n<div class="comment_footer_ctn"></div></div><a href="?ctp=3">3</a>')
     posts, pages = parse_topic(page)
     assert [(p["id"], p["text"], p["at"]) for p in posts] == [("111", "Crash after patch\nGame crashes\nhelp", 100), ("222", "same here", 150)]
-    assert pages == 3 and "42" not in posts[0]["author"]
+    import hashlib
+    assert pages == 3 and posts[0]["author"] != hashlib.sha256(b"steamcommunity:42").hexdigest()[:16] and len(posts[0]["author"]) == 20
 
 
 def test_feed_and_discourse_sources_read_only_new_items():
@@ -169,7 +170,9 @@ def test_pantip_comments_keep_text_but_not_member_number():
     raw = '﻿{"comments":[{"_id":"1","user":{"mid":42},"created_time":"1794121631","message":"สนุกมาก<br>","replies":[{"reply_id":"2","user":{"mid":43},"data_utime":"11/08/2026 14:07:11","message":"จริง"}]}]}'
     rows, n = parse_comments(raw)
     assert n == 1 and [(r["id"], r["text"], r["at"].isoformat()) for r in rows] == [("c:1", "สนุกมาก", "2026-11-08T07:07:11+00:00"), ("r:2", "จริง", "2026-11-08T07:07:11+00:00")]
-    assert "42" not in actor(42)
+    import hashlib
+    plain = hashlib.sha256(b"pantip:42").hexdigest()[:16]
+    assert actor(42) == actor(42) and actor(42) != plain and len(actor(42)) == 20     # 鍵付きの HMAC（公開の番号から計算し直せない）
 
 
 def test_digest_headline_uses_short_title_for_long_names():

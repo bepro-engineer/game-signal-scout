@@ -37,7 +37,8 @@ def text(raw: str) -> str:
 
 
 def actor(miniprofile: str) -> str:
-    return hashlib.sha256(f"steamcommunity:{miniprofile}".encode()).hexdigest()[:16]
+    from game_signal_scout.actor_key import keyed
+    return keyed(hashlib.sha256(f"steamcommunity:{miniprofile}".encode()).hexdigest()[:16])
 
 
 def parse_list(page: str) -> list[tuple[str, str, int]]:

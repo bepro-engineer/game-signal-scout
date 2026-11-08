@@ -22,7 +22,8 @@ _NEXT = re.compile(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</s
 
 
 def actor(mid) -> str:
-    return hashlib.sha256(f"pantip:{mid}".encode()).hexdigest()[:16]
+    from game_signal_scout.actor_key import keyed
+    return keyed(hashlib.sha256(f"pantip:{mid}".encode()).hexdigest()[:16])
 
 
 def parse_listing(page: str) -> list[dict]:

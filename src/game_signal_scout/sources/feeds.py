@@ -30,7 +30,9 @@ def plain(raw: str | None) -> str:
 
 
 def actor(site: str, name: str | None) -> str:
-    return hashlib.sha256(f"{site}:{name or ''}".encode()).hexdigest()[:16]
+    """投稿者の参照（名前の hash に鍵付きの HMAC。actor_key.keyed）。"""
+    from game_signal_scout.actor_key import keyed
+    return keyed(hashlib.sha256(f"{site}:{name or ''}".encode()).hexdigest()[:16])
 
 
 def when(s: str | None) -> datetime | None:
@@ -224,7 +226,8 @@ class HatenaComments(SourceReader):
                 except ValueError:
                     pass
                 if c and at:
-                    uid = hashlib.sha256(f"hatena:{b.get('user')}".encode()).hexdigest()[:16]
+                    from game_signal_scout.actor_key import keyed
+                    uid = keyed(hashlib.sha256(f"hatena:{b.get('user')}".encode()).hexdigest()[:16])
                     items.append(SourceItem(self.name, hashlib.sha256(f"{url}#{b.get('user')}".encode()).hexdigest()[:24], at,
                                             {"text": c[:2000], "link_title": a["title"], "author": uid, "lang": "ja",
                                              "url": "https://b.hatena.ne.jp/entry/" + ("s/" if url.startswith("https://") else "") + url.split("://", 1)[-1]}, None))

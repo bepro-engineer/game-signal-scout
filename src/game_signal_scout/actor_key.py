@@ -37,3 +37,9 @@ def create_key() -> bool:
 def author_hash(actor: str) -> str:
     """投稿者の参照（識別子の HMAC の先頭 20 桁）。"""
     return hmac.new(load_key(), actor.encode(), hashlib.sha256).hexdigest()[:20]
+
+
+def keyed(ref: str) -> str:
+    """取得元が作った投稿者の参照（名前・番号の hash）に、さらに鍵付きの HMAC をかける（Anime の REQ-TERMS-003: 公開の名前から計算し直せないようにする）。
+    取得元の読み方はこれを通した値だけを保存する。保存済みの値も同じ計算で置き換えられる（同じ人は新旧で同じ参照）。"""
+    return author_hash("ref:" + ref)

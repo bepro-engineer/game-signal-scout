@@ -80,3 +80,11 @@ def stub_screen_docs(monkeypatch):
     （画面の文書が作れない公開は止める規則〔Anime の §16.1〕なので、観測のない試験では差し替える）。"""
     from game_signal_scout.signal import publishing as sp
     monkeypatch.setattr(sp, "build_documents", lambda conn, cfg: ({"day/2026-10-31": {}, "days": {"days": []}}, {"audit": []}))
+
+
+
+@pytest.fixture(autouse=True)
+def _author_key():
+    """投稿者の参照の鍵（一時の runtime に作る。取得元の読み方が鍵付きの HMAC をかけるため）。"""
+    from game_signal_scout import actor_key
+    actor_key.create_key()

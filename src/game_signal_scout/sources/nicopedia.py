@@ -15,6 +15,7 @@ import urllib.parse
 from collections.abc import Iterator
 from datetime import datetime, timedelta, timezone
 
+from game_signal_scout.actor_key import keyed
 from game_signal_scout.sources.contract import Batch, SourceItem, SourceReader
 
 SITE = "https://dic.nicovideo.jp"
@@ -89,7 +90,7 @@ class Nicopedia(SourceReader):
                         continue
                     items.append(SourceItem(self.name, f"{appid}:{r['no']}", r["at"], {
                         "appid": appid, "text": r["text"][:4000], "lang": "ja", "url": f"{SITE}/b/a/{urllib.parse.quote(name)}/{st}-#{r['no']}",
-                        "author": hashlib.sha256(f"nicopedia:{r['at'].date()}:{r['id']}".encode()).hexdigest()[:16]}, None))
+                        "author": keyed(hashlib.sha256(f"nicopedia:{r['at'].date()}:{r['id']}".encode()).hexdigest()[:16])}, None))
             if items:
                 last[appid] = max(int(i.item_id.split(":")[1]) for i in items)
             yield Batch(items, {"article": art, "last": last, "tried": tried})

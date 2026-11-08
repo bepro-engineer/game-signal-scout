@@ -16,6 +16,7 @@ import urllib.parse
 from collections.abc import Iterator
 from datetime import datetime
 
+from game_signal_scout.actor_key import keyed
 from game_signal_scout.sources.contract import Batch, SourceItem, SourceReader
 
 CATALOG = "https://catalog.gog.com/v1/catalog?query=like:{q}&limit=5&locale=en-US"
@@ -79,7 +80,7 @@ class GogReviews(SourceReader):
                     if text:
                         items.append(SourceItem(self.name, r["id"], at, {"appid": appid, "text": text[:4000], "lang": lang(c.get("language")),
                                                                          "rating": (r.get("rating") or {}).get("value"),
-                                                                         "author": hashlib.sha256(f"gog:{(r.get('reviewer') or {}).get('id')}".encode()).hexdigest()[:16]},
+                                                                         "author": keyed(hashlib.sha256(f"gog:{(r.get('reviewer') or {}).get('id')}".encode()).hexdigest()[:16])},
                                                 str(r.get("internalUpdateDate") or r.get("date"))))
                 newest = newest if page > 1 or not rows else rows[0]["id"]
                 if stop or page >= int((body or {}).get("pages") or 1):
