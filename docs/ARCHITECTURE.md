@@ -38,6 +38,8 @@ DB          PostgreSQL（共有のサーバーの論理 DB game_signal_scout）
 | 共通の正規化 | `services/normalize.py` | 記述の `normalizer` で選ぶ。発言はどの取得元も `voices`（→ `player_post`） |
 | 作品の同定 | `services/identify.py` | payload に `appid` があれば取得元で決まる（作品の掲示板・レビュー）。なければ本文の題名（英語などは語の並び、日本語・中国語・韓国語は各言語の題名の部分一致）。`game_only` の取得元は文脈の語を求めない |
 | 観測の集計 | `observations.py`（Anime の `sources/observations` の流用） | 取得元 × 日 × 作品 × 言語の独立した投稿者（`obs_work_lang_day`・`obs_post`・`obs_day_state`）。取得元をまたいで人数を足さない |
+| 作品の属性 | `services/normalize.attributes`・`game_attribute` | 取得元のクラスの `attributes` が共通の形（作品・項目・値）にし、取得元・取得の時刻つきで持つ。画面の値は `ops/work_display.work_attrs`（取得元の名前で分けない） |
+| 利用条件 | `source_terms.py`・`config/source_terms.toml` | 取得元ごとの一次資料の記録。禁止が明記された取得元・サイトは取得・集計・公開に入れない。引用は記録で許された取得元だけ |
 | 画面に出す取得元 | `config/map_sources.toml` | 記述だけで集計・画面（作品詳細の取得元の切り替え・言語の地図）に入る |
 
 共通の読み方（`sources/feeds.py`）: RSS / Atom / RSS 1.0・Discourse（`/posts.json`）・Lemmy・Mastodon のハッシュタグ・はてなブックマークのコメント。多くの掲示板は記述（URL・作品の app ID・言語）を足すだけです。
