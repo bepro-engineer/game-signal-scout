@@ -7,7 +7,7 @@ Mac mini で動いています（2026-11-08 から。外への公開はしてい
 | 名前 | 起動 | 中身 | 状態 |
 |---|---|---|---|
 | `com.bepro.game-signal-scout.daily-run` | 毎日 6:15 | collect → normalize → observe → analyze → insight → digest → publish（`--retry`: 再試行できる失敗は 30 分ごとに 3 回まで） | 動作中 |
-| `com.bepro.game-signal-scout.web` | 常駐 | Viewer（ポート 8720。家の中のネットワーク・Tailscale の機械から見られる。相手は `[web] allow_from` で限る） | 動作中 |
+| `com.bepro.game-signal-scout.web` | 常駐 | Viewer（VAIO の共通の入口 `/game/`・公開の名前が中継する裏の口。相手は `[web] allow_from` で Mac mini と VAIO に限る） | 動作中 |
 | `com.bepro.game-signal-scout.collect-<取得元>` | 常駐（異常終了のときだけ起動し直す） | 声の取得元ごとの収集器（どの取得元も同じ形。間隔は `poll_seconds`。DB の接続は周期のあいだだけ） | 動作中 |
 
 ## 2. 確かめ方
