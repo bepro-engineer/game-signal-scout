@@ -5,7 +5,7 @@
 name_ja = "個人（Game Signal Scout の開発者）"
 name_en = "An individual developer of Game Signal Scout"
 # 問い合わせ・削除依頼の窓口（メールアドレス、または https:// のフォームの URL）。一般公開の前にユーザーが決める。
-# 空のあいだ、ページは「準備中」と表示する。Bluesky の Developer Guidelines は削除依頼の窓口を求める（config/source_terms.toml の BS-8）
+# 空のあいだ、ページは「準備中」と表示する。取得元の規約が削除依頼の窓口を求める場合に備える
 contact = "bepro.beengineer@gmail.com"
 
 [dates]

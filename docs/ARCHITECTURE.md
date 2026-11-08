@@ -2,6 +2,8 @@
 
 Game Signal Scout の構造の正本です。根拠は現行の `main` のコードと試験です。Anime Signal Scout の標準（3 層＋MVC・SourceAdapter / Factory・取得元に依らない共通層）に合わせています（Issue #3）。
 
+> **取得元はすべて同列の交換可能な入力。特定の取得元を中心に置かない・目立たせない・個別に名前を挙げて取り上げない**（オーナーの厳命。[CLAUDE.md](../CLAUDE.md)）。
+
 ## 1. 層と依存の向き
 
 ```

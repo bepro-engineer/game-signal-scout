@@ -6,10 +6,6 @@ production = true
 history = true            # 過去を遡って取る（28 日分）。観測の範囲は保存したいちばん古いレビューの日から
 label = ["Steam のレビュー", "Steam reviews"]
 
-[sources.bluesky]
-reader = "foundation"
-production = true
-label = ["Bluesky の投稿", "Bluesky posts"]
 
 [sources.blizzard_forums]
 reader = "foundation"
@@ -166,3 +162,9 @@ label = ["PC Games の掲示板", "PC Games forum"]
 reader = "foundation"
 production = true
 label = ["Famiboards", "Famiboards"]
+
+[sources.bluesky]
+reader = "foundation"
+production = true
+order = 999
+label = ["Bluesky の投稿", "Bluesky posts"]

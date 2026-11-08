@@ -136,5 +136,5 @@ def test_posts_are_reidentified_when_the_title_dictionary_changes(conn):
     conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) "
                  "VALUES ('1030300', 'steam_store', '1030300', 'Hollow Knight: Silksong', '[]', '[]', '[]', now())")
     conn.commit()
-    normalize.voices(conn, "forum_y", cfg)                       # 辞書が変わった: 題名で同定する発言だけ作り直す
+    normalize.voices(conn, "forum_y", cfg)                       # 辞書が変わった: 今の版で作り直す（取得元で決まる発言は同じ結果）
     assert dict(conn.execute("SELECT item_id, appid FROM player_post WHERE source='forum_y'").fetchall()) == {"a": "1030300", "b": "10"}

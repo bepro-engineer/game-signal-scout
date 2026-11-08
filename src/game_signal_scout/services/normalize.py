@@ -2,7 +2,7 @@
 （取得元の名前で分岐しない）。normalizer のない取得元は正規化しない。
 
 - protondb: 報告 → player_report（遊べたか・機材構成の hash・記述）
-- bluesky: 発言 → player_post（作品の同定: Steam のストアのリンクの app ID、なければ題名の一致。services/identify）
+- voices: どの取得元の発言も → player_post（作品の同定: Steam のストアのリンクの app ID、なければ題名の一致。services/identify）
 - steam_reviews: プレイヤーのレビュー → player_post（作品は取得元で決まる: matched_by = source。肯定・否定と、書いた時点の遊んだ時間）
 - steam_store: 作品の情報 → game_profile（画像・説明・ジャンル・遊び方・機種・日本語・発売日。取得元に依らない作品の項目）
 
@@ -68,12 +68,8 @@ def protondb(conn, source: str, settings: dict | None = None) -> int:
 
 
 def voices(conn, source: str, settings: dict | None = None, batch: int = 2000) -> int:
-    """どの取得元の発言も同じ手順で player_post にする（取得元の payload: author・text・lang、作品が決まるなら appid）。"""
-    return bluesky(conn, source, settings, batch)
-
-
-def bluesky(conn, source: str, settings: dict | None = None, batch: int = 2000) -> int:
-    """発言を player_post にする。作品の辞書は ProtonDB の報告の題名から 1 回だけ作る。payload に appid があれば、作品は取得元で決まる（matched_by = source）。"""
+    """どの取得元の発言も同じ手順で player_post にする（取得元の payload: author・text・lang、作品が決まるなら appid、ストアのリンクがあれば steam_appids）。
+    作品の辞書は作品の情報の題名（各言語の表示名を含む）。payload に appid があれば、作品は取得元で決まる（matched_by = source）。取得元の名前で分けない。"""
     from game_signal_scout.repositories import post as post_repo
     from game_signal_scout.services.identify import TitleIndex, identify
     from game_signal_scout.discovery.flags import flags_for
@@ -97,7 +93,7 @@ def bluesky(conn, source: str, settings: dict | None = None, batch: int = 2000) 
         for item_id, occurred_at, p in rows:
             # 作品が取得元で決まる発言（作品ごとの掲示板・作品のページのコメント）は、その作品。ほかは本文から同定する
             appid, title, how = (str(p["appid"]), None, "source") if p.get("appid") else identify(p, index)
-            if "flags" not in p:     # 宣伝・告知・ニュースなどの印（Bluesky と同じ規則。Anime の §4。取得元が印を付けないとき）
+            if "flags" not in p:     # 宣伝・告知・ニュースなどの印（どの取得元も同じ規則〔discovery/flags〕。Anime の §4。取得元が印を付けないとき）
                 p["flags"] = flags_for(PostText(text=p.get("text") or "", link_title=p.get("link_title") or "", tags=p.get("tags") or []))
             out.append({"source": source, "item_id": item_id, "at": occurred_at, "author": p.get("author") or "", "lang": p.get("lang"),
                         "appid": appid, "title": title, "matched_by": how, "flags": p.get("flags") or [], "text": p.get("text") or "",

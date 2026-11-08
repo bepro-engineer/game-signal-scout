@@ -2,7 +2,10 @@
 
 PC・家庭用ゲームのプレイヤーの声（レビュー・掲示板・SNS など多くの取得元）から、ほかでは見えにくい変化（アップデートの影響・不満・評価の変化・言語圏を越えた広がり）を見つけ、限られた休日に遊ぶゲームを選ぶ材料にする試作です。価値の検証と経緯は [Issue #1](https://github.com/bepro-engineer/game-signal-scout/issues/1) が正本です。
 
-**外への公開はしていません。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（127.0.0.1:8720、自分の機械だけ）と Bluesky の受信、毎日 6:15 の daily-run（`launchd --apply`）。10 分ごとの poll（掲示板の新着）も 2026-11-08 に登録しました。
+**外への公開はしていません。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（127.0.0.1:8720、自分の機械だけ）、毎日 6:15 の daily-run（`launchd --apply`）。10 分ごとの poll（掲示板の新着）も 2026-11-08 に登録しました。
+
+
+> **取得元はすべて同列の交換可能な入力。特定の取得元を中心に置かない・目立たせない・個別に名前を挙げて取り上げない**（オーナーの厳命。[CLAUDE.md](CLAUDE.md)）。
 
 ## 構成
 
@@ -40,8 +43,7 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 |---|---|
 | 作品ごとのレビュー | Steam のユーザーレビュー（`GetAppReviews`。28 日分そろうまで遡る）・GOG のレビュー |
 | 作品の公式の掲示板 | Blizzard（Overwatch 2・Diablo IV。9 言語）・MSFS・EVE Online・War Thunder（英・露）・Funcom・Guild Wars 2・CD PROJEKT RED・Warframe・Stardew Valley・Kerbal Space Program・BeamNG.drive |
-| ゲームの総合の掲示板・コミュニティ | NeoGAF・Tildes・Lemmy・Mastodon・GTPlanet・Famiboards（英）、ComputerBase・PCGH・Mein-MMO・PC Games（独）、Gamekult（仏）、ElOtroLado（西）、SpazioGames・Tom's Hardware Italia（伊）、CD-Action（波）、Outer Space・Adrenaline（葡）、PlayUA（宇）、True Gaming（亜）、PTT（繁中）、Keylol・Stage1st（簡中）、Pantip（泰）、ニコニコ大百科の掲示板・ゲームの記事へのはてなブックマークのコメント（日） |
-| SNS | Bluesky（Jetstream。常駐で受信） |
+| ゲームの総合の掲示板・コミュニティ | NeoGAF・Tildes・Lemmy・Mastodon・GTPlanet・Famiboards（英）、ComputerBase・PCGH・Mein-MMO・PC Games（独）、Gamekult（仏）、ElOtroLado（西）、SpazioGames・Tom's Hardware Italia（伊）、CD-Action（波）、Outer Space・Adrenaline（葡）、PlayUA（宇）、True Gaming（亜）、PTT（繁中）、Keylol・Stage1st（簡中）、Pantip（泰）、ニコニコ大百科の掲示板・ゲームの記事へのはてなブックマークのコメント（日）、Bluesky |
 | 作品の情報 | Steam のストア（`appdetails`。画像・ゲーム内容〔日・英〕・ジャンル・遊び方・機種・日本語・発売日・各言語の題名） |
 | 規模・これから | Steam の「最も遊ばれているゲーム」・Steam の人気の近日発売（メニューの下の「まもなく発売」） |
 | 補助 | ProtonDB の公開配布データ（Linux・Steam Deck の動作） |
@@ -61,7 +63,7 @@ python -m game_signal_scout web         # http://127.0.0.1:8720/
 ```
 
 - **Anime Signal Scout の画面と層をそのまま流用**しています（観測の集計 `obs_*`・系列・文書 `signal/`・web の JS / CSS / テンプレート）。メニューは Anime のまま（ダッシュボード・世界で広がる・再燃・言語圏の広がり・作品を探す・このサイトについて）に、遊び方の 4 項目（一人（ソロ）で遊べる・協力プレイで遊べる・対戦プレイで遊べる・コントローラで遊べる）を足しました。日本語と英語を切り替えられます。
-- **今日の兆し**: Anime の dashboard_digest を流用し、プレイヤーの声（Steam のレビュー・Bluesky）を共有のローカル LLM（`scout_llm_gate`）が読んで、ゲームの話題（アップデートの影響・不満・評価の変化など）を見つけます。見出しは 70 字まで（長い題名は副題を省く）。
+- **今日の兆し**: Anime の dashboard_digest を流用し、観測の集計に入れているすべての取得元のプレイヤーの声を共有のローカル LLM（`scout_llm_gate`）が読んで、ゲームの話題（アップデートの影響・不満・評価の変化など）を見つけます。見出しは 70 字まで（長い題名は副題を省く）。
 - **作品詳細**: あらすじの代わりに「ゲーム内容」（Steam のストアの「このゲームについて」）、話題の動きは取得元ごとに切り替え。
 - **まもなく発売**（メニューの下）: Steam の人気の近日発売。発売日が近い作品と、注目の近日発売。
 - 画面に出す日は、Game が観測を始めた日から（`config/daily.toml` `[publish] start_day`）。
@@ -77,8 +79,8 @@ Anime の `ops/launchd`（agent の形）と `sources/runner` を移植してい
 |------|------|------|
 | `daily-run` | 毎日 6:15 | collect → normalize → analyze → publish |
 | `web` | 常駐 | Viewer（127.0.0.1:8720） |
+| `collect-<取得元>` | 常駐（異常終了のときだけ起動し直す） | ストリームの取得元（`resident = true`）の受信。`source-collect --source <取得元>` |
 | `poll` | 10 分ごと（2026-11-08 登録） | `poll`（`poll = true` の掲示板の取得元を collect → 正規化。新着だけを返すフィードの取りこぼしを防ぐ） |
-| `collect-bluesky` | 常駐（異常終了のときだけ起動し直す） | `source-collect --source bluesky`（30 秒ずつ受信して保存。二重起動は 75 で終わり 60 秒後に取り直す。止めの合図で周期の区切りで止まる） |
 
 - `python -m game_signal_scout launchd` は定義を `runtime/launchd` に書くだけです（見るため）。
 - `python -m game_signal_scout launchd --apply` は `~/Library/LaunchAgents` に書き、変わった・新しい定義を bootout → bootstrap し、一覧にない定義を消します。

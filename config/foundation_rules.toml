@@ -1,7 +1,7 @@
 # 共通基盤の判定の規則（ADR 0051）。Source を問わない判定の型の閾値。
 
 [actor_role]
-# 投稿者の振る舞いから見た役割（foundation/account.py）。2026-10-15 夜に Bluesky の投稿の多いアカウントを実際に読んで決めた初期値（精度は実測で確かめる）
+# 投稿者の振る舞いから見た役割（foundation/account.py）。Anime で 2026-10-15 に投稿の多いアカウントを実際に読んで決めた初期値（精度は実測で確かめる）
 window_days = 14                    # 直近の何日の振る舞いで見るか
 min_posts = 5                       # これより少ない投稿者は person（少数の投稿で決めつけない）
 template_min_posts = 10
@@ -12,7 +12,7 @@ aggregator_link_always_min_works = 20   # リンクがほぼ常にある投稿�
 aggregator_link_always_share = 0.8
 
 [voice]
-# 発言にしない項目の印（取得元の Adapter が付ける共通の印。旧い Bluesky の履歴への取り込みと同じ規則を共通の層で）:
+# 発言にしない項目の印（取得元の Adapter が付ける共通の印。共通の層で同じ規則）:
 # adult = 成人向けのラベル / listing = 作品名の一覧の投稿（自己紹介のタグ・鍵が多すぎる）/ stale = 作成の時刻が受信より古すぎる投稿（古い投稿の再流入）
 # no_terms = 候補の語のない投稿（文脈には一致したが作品を名指ししていない。旧い履歴は鍵ごとの登録だったので入らなかった）
 exclude_flags = ["adult", "listing", "stale", "no_terms"]

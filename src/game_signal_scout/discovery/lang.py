@@ -1,4 +1,4 @@
-"""投稿の言語のヒント（Bluesky の受信が使う。本番で使う）。本格的な Language Area の判定器ではない。
+"""投稿の言語のヒント（どの取得元の発言にも使う共通の判定器）。本格的な Language Area の判定器ではない。
 
 結果は言語コード / und / uncertain。und・uncertain は Language Area として数えない（INV-009）。
 """

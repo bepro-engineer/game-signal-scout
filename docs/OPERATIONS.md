@@ -8,7 +8,7 @@ Mac mini で動いています（2026-11-08 から。外への公開はしてい
 |---|---|---|---|
 | `com.bepro.game-signal-scout.daily-run` | 毎日 6:15 | collect → normalize → observe → analyze → insight → digest → publish（`--retry`: 再試行できる失敗は 30 分ごとに 3 回まで） | 動作中 |
 | `com.bepro.game-signal-scout.web` | 常駐 | Viewer（127.0.0.1:8720） | 動作中 |
-| `com.bepro.game-signal-scout.collect-bluesky` | 常駐（異常終了のときだけ起動し直す） | Bluesky の受信 | 動作中 |
+| `com.bepro.game-signal-scout.collect-<取得元>` | 常駐（異常終了のときだけ起動し直す） | ストリームの取得元（`resident = true`）の受信 | 動作中 |
 | `com.bepro.game-signal-scout.poll` | 10 分ごと | `poll = true` の掲示板の取得元を collect → 正規化 | 動作中（2026-11-08 オーナーの承認で登録） |
 
 ## 2. 確かめ方
@@ -20,7 +20,7 @@ curl -s http://127.0.0.1:8720/api/days     # 画面に出している日
 launchctl list | grep game-signal-scout
 ```
 
-ログは `runtime/logs/`（`daily-run.launchd.log`・`web.launchd.log`・`collect-bluesky.launchd.log`・`poll.launchd.log`）です。
+ログは `runtime/logs/`（`daily-run.launchd.log`・`web.launchd.log`・`collect-<取得元>.launchd.log`・`poll.launchd.log`）です。
 
 ## 3. 再試行・再開・障害
 
@@ -42,5 +42,5 @@ DB は共有の PostgreSQL のバックアップに含まれます（Game 専用
 
 ## 6. 実証済みと未実証
 
-- 実証済み: 日次の各段・Viewer・Bluesky の常駐（2026-11-08）・取得元ごとの収集（手動の 1 回）・試験（一時の PostgreSQL）。
+- 実証済み: 日次の各段・Viewer・取得元ごとの収集（手動の 1 回）・試験（一時の PostgreSQL）。
 - 未実証: 障害からの自動復旧の実地（試験だけ）、外への公開（していない）。

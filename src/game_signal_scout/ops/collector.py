@@ -1,7 +1,7 @@
 """常駐の取得元の収集器（launchd から `source-collect --source <取得元>`。Anime の sources/runner.run を Game の最小の形に移植）。
 
-- 対象: config/sources.toml で resident = true の取得元（今は Bluesky。日次の collect はこれを読まない: 続きの位置を 2 つのプロセスで取り合わない）。
-- 1 周期 = 取得元の read の束 1 つ（Bluesky は batch_seconds の間の受信）を services/collect で保存する。日次と同じ Service・同じ取引。
+- 対象: config/sources.toml で resident = true の取得元（常駐で受信する取得元。日次の collect はこれを読まない: 続きの位置を 2 つのプロセスで取り合わない）。
+- 1 周期 = 取得元の read の束 1 つ（ストリームの取得元は batch_seconds の間の受信）を services/collect で保存する。日次と同じ Service・同じ取引。
 - 二重起動: DB の advisory lock（collect:source:<取得元>）。取れなければ 75 で終わり、launchd の ThrottleInterval の後に取り直す（Anime と同じ。
   再起動の直後は前のプロセスがまだ lock を持っていることがある）。
 - 止め方: SIGTERM / SIGINT で、周期の区切りで止まる（Anime と同じ）。

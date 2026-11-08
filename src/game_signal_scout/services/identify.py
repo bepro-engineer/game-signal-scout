@@ -111,10 +111,14 @@ def identify(payload: dict, index: TitleIndex) -> tuple[str | None, str | None, 
 
 
 def version(titles: list[tuple[str, str]], ambiguous: list[str], context_words: list[str], min_chars: int, game_only: bool) -> str:
-    """同定の版: このファイル（規則）・作品の辞書・記述（曖昧な題名・文脈の語・最小の字数・ゲームだけの場か）の指紋。どれかが変われば作り直す。"""
+    """正規化の版: 同定の規則（このファイル）・印の規則・言語の判定・正規化の手順・作品の辞書・記述（曖昧な題名・文脈の語・最小の字数・ゲームだけの場か）の指紋。
+    どれかが変われば、発言の行を作り直す（Anime の §5.3・§21）。"""
     import hashlib
     from pathlib import Path
     h = hashlib.sha256(Path(__file__).read_bytes())
+    here = Path(__file__).parent.parent
+    for rule in (here / "discovery" / "flags.py", here / "languages_detect.py", Path(__file__).parent / "normalize.py"):   # 印・言語・正規化の規則も版に含める（Anime の §21）
+        h.update(rule.read_bytes())
     for a, t in sorted((str(a), str(t)) for a, t in titles):
         h.update(f"{a}\t{t}\n".encode())
     h.update(repr((sorted(ambiguous), sorted(context_words), min_chars, game_only)).encode())

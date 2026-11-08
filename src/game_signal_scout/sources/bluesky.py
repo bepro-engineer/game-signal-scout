@@ -4,7 +4,7 @@ Anime からそのまま: 再開位置の規則（resume_cursor）、フレー�
 対象外になった投稿・アカウントの停止と、その人の投稿の除外・形の違反の 1 件飛ばし）、endpoint の切り替えと時刻の巻き戻し、
 本文の取り出し（discovery/text）・言語（discovery/lang）・印（discovery/flags）、投稿者の HMAC（actor_key）。
 Game で替えた所: 保存する投稿の条件（anime の文脈 → ゲームの文脈。GameContext）と、Game の取得元の契約（read(cursor) → Batch）。
-作品の同定（Steam app ID）は取り込みではせず、正規化（services/normalize.bluesky）で行う（Anime と同じく、受信と同定を分ける）。
+作品の同定（Steam app ID）は取り込みではせず、正規化（services/normalize.voices。どの取得元も同じ）で行う（Anime と同じく、受信と同定を分ける）。
 
 保存（source_item）: 投稿 1 件 = 項目 1 件。payload に本文・言語・投稿者の HMAC（author。did は持たない）・印・リンクの題名・
 Steam のストアのリンクの app ID・返信と引用の相手。項目の ID は at:// URI（did を含む。Anime と同じ）。

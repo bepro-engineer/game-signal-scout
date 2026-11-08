@@ -99,7 +99,7 @@ def _qualified(rs: list[AreaWorkDay], prof: dict) -> dict[tuple[str, int], AreaW
 
 
 def area_obs(ctx, d: date, profiles: dict, countries: dict, comparable_base: bool) -> dict:
-    """lang_obs（地図・言語ページ）を作る。Source が Bluesky だけなら、これまでの lang_obs と同じ値になる。"""
+    """lang_obs（地図・言語ページ）を作る。Source が 1 つだけなら、その Source の lang_obs と同じ値になる（取得元の名前で分けない）。"""
     srcs = profiles["sources"]
     today, g_today = rows(ctx, d, profiles)
     prev, g_prev = rows(ctx, d - timedelta(days=1), profiles)

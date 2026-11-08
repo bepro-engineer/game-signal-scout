@@ -1,4 +1,4 @@
-"""発言の言語（取得元が言語を示さないとき）。Bluesky と同じ判定器（discovery/lang.detect: 文字種 → langid、確信度 0.8 未満は uncertain）を使う
+"""発言の言語（取得元が言語を示さないとき）。すべての取得元で共通の判定器（discovery/lang.detect: 文字種 → langid、確信度 0.8 未満は uncertain）を使う
 （Anime の §7。2026-11-08 Issue #3: 掲示板などは確信度の閾値なしで第 1 候補を採っていた）。中国語は文字で繁体字・簡体字を分ける。短すぎる文は None。"""
 from __future__ import annotations
 

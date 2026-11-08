@@ -40,7 +40,7 @@ class Obs:
     work_id: int | None
     status: str
     head: str | None = None        # 文の書き出し（独立性の検査。signal_cards.text_head と同じ派生。本文ではない）
-    anime: bool = True             # アニメとの結びつき（Bluesky = 取り込みの判定、判定の工程を持つ Source = 作品について書いたと判定済み）
+    anime: bool = True             # アニメとの結びつき（取り込みの判定、判定の工程を持つ Source = 作品について書いたと判定済み）
     at: datetime | None = None     # 投稿の時刻（6 時間の窓。分からなければ None）
     same_text: str | None = None   # 同じ本文の印（自分の言葉が十分にある本文のハッシュ）。別の人が同じ本文を出したら 1 つの発信元と数える
 

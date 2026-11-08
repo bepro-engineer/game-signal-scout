@@ -114,7 +114,7 @@ def test_poll_sources_are_the_feed_forums():
     from game_signal_scout.ops.poll import pollers
     cfg = factory.load_sources_config()
     p = pollers(cfg)
-    assert {"blizzard_forums", "ptt_games", "computerbase"} <= set(p) and "steam_reviews" not in p and "bluesky" not in p
+    assert {"blizzard_forums", "ptt_games", "computerbase"} <= set(p) and "steam_reviews" not in p
 
 
 def test_lemmy_and_mastodon_skip_bots_and_old_items():

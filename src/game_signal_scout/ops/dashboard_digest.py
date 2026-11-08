@@ -47,8 +47,13 @@ VAGUE = re.compile(r"^(特定の|作品(への|の)?(感想|反応|評価)$)|^(�
 
 # ---------------------------------------------------------------- 段 1 声（規則）
 def voice_sources(cfg: dict) -> list[str]:
-    """声の本文を読む取得元（config/daily.toml [dashboard_digest] voice_sources。本文を保存する Source だけ。Source ごとに別々に数え、足さない。ADR 0035・0043 §7・0054）。"""
-    return list((cfg.get("dashboard_digest") or {}).get("voice_sources") or [])
+    """声の本文を読む取得元。既定（voice_sources = "all"）は観測の集計に入れているすべての取得元（config/map_sources.toml）。
+    特定の取得元を決め打ちしない。Source ごとに別々に数え、足さない（ADR 0035・0043 §7・0054）。"""
+    v = (cfg.get("dashboard_digest") or {}).get("voice_sources", "all")
+    if v == "all":
+        from game_signal_scout import observations
+        return list(observations.sources())
+    return list(v or [])
 
 
 def digest_languages() -> frozenset[str]:

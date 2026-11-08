@@ -35,7 +35,7 @@ config = ""                   # 枠の設定ファイルのパス（scout-infra 
 [dashboard_digest]
 # 今日の兆し（Anime の ops/dashboard_digest.py を流用。値は Anime の config/daily.toml と同じ。声の取得元だけ Game のもの）
 enabled = true
-voice_sources = ["steam_reviews", "bluesky"]
+voice_sources = "all"   # 観測の集計に入れているすべての取得元の声を読む（特定の取得元を決め打ちしない。CLAUDE.md）
 timeout_seconds = 400
 num_ctx = 16384
 refresh_days = 3

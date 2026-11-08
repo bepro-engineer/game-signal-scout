@@ -30,7 +30,7 @@ def run(conn, tmp_path, monkeypatch):
     path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", recs)
     cfg = {"protondb": {"adapter": "game_signal_scout.sources.protondb:ProtonDBDump", "local_path": str(path),
                         "normalizer": "game_signal_scout.services.normalize:protondb"},
-           "bluesky": {"adapter": "game_signal_scout.sources.bluesky:Bluesky", "normalizer": "game_signal_scout.services.normalize:bluesky",
+           "bluesky": {"adapter": "game_signal_scout.sources.bluesky:Bluesky", "normalizer": "game_signal_scout.services.normalize:voices",
                        "endpoints": ["wss://fake.invalid/a"], "batch_seconds": 5, "idle_seconds": 0.05, "context_words": WORDS,
                        "ambiguous_titles": ["Rust"]}}
     monkeypatch.setattr(factory, "load_sources_config", lambda: cfg)
