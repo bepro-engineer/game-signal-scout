@@ -43,9 +43,10 @@ def newest_generated_at(conn):
 def statements_by_author(conn, appid: str, days: int, per_window: int, since) -> list[dict]:
     """発見の材料: 作品の直近 days 日の発言を、投稿者ごとに 1 件（いちばん長いもの）。直近の窓（at >= since）と前の窓から、それぞれ多くて per_window 件。
     宣伝などの印のあるもの・短いものは除く。"""
-    rows = conn.execute("SELECT DISTINCT ON (author, at >= %s) item_id, author, at, lang, text FROM player_post WHERE appid = %s "
-                        "AND at > now() - make_interval(days => %s) AND NOT flags ?| %s AND length(text) BETWEEN 60 AND 4000 "
-                        "ORDER BY author, at >= %s, length(text) DESC", (since, appid, days, EXCLUDE, since)).fetchall()
+    rows = conn.execute("SELECT DISTINCT ON (author, cur) item_id, author, at, lang, text FROM ("
+                        "SELECT item_id, author, at, lang, text, at >= %s AS cur FROM player_post WHERE appid = %s "
+                        "AND at > now() - make_interval(days => %s) AND NOT flags ?| %s AND length(text) BETWEEN 60 AND 4000) t "
+                        "ORDER BY author, cur, length(text) DESC", (since, appid, days, EXCLUDE)).fetchall()
     out = [dict(zip(("item_id", "author", "at", "lang", "text"), x)) for x in rows]
     cur = sorted([x for x in out if x["at"] >= since], key=lambda x: x["item_id"])[:per_window]
     prev = sorted([x for x in out if x["at"] < since], key=lambda x: x["item_id"])[:per_window]

@@ -42,3 +42,18 @@ def test_titles_that_are_not_japanese_are_dropped():
     g = insight.group(lambda p: json.dumps([{"title": "第二季遇到作弊者と不満", "ids": [0, 1]}, {"title": "Squad play is fun", "ids": [0, 1]},
                                             {"title": "分隊で拠点を奪うと逆転できる", "ids": [0, 1]}]), "T", exps)
     assert [x["title"] for x in g] == ["分隊で拠点を奪うと逆転できる"]
+
+
+def test_statements_are_one_per_author_in_each_window(conn):
+    """材料は、直近の窓と前の窓のそれぞれで投稿者ごとに 1 件（いちばん長いもの）。"""
+    from game_signal_scout.repositories import insight as repo
+    now = datetime.now(timezone.utc)
+    conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) SELECT 'f', 'i' || g, now(), now(), '{}' FROM generate_series(1, 4) g")
+    rows = [("i1", "a", now - timedelta(days=1), "x" * 80), ("i2", "a", now - timedelta(days=2), "y" * 120), ("i3", "a", now - timedelta(days=9), "z" * 90),
+            ("i4", "b", now - timedelta(days=1), "w" * 70)]
+    for i, au, at, text in rows:
+        conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, appid, matched_by, flags, text) VALUES ('f', %s, %s, %s, 'en', '7', 'source', '[]', %s)",
+                     (i, at, au, text))
+    conn.commit()
+    got = repo.statements_by_author(conn, "7", 14, 60, now - timedelta(days=7))
+    assert sorted(r["item_id"] for r in got) == ["i2", "i3", "i4"]
