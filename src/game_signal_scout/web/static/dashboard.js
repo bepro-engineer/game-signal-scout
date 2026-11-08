@@ -13,12 +13,11 @@
   const T = (x, y, s, o = {}) => `<text x="${x}" y="${y}" font-size="${o.size || 14}" fill="${o.fill || INK2}" text-anchor="${o.anchor || "middle"}" font-weight="${o.bold ? 700 : 400}">${s}</text>`;
   const widthOf = el => Math.floor(el.getBoundingClientRect().width);
 
-  /* ---------- 紹介・表示している日 ---------- */
-  // 入口（#2: 次に遊びたいゲームを発見する）: 遊ぶ目的から探し始める。選ぶと、その目的に当てはまる体験を複数のプレイヤーが書いた作品へ
-  $("intro").innerHTML = `<div class="ask"><h2>${tr("今日は、どんなゲームを探す？", "What kind of game are you looking for today?")}</h2>
-    <p>${tr("世界のプレイヤーが実際に遊んで書いた体験から、次に遊びたいゲームを見つけます。", "Find your next game from what players around the world actually did and wrote.")}</p>
-    <div class="ask-i">${A.INTENTS.map(([k, ja, en, dja, den]) => `<a class="ask-b ask-${k}" href="finds.html?intent=${k}"><b>${tr(ja, en)}</b><small>${tr(dja, den)}</small></a>`).join("")}</div></div>`;
-  A.dayBar($("intro"), "afterend");   // 表示している日は紹介のブロックの下に右寄せ（2026-10-15 のユーザーの指示）
+  /* ---------- 表示している日 ---------- */
+  // 一番上の「今日は、どんなゲームを探す？」の枠（遊ぶ目的の 4 つのボタン）は外した（2026-11-09 オーナー「これいらない」。押しても同じ一覧になっていた）。
+  // 表示している日の欄は、今日の兆しの上に残す
+  A.dayBar($("intro"), "afterend");   // 表示している日は右寄せ（2026-10-15 のユーザーの指示）
+  $("intro").remove();
 
   /* ---------- 今日の兆し ---------- */
   // 先頭の組（G.lead。ADR 0052）: 見出し・本文・引用と作品の列の先頭は、サーバーが 1 つの発見から作った組だけを使う（言語ごとに別の文を選ばない）。
