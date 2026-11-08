@@ -93,3 +93,12 @@ def test_work_page_shows_game_content_instead_of_synopsis(client):
     from pathlib import Path
     js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/work.js").read_text()
     assert 'tr("ゲーム内容", "About the game")' in js
+
+
+def test_non_game_software_is_not_a_work(conn):
+    """ゲームでないソフト（Steam のジャンルがユーティリティなど。例: Wallpaper Engine）は作品として出さない。"""
+    from game_signal_scout.ops.work import publishable_works
+    for a, g in (("431960", '["カジュアル", "ユーティリティ", "写真編集"]'), ("1245620", '["アクション", "RPG"]')):
+        conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', %s, now(), now(), '{}')", (a,))
+        conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) VALUES (%s, 'steam_store', %s, 'x', %s, '[]', '[]', now())", (a, a, g))
+    assert publishable_works(conn, [431960, 1245620]) == {1245620}
