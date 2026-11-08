@@ -73,3 +73,11 @@ def test_intent_and_caution_are_kept_only_when_most_of_the_group_agrees():
     f = insight.tally([{"title": "2 人で拠点を守ると連携できる", "members": ["p1", "p2", "p3"]}], posts, exps, SINCE, 3)[0]
     assert f["intent"] == "friends" and f["caution"] is None
     assert insight._clean_exp({"did": "大剣で溜め攻撃", "happened": "ボスを倒せた", "verdict": "fun", "topic": "t", "intent": "solo"})["intent"] is None
+
+
+def test_untranslated_or_abstract_text_is_not_used():
+    assert insight._clean_exp({"did": "後期進行數值膨脹的爽快遊玩", "happened": "前期受挫但後期變得非常爽快", "verdict": "fun", "topic": "t"}) is None
+    exps = [("p1", {"did": "a", "happened": "b", "topic": "t", "verdict": "fun"}), ("p2", {"did": "a", "happened": "b", "topic": "t", "verdict": "fun"})]
+    g = insight.group(lambda p: json.dumps({"groups": [{"title": "コンテンツの量や、探索の充実度を評価する。", "ids": [0, 1]},
+                                                       {"title": "斬馬刀でボスに挑むと、ほぼ一方的に押し切れる", "ids": [0, 1]}]}), "T", exps)
+    assert [x["title"] for x in g] == ["斬馬刀でボスに挑むと、ほぼ一方的に押し切れる"]

@@ -25,7 +25,7 @@ VERDICTS = ("fun", "frustration", "mixed")
 INTENTS = ("deep", "short", "novel", "friends")
 CAUTIONS = ("time", "price", "performance", "bugs", "difficulty", "online")
 KANA = re.compile(r"[\u3040-\u30ff]")
-HANZI_ONLY = re.compile(r"[遇到们这个吗么还没为说时会对过]")   # 日本語では使わない簡体字・中国語の語
+HANZI_ONLY = re.compile(r"[遇到们这个吗么还没为说时会对过進數膨脹遊後變們這個麼還說時會對過]")   # 日本語では使わない簡体字・中国語の語
 
 READ_PROMPT = """ゲーム「{title}」のプレイヤーの発言を 1 件ずつ読んでください。発言が「自分が実際に遊んで、何をして、何が起きたか」を具体的に書いているときだけ、それを取り出します。
 感想だけ・ニュース・質問・宣伝・抽象的な評価だけのものは null にします。発言にないことは書かないでください。
@@ -42,7 +42,9 @@ caution は、買う・遊ぶ前に知っておくべき注意（発言に書い
 
 GROUP_PROMPT = """ゲーム「{title}」のプレイヤーの体験の一覧です。同じ具体的な体験（同じことをして、同じことが起きた）を書いているものをまとめてください。
 言い換えでも中身が同じならまとめ、中身が違えば分けます。まとまらないものは入れなくてよいです。番号は一覧にあるものだけを使います。
-次の形の JSON だけを返してください（前置き不要）: {{"groups": [{{"title": "まとめた体験を 1 文で（「〜すると〜」の形。日本語 50 字以内。一覧にないことを足さない）", "ids": [番号, ...]}}]}}
+title は、一覧にある具体的な行動と結果をそのまま使って書きます（例:「斬馬刀でボスに挑むと、ほぼ一方的に押し切れる」「ボス戦の途中で強制終了し、進行が消える」）。
+「〜を評価する」「〜を感じる」「〜に満足」のような抽象的な言い方にしないでください。一覧にないことは足さないでください。
+次の形の JSON だけを返してください（前置き不要）: {{"groups": [{{"title": "まとめた体験を 1 文で（「〜すると、〜」の形。日本語 50 字以内）", "ids": [番号, ...]}}]}}
 
 一覧:
 {items}"""
@@ -56,6 +58,7 @@ def _json_array(text: str) -> list:
         return []
 
 
+ABSTRACT = re.compile(r"(を|に)(評価する|感じる|満足する|満足した|感じた)。?$")   # 具体的な体験でない見出し
 VAGUE = re.compile(r"^(ゲームを)?(プレイ|遊|始め|購入|買|触|やっ)[^、。]{0,6}$|^(ゲーム|本作|この作品)を(プレイ|遊)")   # 中身のない行動
 
 
@@ -65,6 +68,8 @@ def _clean_exp(e) -> dict | None:
     v = str(e.get("verdict") or "").strip()
     out = {k: str(e.get(k) or "").strip()[:60] for k in ("did", "happened", "topic")}
     if not out["did"] or not out["happened"] or v not in VERDICTS or VAGUE.search(out["did"]):
+        return None
+    if any(not KANA.search(out[k]) or HANZI_ONLY.search(out[k]) for k in ("did", "happened")):   # 日本語でない（訳されていない）体験は使わない
         return None
     it, ca = str(e.get("intent") or "").strip(), str(e.get("caution") or "").strip()
     return {**out, "verdict": v, "intent": it if it in INTENTS else None, "caution": ca if ca in CAUTIONS else None}
@@ -94,7 +99,7 @@ def group(ask, title: str, exps: list[tuple[str, dict]]) -> list[dict]:
     for g in _json_array(ask(GROUP_PROMPT.format(title=title, items=items))):
         if not isinstance(g, dict) or not str(g.get("title") or "").strip():
             continue
-        if not KANA.search(str(g["title"])) or HANZI_ONLY.search(str(g["title"])):   # 日本語でない文（中国語の混ざり）は出さない
+        if not KANA.search(str(g["title"])) or HANZI_ONLY.search(str(g["title"])) or ABSTRACT.search(str(g["title"])):   # 日本語でない文・抽象的な文は出さない
             continue
         ids = sorted({int(i) for i in g.get("ids") or [] if str(i).isdigit() and int(i) < len(exps)})
         if ids:
