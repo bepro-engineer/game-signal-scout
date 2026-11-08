@@ -10,20 +10,7 @@
   const MODE_PAGES = { solo: "ひとりで遊べる", coop: "協力プレイ", versus: "対戦", pad: "コントローラーで遊べる" };
   const PAGE = document.documentElement.dataset.page, MODE = MODE_PAGES[PAGE];
   const W = P.works.filter(w => !MODE || (w.modes || []).includes(MODE)), NPAGE = W.filter(w => w.page_only).length;
-  // 遊び方のページ（#2 6723386003）: 対応の一覧の前に、その遊び方で実際に遊んだプレイヤーの体験（何をして → 何が起きたか）を出す。
-  // 体験は、発言にその遊び方が書いてあったものだけ（作品が対応しているだけでは載せない）。作品の一覧は、そのあとの補助
-  if (MODE) { const FK = { solo: "solo", coop: "coop", versus: "versus", pad: "controller" }[PAGE], FC = A.FACETS.find(x => x[0] === FK), FX = P.finds || {}, FA = P.finds_art || {};
-    const byId = Object.fromEntries(P.works.map(w => [w.id, w]));
-    // その遊び方で遊んだ体験のうち、醍醐味（何が面白かったか）が書かれていたもの。カードは トップ・プレイヤーの発見 と同じ部品
-    const xs = Object.entries(FX).flatMap(([id, fs]) => { const w = byId[id] && { ...byId[id], ...(FA[id] || {}) };
-      return w ? fs.filter(f => FC[5](f) && f.appeal).map(f => ({ w, appeal: f.appeal, kind: f.appeal_kind, verdict: f.verdict, people: f.people, ev: f.ev || {}, caution: f.caution,
-        against: f.verdict === "fun" ? f.frustration || 0 : 0 })) : []; }).sort((a, b) => b.people - a.people);
-    const ex = xs.length ? `${A.jpLegend()}<div class="dcs">${xs.slice(0, 9).map(A.discover.card).join("")}</div>`
-      : `<p class="sr-exp-none">${tr("この遊び方で遊んだプレイヤーの醍醐味は、まだ読めていません。プレイヤーの発言にこの遊び方の体験が書かれていたときに、ここに出ます。", "No player experiences for this way of playing have been read yet.")}</p>`;
-    document.getElementById("sr-panel").insertAdjacentHTML("beforebegin", `<section class="sr-xp"><div class="sec-h"><h2>${tr(`${FC[1]}：${FC[3]}`, `${FC[2]}: ${FC[4]}`)}</h2>
-      <p>${tr("世界のプレイヤーが、この遊び方で実際に遊んで書いた面白さ。", "What players found fun, playing this way.")}</p></div>${ex}
-      <div class="sec-h sr-xp-list"><h2>${tr(`${MODE}作品（ストアの表記）`, "Titles that support it (store listing)")}</h2></div></section>`); }
-  const st = { q: "", jp: "", kind: "", lang: "", air: "", genre: "", score: "", year: "", tag: "", sort: "fun", n: PER };
+  const st = { q: "", jp: "", kind: "", lang: "", air: "", genre: "", score: "", year: "", tag: "", sort: "last", n: PER };
   const EX = A.EXTRA || { tag: t => t };
   try { st.q = new URLSearchParams(location.search).get("q") || ""; } catch (e) { /* 既定で表示 */ }
   // 作品詳細から戻ったとき（前のページへ・ブラウザの戻る）は、探す条件と表示した件数を戻す
@@ -41,7 +28,6 @@
   const filtered = () => { const q = norm(st.q);
     const list = W.filter(w => hitQ(w, q) && hitJ(w, st.jp) && (!st.kind || w.kinds.includes(st.kind)) && hitL(w, st.lang) && (!st.air || airOf(w) === st.air) && (!st.genre || w.genres.includes(st.genre))
       && (!st.score || (w.score || 0) >= Number(st.score)) && (!st.year || String(w.year) === st.year) && (!st.tag || (w.tags || []).includes(st.tag)));
-    if (st.sort === "fun") { const n = w => ((P.finds || {})[w.id] || []).filter(f => f.appeal).length; return [...list].sort((a, b) => n(b) - n(a) || ((a.last || "") < (b.last || "") ? 1 : -1)); }
     if (st.sort === "score") return [...list].sort((a, b) => (b.score || 0) - (a.score || 0) || (b.pop || 0) - (a.pop || 0));
     if (st.sort === "pop") return [...list].sort((a, b) => (b.pop || 0) - (a.pop || 0));
     if (st.sort === "days") return [...list].sort((a, b) => b.days - a.days || b.peak - a.peak);
@@ -58,11 +44,13 @@
   const SCORES = [["80", tr("80点以上", "80+")], ["70", tr("70点以上", "70+")], ["60", tr("60点以上", "60+")]];
   $("sr-panel").innerHTML = `<label class="sr-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input id="sr-q" type="search" autocomplete="off" placeholder="${tr("作品名で探す（日本語・英語どちらでも）", "Search by title (Japanese or English)")}" value="${esc(st.q)}" aria-label="${tr("作品名", "Title")}"></label>
-    <div class="sr-row"><span class="sr-l">${tr("日本語", "Japanese")}</span><span class="sr-chips">${chipBtn("jp", "", tr("すべて", "All"), W.length)}${[["voice", tr("日本語音声", "Japanese audio")], ["sub", tr("日本語字幕以上", "Japanese subtitles or more")], ["any", tr("日本語UI以上", "Japanese UI or more")], ["none", tr("日本語非対応", "No Japanese")]].map(([k, l]) => chipBtn("jp", k, l, cnt(w => hitJ(w, k)))).join("")}</span></div>
+    <div class="sr-row"><span class="sr-l">${tr("日本語", "Japanese")}</span><span class="sr-chips">${chipBtn("jp", "", tr("すべて", "All"), W.length)}${[["any", tr("日本語で遊べる", "Playable in Japanese")], ["sub", tr("字幕あり", "Subtitles")], ["voice", tr("音声あり", "Voice")], ["none", tr("日本語なし", "No Japanese")], ["unknown", tr("未確認", "Unknown")]].map(([k, l]) => chipBtn("jp", k, l, cnt(w => hitJ(w, k)))).join("")}</span></div>
+    <div class="sr-row"><span class="sr-l">${tr("変化の種類", "Type of change")}</span><span class="sr-chips">${chipBtn("kind", "", tr("すべて", "All"), W.length)}${Object.keys(KIND).map(k => chipBtn("kind", k, esc(KIND[k]), cnt(w => w.kinds.includes(k)))).join("")}</span></div>
+    <div class="sr-row"><span class="sr-l">${tr("言語圏", "Language area")}</span><span class="sr-chips">${chipBtn("lang", "", tr("すべて", "All"))}${MAIN_L.map(l => chipBtn("lang", l, `<i style="background:${lcol(l)}"></i>${esc(ln(l))}`, cnt(w => hitL(w, l)), ` style="--lc:${lcol(l)}"`)).join("")}${chipBtn("lang", "other", tr("そのほか", "Other"), cnt(w => hitL(w, "other")))}</span></div>
     <div class="sr-row"><span class="sr-l">${tr("発売年", "Year")}</span><span class="sr-sel"><select id="sr-year" aria-label="${tr("発売年", "Year")}"><option value="">${tr("すべて", "All")}</option>${years.map(([y, n]) => `<option value="${esc(y)}">${tr(`${y}年（${n}）`, `${y} (${n})`)}</option>`).join("")}</select></span>
       ${tagsAll.length ? `<span class="sr-l sr-l2">${tr("タグ", "Tag")}</span><span class="sr-sel"><select id="sr-tag" aria-label="${tr("タグ", "Tag")}"><option value="">${tr("すべて", "All")}</option>${tagsAll.map(([t, n]) => `<option value="${esc(t)}">${esc(EX.tag(t))}${tr(`（${n}）`, ` (${n})`)}</option>`).join("")}</select></span>` : ""}</div>
     <div class="sr-row"><span class="sr-l">${tr("ジャンル", "Genre")}</span><span class="sr-sel"><select id="sr-genre" aria-label="${tr("ジャンル", "Genre")}"><option value="">${tr("すべて", "All")}</option>${genres.map(([g, n]) => `<option value="${esc(g)}">${esc(GENRE[g] || g)}${tr(`（${n}）`, ` (${n})`)}</option>`).join("")}</select></span>
-      <span class="sr-l sr-l2">${tr("並び順", "Sort")}</span><span class="sr-sel"><select id="sr-sort" aria-label="${tr("並び順", "Sort")}"><option value="fun">${tr("プレイヤーが書いた面白さが多い順", "Most fun experiences written")}</option><option value="last">${tr("最近プレイヤーが書いた順", "Most recently written about")}</option></select></span></div>`;
+      <span class="sr-l sr-l2">${tr("並び順", "Sort")}</span><span class="sr-sel"><select id="sr-sort" aria-label="${tr("並び順", "Sort")}"><option value="last">${tr("最後に動いた日が新しい順", "Most recent change")}</option><option value="days">${tr("動いた日数が多い順", "Most days with a change")}</option><option value="peak">${tr("いちばん多い日の人数が多い順", "Largest single-day count")}</option><option value="score">${tr("平均評価が高い順（AniList）", "Highest average score (AniList)")}</option><option value="pop">${tr("リストに入れた人が多い順（AniList）", "Most on users' lists (AniList)")}</option></select></span></div>`;
 
   /* ---------- 結果のカード（作品詳細へのリンク） ---------- */
   const meta = w => [FMT[w.fmt], w.year && w.season ? tr(`${w.year}年${SEASON[w.season]}`, `${SEASON[w.season]} ${w.year}`) : w.year ? String(w.year) : "", AIR[w.rs]].filter(Boolean).join(tr("・", " · "));
@@ -74,12 +62,12 @@
     return ks.length ? `<span class="sr-k">${ks.map(k => `<span class="kt${st.kind === k ? " on" : ""}" data-kind="${esc(k)}">${esc(KIND[k])}</span>`).join("")}</span>` : "";
   };
   const card = w => `<article class="sr-card"><a class="sr-link" href="${A.workUrl(w.id)}" aria-label="${esc(nm(w.name))}"></a>${art(w)}
-    <div class="sr-t">${wn(w.name, 2, "h3")}${meta(w) || w.score != null ? `<span class="sr-meta">${esc(meta(w))}${score(w)}</span>` : ""}<span class="sr-dev">${A.jpTag(w)}</span>${(() => { const f = ((P.finds || {})[w.id] || []).find(x => x.appeal); return f ? `<span class="sr-fun">${esc(f.appeal)}</span>` : ""; })()}
+    <div class="sr-t">${wn(w.name, 2, "h3")}${meta(w) || w.score != null ? `<span class="sr-meta">${esc(meta(w))}${score(w)}</span>` : ""}<span class="sr-dev">${A.jpTag(w)} ${A.devLine(w)}</span>${kinds(w)}
     </div></article>`;
 
   function render() {
     const list = filtered(), shown = list.slice(0, st.n);
-    const JPN = { any: tr("日本語UI以上", "Japanese UI or more"), sub: tr("日本語字幕以上", "Japanese subtitles or more"), voice: tr("日本語音声", "Japanese audio"), none: tr("日本語非対応", "No Japanese"), unknown: tr("日本語未確認", "JP unknown") };
+    const JPN = { any: tr("日本語で遊べる", "Playable in Japanese"), sub: tr("日本語字幕あり", "JP subtitles"), voice: tr("日本語音声あり", "JP voice"), none: tr("日本語なし", "No Japanese"), unknown: tr("日本語は未確認", "JP unknown") };
     const conds = [st.q && `「${esc(st.q)}」`, st.jp && JPN[st.jp], st.kind && esc(KIND[st.kind]), st.lang && (st.lang === "other" ? tr("そのほかの言語圏", "Other language areas") : esc(ln(st.lang))), st.air && esc(AIR[st.air]), st.genre && esc(GENRE[st.genre] || st.genre),
       st.score && tr(`平均評価${st.score}点以上`, `Score ${st.score}+`), st.year && tr(`${esc(st.year)}年`, esc(st.year)), st.tag && esc(EX.tag(st.tag))].filter(Boolean);
     $("sr-count").innerHTML = `<b>${num(list.length)}</b>${tr("作品", " titles")}<span>${tr(`（全${W.length}作品中。${md(P.first)}〜${md(P.latest)}に話題の変化を観測した${W.length - NPAGE}作品と、各ページにだけ載っている${NPAGE}作品）`,

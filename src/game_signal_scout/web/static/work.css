@@ -124,18 +124,3 @@ main.wk .wk-grid > .wk-sec > .sec-h p { grid-column: 2; margin: 2px 0 0; font-si
 /* 選んだ棒の値（#59）: グラフの上の 1 行。選んだ棒に枠 */
 .wk-read { margin: 0 0 6px; min-height: 1.5em; font-size: 14px; font-weight: 700; color: var(--ink); }
 .wk-ch .c.sel .bar { outline: 2px solid var(--accent); outline-offset: 1px; }
-/* プレイヤーがしたこと・起きたこと（#2） */
-.wk-finds { grid-column: 1 / -1; margin: 8px 0; padding: 12px 14px; border-radius: 12px; background: #f7f6fb; }
-.wk-finds h2 { margin: 0 0 6px; font-size: 17px; }
-.wkf { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.wkf li { padding: 6px 10px; border-radius: 8px; background: #fff; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
-.wkf li b { font-weight: 700; } .wkf small { display: block; font-size: 12px; color: #666; }
-.wkf-v, .wkf-c, .wkf-fc { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #eee; color: #555; }
-.wkf-v-fun { background: #dff3ea; color: #2f7a58; } .wkf-v-frustration { background: #fde9e2; color: #9a4a33; } .wkf-v-mixed { background: #f6efd6; color: #7a6420; }
-.wkf-c { background: #fde9e2; color: #9a4a33; } .wkf-fc { background: #ece9fb; color: #4a3fb0; }
-.wkf-one { margin: 8px 0 4px; font-size: 12px; font-weight: 700; color: #666; } .wkf-s li { font-size: 13px; }
-.wkf-src { margin: 6px 0 0; font-size: 12px; color: #777; }
-.wkf-a { display: block; font-size: 17px; line-height: 1.5; color: var(--ink, #20283d); }
-.wk-finds { background: var(--soft, #f2f4f8); }
-
-.wk-judge .jp-legend { margin: 6px 0 10px; padding: 8px 10px; flex-direction: column; align-items: flex-start; gap: 4px; font-size: 12px; box-shadow: none; background: var(--soft, #f2f4f8); }

@@ -1,30 +1,43 @@
-// プレイヤーの発見（#2）: 世界のプレイヤーが実際に遊んで書いた「何をして → 何が起きて → 何が面白かったか（醍醐味）」。
-// 並び: 面白さの種類で絞る札（実際に体験のある種類だけ・件数つき）→ 日本語の凡例 → 醍醐味のカード → 買う前に知っておきたいこと（不満・注意）。
-// 人数は確からしさの目安（多い＝面白い、ではない）。ひとりの体験はそう書く。原文は出さない。数は集計（services/insight）が数えたもの。
+// プレイヤーの発見（#2。「世界で広がる作品」の置き換え）: 作品ごとに、世界のプレイヤーが実際に遊んで「何をして、何が起きたか」と、
+// 同じことを書いた独立した投稿者の数・前の週との比較。数は集計（services/insight）が数えたもの。原文は出さない（要約と数だけ）。
 (() => {
-  const A = window.ASS, { tr, esc, num, nm } = A, P = A.P, FI = (P.finds || {}).items || [], DS = A.discover;
-  const Q = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(""); } })();
-  const st = { k: Q.get("k") || "", jp: Q.get("jp") || "" };
+  const A = window.ASS, { tr, esc, nm, art, wn, num, ln, lcol } = A, P = A.P, ALL = (P.finds || {}).items || [];
+  // 遊ぶ目的で絞る（トップの入口から ?intent=）: その目的に当てはまる面白い・賛否の体験を書いた人の多い作品から。注意（不満）は一緒に出す
+  const INTENT = (() => { try { return new URLSearchParams(location.search).get("intent") || ""; } catch (e) { return ""; } })();
+  const IT = A.INTENTS.find(x => x[0] === INTENT);
+  const fits = w => w.finds.filter(f => f.intent === INTENT && f.verdict !== "frustration");
+  // いま変わったこと（#2: 「再燃」の置き換え）: 前の週になかった・増えた体験だけ。なぜ遊ぶ意味が変わったかを、体験と人数で示す
+  const VIEW = (() => { try { return new URLSearchParams(location.search).get("view") || ""; } catch (e) { return ""; } })();
+  const changed = w => w.finds.filter(f => f.trend === "new" || f.trend === "up");
+  const F = VIEW === "changed" ? ALL.filter(w => changed(w).length).map(w => ({ ...w, finds: changed(w) })).sort((a, b) => b.finds[0].people - a.finds[0].people)
+    : IT ? ALL.filter(w => fits(w).length).sort((a, b) => fits(b)[0].people - fits(a)[0].people)
+    .map(w => ({ ...w, finds: [...fits(w), ...w.finds.filter(f => !fits(w).includes(f) && (f.verdict === "frustration" || f.caution))] })) : ALL;
+  const CAUTION = { time: ["時間がかかる", "Time-consuming"], price: ["価格・課金", "Price / monetization"], performance: ["動作が重い", "Performance"],
+    bugs: ["不具合", "Bugs"], difficulty: ["難しさ", "Difficulty"], online: ["接続・対戦相手", "Online issues"] };
   const $ = id => document.getElementById(id);
-  const jpOk = w => ["ui", "sub", "voice"].includes(A.jpLevel(w));
-  const ALL = DS.items(FI.filter(w => !st.jp || jpOk(w)));
-  const IT = ALL.filter(x => !st.k || x.kind === st.k);
-  const url = patch => { const s = { ...st, ...patch }, u = new URLSearchParams(); Object.entries(s).forEach(([k, v]) => v && u.set(k, v)); const q = u.toString(); return `finds.html${q ? `?${q}` : ""}`; };
-  const kinds = Object.keys(A.APPEAL).map(k => [k, ALL.filter(x => x.kind === k).length]).filter(([, n]) => n);
-  const chips = `<div class="fd-row"><a href="${url({ k: "" })}"${!st.k ? ' class="on" aria-current="true"' : ""}>${tr("すべての面白さ", "All")}<small>${num(ALL.length)}</small></a>
-      ${kinds.map(([k, n]) => `<a href="${url({ k: st.k === k ? "" : k })}"${st.k === k ? ' class="on" aria-current="true"' : ""}>${esc(tr(...A.APPEAL[k]))}<small>${num(n)}</small></a>`).join("")}
-      <a href="${url({ jp: st.jp ? "" : "any" })}"${st.jp ? ' class="on" aria-current="true"' : ""}>${tr("日本語UI以上の作品だけ", "Japanese UI or more only")}${st.jp ? " ×" : ""}</a></div>`;
-  // 買う前に知っておきたいこと: 不満・注意の体験（作品ごと。醍醐味のないものも含む）
-  const warns = FI.filter(w => !st.jp || jpOk(w)).flatMap(w => [...w.finds.filter(f => f.verdict === "frustration" || f.caution).map(f => ({ w, f, ev: (f.examples || [])[0] || {}, people: f.people })),
-    ...w.singles.filter(e => e.verdict === "frustration" || e.caution).map(e => ({ w, f: e, ev: e, people: 1 }))]).sort((a, b) => b.people - a.people).slice(0, 12);
-  const warn = x => `<li><a href="${A.workUrl(x.w.id)}"><b>${esc(nm(x.w.name))}</b></a>${x.f.caution ? `<span class="dc-w">${esc(tr(...DS.CJ[x.f.caution]))}</span>` : ""}
-      <span>${DS.evLine(x.ev)}</span><small>${DS.pplWrote(x.people)}</small></li>`;
-  $("fd-note").innerHTML = chips;
-  $("fd-list").innerHTML = (IT.length ? `${A.jpLegend()}<div class="dcs">${IT.map(DS.card).join("")}</div>`
-    : `<div class="rv-empty"><div><b>${tr("この条件に当てはまる体験は、まだありません", "No experiences match yet")}</b>
-        <p>${FI.length ? tr(`読んだ ${num(FI.length)}作品の発言のうち、この面白さを書いた体験はまだありませんでした。`, `None of the posts on ${num(FI.length)} titles described this yet.`)
-          : tr("まだプレイヤーの発言を読んだ作品がありません。", "No titles have been read yet.")}</p></div></div>`)
-    + (warns.length ? `<div class="dsec"><h2>${tr("買う前に知っておきたいこと", "Good to know before buying")}</h2><p class="dl">${tr("プレイヤーが書いた不満と注意です。", "Complaints and cautions players wrote.")}</p><ul class="fd-warn">${warns.map(warn).join("")}</ul></div>` : "")
-    + `<details class="fd-how"><summary>${tr("この情報の出どころ", "Where this comes from")}</summary><p>${tr("世界のプレイヤーがこの 7 日に書いた発言を AI が読み、「何をして、何が起きて、何が面白かったか」を取り出しました。人数はこちらで数えています（同じ人の複数の発言は 1 人）。人数は確からしさの目安で、多いほど面白いという意味ではありません。原文は載せていません。",
-      "AI read posts from the last 7 days and extracted what players did, what happened and what was fun. Counts are done separately; one player counts once. Original posts are not shown.")}</p></details>`;
+  const VERDICT = { fun: ["面白い", "Fun"], frustration: ["不満", "Frustrating"], mixed: ["賛否", "Mixed"] };
+  const TREND = { new: ["今週はじめて", "New this week"], up: ["増えている", "Growing"], same: ["続いている", "Ongoing"], down: ["減っている", "Fading"] };
+  const ppl = n => tr(`${num(n)}人`, `${num(n)} ${n === 1 ? "player" : "players"}`);
+  const langs = f => f.langs.slice(0, 4).map(l => `<span class="fd-lg"><i style="background:${lcol(l)}"></i>${esc(ln(l))}</span>`).join("") +
+    (f.langs.length > 4 ? `<span class="fd-lg more">${tr(`ほか${f.langs.length - 4}`, `+${f.langs.length - 4}`)}</span>` : "");
+  const find = (f, w) => `<li class="fd-f fd-${esc(f.verdict)}">
+      <p class="fd-h"><span class="fd-v">${esc(tr(...VERDICT[f.verdict]))}</span>${f.caution ? `<span class="fd-c">${tr("注意: ", "Note: ")}${esc(tr(...CAUTION[f.caution]))}</span>` : ""}<b>${esc(f.title)}</b></p>
+      <p class="fd-n"><span class="fd-p">${tr(`${ppl(f.people)}が同じことを書いています`, `${ppl(f.people)} wrote the same`)}</span>
+        <span class="fd-t fd-t-${esc(f.trend)}">${esc(tr(...TREND[f.trend]))}${f.trend !== "new" ? tr(`（前の週 ${num(f.prev)}人）`, ` (prev. week ${num(f.prev)})`) : ""}</span>
+        ${f.verdict === "mixed" ? `<span class="fd-mix">${tr(`面白い ${num(f.fun)}・不満 ${num(f.frustration)}・どちらも ${num(f.mixed)}`, `fun ${num(f.fun)} · frustrating ${num(f.frustration)} · both ${num(f.mixed)}`)}</span>` : ""}</p>
+      <p class="fd-l">${langs(f)}</p>
+      ${f.examples && f.examples.length ? `<ul class="fd-ex">${f.examples.map(e => `<li>${esc(e.did)} <span aria-hidden="true">→</span> ${esc(e.happened)}</li>`).join("")}</ul>` : ""}
+    </li>`;
+  const card = w => `<article class="fd-w"><a class="fd-a" href="${A.workUrl(w.id)}">${art(w)}</a>
+      <div class="fd-b"><h3><a href="${A.workUrl(w.id)}">${wn(w.name, 2, "span")}</a></h3>
+        <p class="fd-meta">${A.jpTag(w)} ${A.devLine(w)}</p>
+        <ol class="fd-fs">${w.finds.map(f => find(f, w)).join("")}</ol>
+        <p class="fd-src">${tr(`${esc(w.since)}からの 7 日に、この作品について書いた ${num(w.read_people || 0)}人の発言を AI が読み、具体的な体験を書いた ${num(w.experiences || 0)}件をまとめました。`,
+          `AI read posts by ${num(w.read_people || 0)} players over 7 days from ${esc(w.since)} and grouped ${num(w.experiences || 0)} concrete experiences.`)}</p></div></article>`;
+  const tabs = `<nav class="fd-tabs">${[["", "すべて", "All"], ...A.INTENTS].map(([k, ja, en]) => `<a href="finds.html${k ? `?intent=${k}` : ""}"${k === INTENT && VIEW !== "changed" ? ' class="on" aria-current="page"' : ""}>${tr(ja, en)}</a>`).join("")}
+    <a href="finds.html?view=changed"${VIEW === "changed" ? ' class="on" aria-current="page"' : ""}>${tr("いま変わったこと", "What changed")}</a></nav>`;
+  $("fd-note").innerHTML = tabs + `<p>${tr("人数は、同じ具体的な体験を書いた別々の人の数です（同じ人の複数の投稿は 1 人）。AI は発言を読んでまとめるだけで、数は数えていません。発言の原文は載せていません。",
+    "Counts are distinct players who wrote the same concrete experience (several posts by one player count once). AI only reads and groups; counting is done separately. Original posts are not shown.")}</p>`;
+  $("fd-list").innerHTML = F.length ? F.map(card).join("")
+    : `<div class="rv-empty"><div><b>${IT ? tr(`「${IT[1]}」に当てはまる発見はまだありません`, `No discoveries for “${IT[2]}” yet`) : tr("まだ発見はありません", "No discoveries yet")}</b><p>${tr("同じ体験を 3 人以上のプレイヤーが書いた作品だけを出します。根拠のない作品は並べません。", "We only list titles where 3 or more players wrote about the same experience.")}</p></div></div>`;
 })();

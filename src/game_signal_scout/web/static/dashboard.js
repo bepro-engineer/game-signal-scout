@@ -14,29 +14,11 @@
   const widthOf = el => Math.floor(el.getBoundingClientRect().width);
 
   /* ---------- 紹介・表示している日 ---------- */
-  // 入口（#2）: いちばん具体的な醍醐味を大きな絵で → どんな面白さを味わいたい？（実際に体験のある種類だけ）→ プレイヤーが見つけた面白さ（日本語の凡例つき）。
-  // 体験がまだ読めていない日は、そう書く（空の入口は作らない）
-  const FI = ((A.P && A.P.finds) || {}).items || [], DS = A.discover, IT = DS.items(FI), VJ = DS.VJ;
-  const HX = IT.find(x => x.verdict === "fun") || IT[0];
-  if (HX) $("intro").classList.add("dsc");
-  $("intro").innerHTML = !HX ? `<div class="ask"><h2>${tr("プレイヤーの体験を読んでいるところです", "Reading players' experiences")}</h2><p>${tr("世界のプレイヤーが書いた「何をして、何が起きて、何が面白かったか」を、ここに出します。", "What players did, what happened and what was fun will appear here.")}</p></div>`
-    : `${DS.hero(HX)}
-    <div class="dsec"><h2>${tr("どんな面白さを味わいたい？", "What kind of fun are you after?")}</h2><p class="dl">${tr("世界のプレイヤーが実際に遊んで書いた体験から、面白さの種類ごとに集めました。", "Collected by kind of fun from what players actually wrote.")}</p>
-      ${DS.kinds(IT, k => `finds.html?k=${k}`)}</div>
-    <div class="dsec"><h2>${tr("プレイヤーが見つけた面白さ", "The fun players found")}</h2><p class="dl">${tr("何をして、何が起きて、何が面白かったのか。", "What they did, what happened, and what was fun.")}</p>
-      ${A.jpLegend()}<div class="dcs">${IT.filter(x => x !== HX).slice(0, 6).map(DS.card).join("")}</div>
-      <p class="dmore"><a href="finds.html">${tr("プレイヤーが見つけた面白さをすべて見る →", "See all →")}</a></p></div>`;
+  // 入口（#2: 次に遊びたいゲームを発見する）: 遊ぶ目的から探し始める。選ぶと、その目的に当てはまる体験を複数のプレイヤーが書いた作品へ
+  $("intro").innerHTML = `<div class="ask"><h2>${tr("今日は、どんなゲームを探す？", "What kind of game are you looking for today?")}</h2>
+    <p>${tr("世界のプレイヤーが実際に遊んで書いた体験から、次に遊びたいゲームを見つけます。", "Find your next game from what players around the world actually did and wrote.")}</p>
+    <div class="ask-i">${A.INTENTS.map(([k, ja, en, dja, den]) => `<a class="ask-b ask-${k}" href="finds.html?intent=${k}"><b>${tr(ja, en)}</b><small>${tr(dja, den)}</small></a>`).join("")}</div></div>`;
   A.dayBar($("intro"), "afterend");   // 表示している日は紹介のブロックの下に右寄せ（2026-10-15 のユーザーの指示）
-
-  /* ---------- 作品は 1 度だけ出す（2026-11-09 オーナー）: 段の大事さの順に割り当てる ----------
-     ① 今日の兆しの見出しの作品 ② 今日の注目・動き始めた作品 ③ 今日の兆しの作品の列 ④ いつもより話題が増えた作品 ⑤ 話題が多かった作品。先の段に出た作品は後の段に出さない */
-  const SEEN = new Set(G.featured.length ? [G.featured[0].id] : []);
-  const fresh = xs => { const out = xs.filter(x => !SEEN.has(x.id)); out.forEach(x => SEEN.add(x.id)); return out; };
-  const CKF = fresh(G.checks);
-  // 作品の列は、狭い幅では入る列の数だけ見せる（gaze.css）。見えない作品を下の段から除くとどこにも出なくなるので、
-  // 列に実際に見えている作品だけを「出した」に数える（描いた後に markShown）
-  const FEAT = [...G.featured.slice(0, 1), ...G.featured.slice(1).filter(x => !SEEN.has(x.id))];
-  const markShown = () => document.querySelectorAll("#lead .g-row > li").forEach((li, i) => { if (li.getClientRects().length && FEAT[i]) SEEN.add(FEAT[i].id); });
 
   /* ---------- 今日の兆し ---------- */
   // 先頭の組（G.lead。ADR 0052）: 見出し・本文・引用と作品の列の先頭は、サーバーが 1 つの発見から作った組だけを使う（言語ごとに別の文を選ばない）。
@@ -49,31 +31,23 @@
   const body = LD ? LD.body.join(L === "ja" ? "" : " ") : null;
   const lede = body ? `<span class="lede-t" id="lede-t">${esc(body).replace(/『([^』]+)』/g, (_, n) => `<b class="nb">『${n}』</b>`)}</span>`
     : `${esc(S.lede[L])}${S.basis === "movement" ? "" : tr("たとえば、こんな作品です。", " For example:")}`;
-  // 今日の兆しの作品で、プレイヤーが何をして何が起きたか（#2 6723365999: 人数・増減だけにしない）。読めた作品だけ
-  function leadFinds() { const ids = G.featured.map(w => w.id), w = ids.map(i => FI.find(x => x.id === i)).find(x => x && (x.finds.length || x.singles.length));
-    if (!w) return "";
-    const li = [...w.finds.slice(0, 3).map(f => `<li><span class="ask-v ask-v-${esc(f.verdict)}">${esc(tr(...VJ[f.verdict]))}</span>${esc(f.title)}<small>${tr(`${num(f.people)}人`, `${num(f.people)} players`)}${f.trend === "new" || f.trend === "up" ? tr("・今週増えた", " · up this week") : ""}</small></li>`),
-      ...w.singles.slice(0, Math.max(0, 3 - w.finds.length)).map(e => `<li><span class="ask-v ask-v-${esc(e.verdict)}">${esc(tr(...VJ[e.verdict]))}</span>${esc(e.act)} → ${esc(e.result)}<small>${tr("1人の体験", "1 player")}</small></li>`)];
-    return `<div class="g-did"><p>${tr(`『${esc(A.nm(w.name))}』でプレイヤーがしたこと・起きたこと`, `What players did in ${esc(A.nm(w.name))}`)}</p><ul>${li.join("")}</ul></div>`; }
   $("lead").innerHTML = `
     <div class="g-kick"><b>${tr("今日の兆し", "Today's signal")}</b><span class="g-day">${esc(today[L])}</span>
       ${body ? `<button type="button" class="lede-more" aria-controls="lede-t" aria-expanded="false" hidden>${tr("続きを読む", "Read more")}</button>` : ""}</div>
     ${shortHead ? `<h1 class="g-short">${esc(shortHead)}</h1><p class="g-headline">${esc(head)}</p>` : `<h1>${esc(head)}</h1>`}
     <p class="lede"${ss ? ` data-sents="${esc(JSON.stringify(ss))}"` : ""}>${lede}</p>
     ${LD ? A.cites(LD.cites) : ""}
-    ${leadFinds()}
-    <ul class="g-row">${FEAT.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}</li>`).join("")}</ul>
-    <div class="g-foot"><span>${tr(`話題になった${G.works_today}作品から${FEAT.length}作品（人数の順ではありません。下の段に出る作品は除いています）。`, `${FEAT.length} of the ${G.works_today} titles talked about (not in order of people). `)}${G.movement ? tr(`作品それぞれの普段と比べて目立って動いた作品は${G.movement.q1.changes}作品でした。`, `${G.movement.q1.changes} titles moved notably from their usual level.`) : ""}</span>
+    <ul class="g-row">${G.featured.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}</li>`).join("")}</ul>
+    <div class="g-foot"><span>${tr(`話題になった${G.works_today}作品から${G.featured.length}作品（人数の順ではありません）。`, `${G.featured.length} of the ${G.works_today} titles talked about (not in order of people). `)}${G.movement ? tr(`作品それぞれの普段と比べて目立って動いた作品は${G.movement.q1.changes}作品でした。`, `${G.movement.q1.changes} titles moved notably from their usual level.`) : ""}</span>
       <a href="#trend">${tr("「いつもより話題が増えた作品」で確かめる ↓", "See “Titles talked about more than usual” ↓")}</a></div>`;
 
-  markShown();
   { const t = $("lede-t"), b = document.querySelector(".lede-more");
     if (t && b) { const fit = () => { if (b.getAttribute("aria-expanded") === "true") return; b.hidden = !(t.scrollHeight > t.clientHeight + 2); };
       fit(); if (document.fonts) document.fonts.ready.then(fit); window.addEventListener("resize", fit);
       b.addEventListener("click", () => { const open = b.getAttribute("aria-expanded") !== "true"; b.setAttribute("aria-expanded", String(open)); t.classList.toggle("open", open); b.textContent = open ? tr("閉じる", "Close") : tr("続きを読む", "Read more"); }); } }
 
   /* ---------- 言語ごとの作品数（地図） ---------- */
-  if ($("world")) { const O = G.lang_obs, CN = O.countries || {};
+  { const O = G.lang_obs, CN = O.countries || {};
     // 作品数の多い順。同じ数のときは言語コードの順（日英で同じ並び。毎回同じ）
     const langs = [...O.langs].sort((a, b) => b.n - a.n || (a.code < b.code ? -1 : a.code > b.code ? 1 : 0));
     // 国・地域 → 話題の作品のある言語圏と役割（p = 主要な社会言語 / s = 共通語・第二言語。ADR 0049）。役割がなければ主要として扱う（従来の対応表）
@@ -213,17 +187,14 @@
   }
 
   /* ---------- 今チェックしておきたい作品（本番のその日のカード。並びも本番のまま。順位ではない） ---------- */
-  { const CK = CKF;
+  { const CK = G.checks;
     const first = c => String((c.first || {})[L] || "").replace(/\s*\d+〜\d+時/, "").replace(/,\s*\d+–\d+h/, "");
     const grow = c => c.grow && c.grow[0] != null && c.grow[1] != null ? tr(`${c.grow[0]}人→${c.grow[1]}人`, `${c.grow[0]}→${c.grow[1]} people`) : "";
     const nl = c => (c.new_langs || []).map(x => x[L]).join(tr("・", ", "));
     const meta = c => [`${tr("初検知", "First seen")} ${first(c)}${grow(c) ? `・${grow(c)}` : ""}`, `${tr("その後", "After")}: ${(c.after || {})[L] || ""}`,
       ...(nl(c) ? [`${tr("新しい言語圏", "New language areas")}: ${nl(c)}`] : [])].join(" ・ ");
     const small = c => `<li class="ck2" data-cls="${esc(c.cls || "")}">${link(c)}${art(c)}<div class="ck2-t">${wn(c.name, 1)}<span class="ck2-l"><i>${esc((c.label || {})[L] || "")}</i>${esc((c.line || {})[L] || "")}</span><span class="ck2-m" title="${esc(meta(c))}">${esc(meta(c))}</span></div></li>`;
-    if (!CK.length && G.checks.length) {   // 動き始めた作品は、すべて今日の兆しの見出しの作品だった: 段は消さず、そう書いて上へ案内する（空だと書かない・隠さない）
-      $("others").innerHTML = `<h2 class="g-h">${tr("今チェックしておきたい作品", "Worth a look now")}</h2><div class="rv-empty"><div><b>${tr(`この日に動き始めた作品は、上の「今日の兆し」の${G.checks.map(c => `『${esc(nm(c.name))}』`).join("・")}でした`, `The title that started moving today is the one in “Today's signal” above`)}</b>
-        <p><a href="#lead">${tr("今日の兆しへ戻る ↑", "Back to Today's signal ↑")}</a></p></div></div>`;
-    } else if (!CK.length) {
+    if (!CK.length) {
       $("others").innerHTML = `<h2 class="g-h">${tr("今チェックしておきたい作品", "Worth a look now")}</h2><div class="rv-empty"><div><b>${tr("この日に動き始めた作品は見つかりませんでした", "No title started moving on this day")}</b></div></div>`;
     } else {
       const top = CK[0], rest = CK.slice(4);
@@ -250,7 +221,7 @@
 
   /* ---------- ゲームの動きをもっと見る（いつもより話題が増えた作品。web/movement.py の分析。全 Source 共通の系列と Signal 発見） ---------- */
   // 数を並べる段ではなく、作品それぞれの普段と比べて何が変わったかを伝える段（2026-10-16 のユーザーの指示）。分析の結果に応じて文と項目の数を変える
-  const MV = G.movement;
+  const MV = G.movement, TOP = G.top;
   const OS = G.obs_status || (G.complete ? "complete" : "partial");
   const obsNote = OS === "complete" || OS === "recovered" ? "" : `<p class="mv-partial">${tr(`${md(day)} は一部の時間に観測が途切れたため、人数が実際より少ない可能性があります。`, `${md(day)} was only partly observed, so counts may be low.`)}</p>`;
   // 作品自身の直近 14 日の人数（観測していない日は空き）。今日を強調し、普段（中央値）を線で示す。変化の理解に役立つときだけ置く
@@ -278,26 +249,27 @@
       ${main(x) ? `<p class="mv-main">${esc(main(x))}</p>` : ""}<p class="mv-sub">${meta}</p>${spark(x.spark, x.base)}</div></li>`; };
   const DPm = G.display || {};
   const listOf = (id, rows, first) => { const el = document.getElementById(id); if (el && rows.length) A.moreList(el, rows, first == null ? rows.length : first, DPm.rows_step || rows.length); };
-  const Q1F = MV ? fresh(MV.q1.featured) : [];   // いつもより話題が増えた作品（上の段に出した作品を除く）
   let q1 = "";
   if (!MV) {
     q1 = `<p class="mv-a">${tr("この日の分析はありません。", "No analysis for this day.")}</p>`;
   } else {
     // ブロックは見出しで何の一覧かが分かるので、前置きの文は置かない（2026-10-25 のユーザーの指示: 読者に長い文を読ませない）。ないときだけ 1 行で言う
-    const a = { ...MV.q1, featured: Q1F };
-    q1 = `${obsNote}${a.featured.length ? `<ul class="mv-cards" id="mv-q1"></ul>` : MV.q1.featured.length ? "" : `<p class="mv-a">${tr("この日は、いつもより話題が増えた作品はありませんでした。", "No title rose above its usual level on this day.")}</p>`}`;
+    const a = MV.q1;
+    q1 = `${obsNote}${a.featured.length ? `<ul class="mv-cards" id="mv-q1"></ul>` : `<p class="mv-a">${tr("この日は、いつもより話題が増えた作品はありませんでした。", "No title rose above its usual level on this day.")}</p>`}`;
   }
-  const TOP = fresh(G.top);   // 上の段に出した作品を除いた、話題の多かった作品（人数の順）
   $("more").innerHTML = `
     <div class="sec-h"><h2>${tr("ゲームの動きをもっと見る", "More on today's movement")}</h2><p>${tr("作品それぞれの普段と比べて、この日に何が変わったかを確かめられます。", "See what changed on this day compared with each title's usual level.")}</p></div>
-    ${q1 ? `<div class="mv"><article class="mv-q" id="trend"><h3>${tr("いつもより話題が増えた作品", "Titles talked about more than usual")}</h3>${q1}</article></div>` : ""}
-    <section class="mv-list" id="rank"><h3 class="mv-lh">${tr(`ほかに ${md(day)} に話題が多かった${TOP.length}作品`, `${TOP.length} more titles talked about on ${md(day)}`)}<small>${tr("人数の順", "by people")}</small></h3>
-      <ul class="rank">${TOP.map(t => `<li class="${t.first ? "first" : ""}">${link(t)}${art(t)}<div class="rk">${wn(t.name, 1, "span")}${t.first ? `<span class="tagfirst">${tr("初めて話題に", "First seen")}</span>` : ""}<div class="bar"><span style="width:${t.n / Math.max(...TOP.map(x => x.n)) * 100}%"></span></div></div><em>${esc(A.ppl(t.n))}</em></li>`).join("")}</ul>
+    <div class="mv">
+      <article class="mv-q" id="trend">
+        <h3>${tr("いつもより話題が増えた作品", "Titles talked about more than usual")}</h3>${q1}</article>
+    </div>
+    <section class="mv-list" id="rank"><h3 class="mv-lh">${tr(`${md(day)} に話題が多かった${TOP.length}作品`, `${TOP.length} most talked-about titles on ${md(day)}`)}<small>${tr("人数の順", "by people")}</small></h3>
+      <ul class="rank">${TOP.map(t => `<li class="${t.first ? "first" : ""}">${link(t)}${art(t)}<div class="rk">${wn(t.name, 1, "span")}${t.first ? `<span class="tagfirst">${tr("初めて話題に", "First seen")}</span>` : ""}<div class="bar"><span style="width:${t.n / (TOP[0] || t).n * 100}%"></span></div></div><em>${esc(A.ppl(t.n))}</em></li>`).join("")}</ul>
       <p class="mv-note">${tr("人気の順位ではなく、この日の観測の人数です。「初めて話題に」は、このサイトで初めて話題になった作品です（新作という意味ではありません）。", "Not a popularity ranking: people observed on this day. “First seen” means first talked about on this site, not a new release.")}</p></section>`;
   document.addEventListener("click", e => { if (!e.target.closest('a[href="#trend"]')) return;
     const q = $("trend"); q.classList.remove("flash"); void q.offsetWidth; q.classList.add("flash"); });
   if (MV) {   // いつもより話題が増えた作品の一覧: 初めの数件を描き、残りは「もっと見る」で開く（件数は config/pages.toml [display]。全件はデータにある。#24）
-    listOf("mv-q1", told(Q1F).map(x => card(x, subQ1(x))), DPm.moves_first);
+    listOf("mv-q1", told(MV.q1.featured).map(x => card(x, subQ1(x))), DPm.moves_first);
   }
   if (location.hash) { const t = document.getElementById(location.hash.slice(1)); if (t) setTimeout(() => t.scrollIntoView(), 0); }
 })();

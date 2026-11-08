@@ -45,7 +45,6 @@
     }
     await Promise.all(jobs);
     for (const s of run) await load(s);
-    A.ensureJpLegend();
     // 今日の兆しの文章の組版（6 ページ共通）。ダッシュボードは見出し（h1）があるので、文章は段落だけ。
     // 新しい表示（ui_next。ADR 0045 の文章は原文の抜粋を引用する）では、引用の中の句点で文を分けない（本番の表示はこれまでどおり）
     const qn = !!(A.D && A.D.dashboard && A.D.dashboard.ui_next);

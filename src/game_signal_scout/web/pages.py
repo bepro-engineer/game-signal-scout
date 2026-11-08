@@ -40,9 +40,9 @@ class Page:
 
 
 PAGES: dict[str, Page] = {
-    "index": Page("ダッシュボード", "Dashboard", CSS_BASE, "day pages", "dashboard.js", ("world.js",)),
+    "index": Page("ダッシュボード", "Dashboard", CSS_BASE, "day", "dashboard.js", ("world.js",)),
     # Game: プレイヤーの発見（#2。「世界で広がる作品」の置き換え。古い spread.html は finds.html へ転送する）
-    "finds": Page("見つけた面白さ", "The fun players found", CSS_BASE + ["finds.css"], "pages", "finds.js"),
+    "finds": Page("プレイヤーの発見", "What players found", CSS_BASE + ["finds.css"], "pages", "finds.js"),
     "lang": Page("言語別の作品", "Titles by language", CSS_BASE, "day", "lang.js"),
     # 「再燃」はプレイヤーの発見の「いま変わったこと」（finds.html?view=changed）にまとめた（#2。アニメの放送後の前提は Game に合わない。古い URL は転送）
     "langspread": Page("言語圏の広がり", "Language spread", CSS_PAGE + ["langspread.css"], "pages", "langspread.js"),
@@ -53,7 +53,7 @@ PAGES: dict[str, Page] = {
     "coop": Page("協力プレイで遊べる", "Co-op", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js", ("extra.js",)),
     "versus": Page("対戦プレイで遊べる", "Versus", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js", ("extra.js",)),
     "pad": Page("コントローラで遊べる", "Controller", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js", ("extra.js",)),
-    "work": Page("作品詳細", "Title details", CSS_PAGE + ["work.css", "extra.css"], "work pages", "work.js", ("extra.js",)),
+    "work": Page("作品詳細", "Title details", CSS_PAGE + ["work.css", "extra.css"], "work", "work.js", ("extra.js",)),
     "about": Page("このサイトについて", "About", CSS_INFO, info=True),
     "guide": Page("データの見方", "How to read the data", CSS_INFO, info=True),
     "rights": Page("出典と権利について", "Sources and rights", CSS_INFO, info=True),

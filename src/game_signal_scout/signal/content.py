@@ -759,18 +759,12 @@ def pages(ctx: Ctx) -> dict:
     return out
 
 
-def _pub_ev(e: dict) -> dict:
-    """体験の公開の形: したこと（act）・起きたこと（result）。did は公開の文書で使えない項目名（FORBIDDEN_KEYS。内部の識別子の名前）なので名前を変える。"""
-    out = {k: v for k, v in e.items() if k not in ("did", "happened")}
-    return {**out, "act": e.get("did"), "result": e.get("happened")}
-
-
 def finds_page(ctx: Ctx) -> dict:
     """プレイヤーの発見（#2。services/insight の結果）: 作品ごとに、同じ具体的な体験を書いた独立した投稿者の数と、前の窓との比較。
     並びは作品のいちばん大きな発見の人数の順。原文は出さない（要約と数だけ）。作品の判断の属性（日本語・開発元・機種）を添える。"""
     from game_signal_scout.repositories import insight as insight_repo
     from game_signal_scout.ops import work_display
-    rows = {a: b for a, b in insight_repo.all_insights(ctx.conn).items() if b.get("kind") == "finds" and (b.get("finds") or b.get("singles"))}
+    rows = {a: b for a, b in insight_repo.all_insights(ctx.conn).items() if b.get("kind") == "finds" and b.get("finds")}
     ctx.conn.rollback()
     if not rows:
         return {"items": []}
@@ -780,11 +774,10 @@ def finds_page(ctx: Ctx) -> dict:
         m = meta.get(int(a))
         if not m:
             continue
-        items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner", "header", "shots")}, **_judge(m), "modes": (ctx.briefs.get(int(a)) or {}).get("modes") or [], "finds": [{**f, "examples": [_pub_ev(x) for x in f.get("examples") or []]} for f in b.get("finds") or []],
-                      "singles": [_pub_ev(e) for e in b.get("singles") or []],
-                      "stages": b.get("stages") or {}, "min_people": b.get("min_people"), "read_people": b.get("read_people"),
-                      "experiences": b.get("experiences"), "window_days": b.get("window_days"), "since": (b.get("since") or "")[:10]})   # 作った時刻（generated_at）は公開しない項目（FORBIDDEN_KEYS）
-    items.sort(key=lambda x: (-max([f["people"] for f in x["finds"]] or [1]), -len(x["finds"]), x["id"]))
+        items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner")}, **_judge(m), "finds": b["finds"], "read_people": b.get("read_people"),
+                      "experiences": b.get("experiences"), "window_days": b.get("window_days"), "since": (b.get("since") or "")[:10],
+                      "generated_at": b["generated_at"].isoformat() if hasattr(b.get("generated_at"), "isoformat") else str(b.get("generated_at") or "")})
+    items.sort(key=lambda x: (-max(f["people"] for f in x["finds"]), x["id"]))
     return {"items": items}
 
 
@@ -843,15 +836,7 @@ def search(ctx: Ctx, pg: dict) -> dict:
                 byid[i]["pages"].append(page)
     for x in works:
         x.update(_extra_brief(ctx, int(x["id"][1:])))
-    # 遊び方のページ（solo・coop・versus・pad）で、その遊び方で遊んだプレイヤーの体験を先に見せる（#2 6723386003。属性の一覧だけにしない）
-    fx = {w["id"]: [{**{k: f.get(k) for k in ("title", "fits", "appeal", "appeal_kind", "verdict", "people", "style", "input", "caution", "fun", "frustration", "mixed")},
-                     "ev": (f.get("examples") or [{}])[0]} for f in w["finds"]]
-                    + [{"title": f"{e['act']} → {e['result']}", "appeal": e.get("appeal") or "", "appeal_kind": e.get("appeal_kind"), "verdict": e["verdict"], "people": 1,
-                        "style": e.get("style"), "input": e.get("input"), "caution": e.get("caution"), "single": True, "ev": {"act": e["act"], "result": e["result"]}}
-                       for e in w.get("singles") or []]
-          for w in (pg.get("finds") or {}).get("items") or []}
-    fart = {w["id"]: {k: w.get(k) for k in ("header", "banner", "shots")} for w in (pg.get("finds") or {}).get("items") or []}
-    return {"days": len(ctx.pdays), "first": ctx.pdays[0].isoformat(), "latest": ctx.latest.isoformat(), "works": works, "finds": fx, "finds_art": fart}
+    return {"days": len(ctx.pdays), "first": ctx.pdays[0].isoformat(), "latest": ctx.latest.isoformat(), "works": works}
 
 
 # ---------------------------------------------------------------- 作品詳細

@@ -20,46 +20,20 @@
   const wn = (name, lines = 2, tag = "b") => `<${tag} class="wn l${lines === 1 ? 1 : 2}" title="${esc(nm(name))}">${esc(nm(name))}</${tag}>`;
   // 日本語の対応（#2。日本人が最初に判断する）: 音声 > 字幕 > UI の順に、いちばん深い対応を 1 つの札で。属性がなければ「未確認」（非対応と混ぜない）
   const jpLevel = w => !w || w.jp == null ? "unknown" : w.jp.voice ? "voice" : w.jp.sub ? "sub" : w.jp.ui ? "ui" : "none";
-  // 日本語の対応（#2）: 一般的な言い方の札（日本語音声・日本語字幕・日本語UI・日本語非対応）。いちばん高い段階を 1 つだけ出す。
-  // 色は強調の紫 1 系統の濃淡で段階の目安。意味は凡例（札と短い定義）を、札の出る領域に必ず出す。出典は販売元のストアの対応言語の表
-  const JPL = { voice: ["日本語音声", "Japanese audio"], sub: ["日本語字幕", "Japanese subtitles"], ui: ["日本語UI", "Japanese UI"],
-    none: ["日本語非対応", "No Japanese"], unknown: ["日本語未確認", "Japanese unknown"] };
+  const JPL = { voice: ["日本語音声", "JP voice"], sub: ["日本語字幕", "JP subtitles"], ui: ["日本語UI", "JP interface"], none: ["日本語なし", "No Japanese"], unknown: ["日本語 未確認", "JP unknown"] };
   const jpTag = w => { const k = jpLevel(w); return `<span class="jp jp-${k}">${esc(tr(...JPL[k]))}</span>`; };
-  const jpLegend = () => `<div class="jp-legend"><b>${tr("凡例", "Legend")}</b>
-    <span><span class="jp jp-voice">${tr("日本語音声", "Japanese audio")}</span>${tr("声・字幕・UI が日本語", "audio, subtitles and UI")}</span>
-    <span><span class="jp jp-sub">${tr("日本語字幕", "Japanese subtitles")}</span>${tr("字幕・UI が日本語（声は外国語）", "subtitles and UI")}</span>
-    <span><span class="jp jp-ui">${tr("日本語UI", "Japanese UI")}</span>${tr("メニュー等のみ日本語", "menus only")}</span>
-    <span><span class="jp jp-none">${tr("日本語非対応", "No Japanese")}</span></span>
-    <small>${tr("出典: 販売元のストアの対応言語", "Source: publisher's store listing")}</small></div>`;
-  // 凡例は必ず付ける（#2）: 日本語の印が出る領域（本文・左の列）ごとに、最初の印より前に凡例がなければ、その印を含む段の前に入れる。
-  // 後から足される印（「もっと見る」など）は、同じ領域の先頭の凡例が受け持つ
-  const ensureJpLegend = () => document.querySelectorAll("main, .sidecol").forEach(root => {
-    const first = [...root.querySelectorAll(".jp")].find(j => !j.closest(".jp-legend") && j.getClientRects().length); if (!first) return;   // 隠れている印は数えない
-    if (root.querySelector(".jp-legend")) return;   // その領域に凡例がある（置き場所はページが決める）
-    let sec = first; while (sec.parentElement && sec.parentElement !== root) sec = sec.parentElement;
-    sec.insertAdjacentHTML("beforebegin", jpLegend()); });
-  // 醍醐味の種類（services/insight の appeal_kind と同じ鍵）。体験から言えたときだけ付く
-  const APPEAL = { conquer: ["強敵を自力で乗り越える手応え", "Overcoming tough challenges yourself"], explore: ["探して、見つける喜び", "The joy of exploring and finding"],
-    story: ["物語と世界に浸る", "Getting lost in the story and world"], grow: ["育てて、作り上げる楽しさ", "Building and growing things"],
-    team: ["仲間と作戦が決まる快感", "Teamwork that clicks"], versus: ["相手との読み合い・駆け引き", "Outplaying opponents"],
-    feel: ["思いどおりに動かす気持ちよさ", "How good it feels to play"], surprise: ["予想外が起きる面白さ", "Surprises and unexpected play"] };
-  // 作品の絵: 場面の画像（スクリーンショット）→ 横長の帯 → ストアのヘッダー → 縦長の表紙。i で場所ごとに別の 1 枚
-  const shot = (w, i = 0) => { const xs = (w && w.shots) || []; return xs.length ? xs[i % xs.length] : (w && (w.banner || w.header || w.cover)) || ""; };
   const art = (w, alt) => `<div class="art">${w && w.cover ? `<img src="${esc(w.cover)}" alt="${esc(nm(alt || (w && w.name)))}" referrerpolicy="no-referrer" loading="lazy">` : ""}${w && "jp" in w ? jpTag(w) : ""}</div>`;
   // 開発元と国・地域（出典の記載のとおり。記載がなければ「国・地域は未確認」）
   // 多いときは max 社まで（残りは「ほか N 社」。作品詳細はすべて）
-  const devName = w => { const ds = (w && w.dev) || []; return ds.length ? esc(ds[0].n) + (ds.length > 1 ? tr(`ほか${ds.length - 1}社`, ` +${ds.length - 1}`) : "") : ""; };
   const devLine = (w, max = 2) => { const ds = (w && w.dev) || []; if (!ds.length) return tr("開発元は未確認", "Developer unknown");
     const one = d => `${esc(d.n)}${d.c ? `（${esc(d.c.join("・"))}）` : tr("（国・地域は未確認）", " (country unknown)")}`;
     return ds.slice(0, max).map(one).join(tr("、", ", ")) + (ds.length > max ? tr(`ほか${ds.length - max}社`, ` +${ds.length - max} more`) : ""); };
   const workUrl = id => `work.html?id=${encodeURIComponent(id)}`;
-  // 体験の観点（#2 6723386003: 固定の分類ではなく、プレイヤーの体験に付く観点。services/insight の style・input と同じ鍵）
-  // [鍵, 名前, 英語, 醍醐味の説明, 英語, 体験の値を取る関数]。どの観点も、体験に書いてあったときだけ付く（作品の対応の有無ではない）
-  const FACETS = [["solo", "ひとりで遊ぶ醍醐味", "The joy of playing solo", "自力の攻略・探索・没入", "Clearing it yourself, exploring, getting absorbed", f => f.style === "solo"],
-    ["coop", "協力プレイの醍醐味", "The joy of co-op", "役割分担・連携が決まる瞬間", "Splitting roles, teamwork that clicks", f => f.style === "coop"],
-    ["versus", "対戦の醍醐味", "The joy of versus", "駆け引き・読み合い・上達", "Mind games, reading opponents, getting better", f => f.style === "versus"],
-    ["controller", "コントローラーで遊ぶ醍醐味", "The joy of a controller", "手に馴染む操作感", "How it feels in your hands", f => f.input === "controller"]];
-  const facetHit = (f, k) => { const x = FACETS.find(y => y[0] === k); return !x || x[5](f); };
+  // 遊ぶ目的（#2 の入口。services/insight の intent と同じ鍵）
+  const INTENTS = [["deep", "じっくり没頭したい", "Get absorbed", "探索・物語・育成", "Exploration, story, progression"],
+    ["short", "短時間で楽しみたい", "Have fun in a short time", "1 回が短くても満足", "Satisfying in short sessions"],
+    ["novel", "新しい体験がしたい", "Try something new", "独創的な仕組み・意外な遊び方", "Original mechanics, surprising play"],
+    ["friends", "友達と遊びたい", "Play with friends", "協力・対戦・一緒に", "Co-op, versus, together"]];
   // 変化の判定のページで、2 番目以降に登録した Source の系列で判定された作品の出典（人数はその Source の中の数。ADR 0050）
   const srcNote = w => w.src_label ? `<span class="rv-air">${esc(tr("出典：", "Source: ") + tr(...w.src_label))}</span>` : "";
   // 言語（色は言語にだけ使う）
@@ -119,7 +93,7 @@
     coop: '<circle cx="8" cy="8" r="3.5"/><circle cx="16.5" cy="9" r="3"/><path d="M2 20c.8-3.5 3.3-5.5 6-5.5s5.2 2 6 5.5M14 15c3 0 5.3 1.6 6.2 5"/>',
     versus: '<path d="M4 4l7 7M20 4l-7 7M6 18l-2 2M18 18l2 2M9 13l-4 4M15 13l4 4"/>',
     pad: '<path d="M7 9h10a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L14.5 15h-5l-1.1 1.8A3 3 0 0 1 3 15v-2a4 4 0 0 1 4-4z"/><path d="M8 11.5v3M6.5 13h3"/>' };
-  const NAV = [["index", "ダッシュボード", "Dashboard"], ["finds", "見つけた面白さ", "The fun players found"], ["langspread", "言語圏の広がり", "Language spread"], ["solo", "一人（ソロ）で遊べる", "Single-player"], ["coop", "協力プレイで遊べる", "Co-op"],
+  const NAV = [["index", "ダッシュボード", "Dashboard"], ["finds", "プレイヤーの発見", "What players found"], ["langspread", "言語圏の広がり", "Language spread"], ["solo", "一人（ソロ）で遊べる", "Single-player"], ["coop", "協力プレイで遊べる", "Co-op"],
     ["versus", "対戦プレイで遊べる", "Versus"], ["pad", "コントローラで遊べる", "Controller"], ["search", "作品を探す", "Find titles"], ["about", "このサイトについて", "About"]];
   const page = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
   document.documentElement.dataset.page = page;   // ページごとのアクセントの色（palette.css）
@@ -322,32 +296,7 @@
       else { add(step); row.querySelector("button")?.focus(); } });
     add(first);
   };
-  // 醍醐味の部品（トップ・プレイヤーの発見で共通。#2）: 絵 → 醍醐味の一文 → 根拠（何をして → 何が起きたか）→ 人数・日本語の順。原文は出さない
-  const VJ = { fun: ["面白い", "Fun"], mixed: ["賛否あり", "Mixed"], frustration: ["不満", "Frustrating"] };
-  const CJ = { time: ["時間がかかる", "Takes time"], price: ["価格・課金", "Price"], performance: ["動作が重い", "Performance"], bugs: ["不具合", "Bugs"], difficulty: ["難しい", "Difficulty"], online: ["接続・対戦相手", "Online"] };
-  // 醍醐味つきの体験の一覧（複数の人のまとまり ＋ ひとりの体験）。人数の多い順、同じなら面白いを先に
-  const appealItems = FI => FI.flatMap(w => [
-    ...w.finds.filter(f => f.appeal).map(f => ({ w, appeal: f.appeal, kind: f.appeal_kind, verdict: f.verdict, people: f.people, ev: (f.examples || [])[0] || {}, caution: f.caution, trend: f.trend,
-      against: f.verdict === "fun" ? f.frustration : f.verdict === "frustration" ? f.fun : 0, style: f.style, input: f.input })),
-    ...w.singles.filter(e => e.appeal).map(e => ({ w, appeal: e.appeal, kind: e.appeal_kind, verdict: e.verdict, people: 1, ev: e, caution: e.caution, against: 0, style: e.style, input: e.input }))])
-    .sort((a, b) => b.people - a.people || (a.verdict === "fun" ? 0 : 1) - (b.verdict === "fun" ? 0 : 1));
-  const pplWrote = n => n > 1 ? tr(`${num(n)}人が同じことを書いた`, `${num(n)} players wrote the same`) : tr("1人の体験（まだ重なる声なし）", "One player (not yet echoed)");
-  const evLine = ev => ev && ev.act ? `<b>${esc(ev.act)}</b> → ${esc(ev.result)}` : "";
-  const dHero = x => `<section class="dh"><img src="${esc(shot(x.w, 0))}" alt="" referrerpolicy="no-referrer">
-      <div class="dh-in"><span class="dh-k">${tr("いま、プレイヤーが夢中になっていること", "What players are into right now")}</span>
-        <h1>${esc(x.appeal)}</h1><p class="dh-g">${tr(`<b>${esc(nm(x.w.name))}</b> を遊んだプレイヤーの体験から`, `From players of <b>${esc(nm(x.w.name))}</b>`)}</p>
-        <p class="dh-ev">${evLine(x.ev)}</p>
-        <div class="dh-m"><span class="dh-p">${pplWrote(x.people)}</span><a class="dbtn" href="${workUrl(x.w.id)}">${tr("この作品の体験を見る", "See this title")}</a></div></div></section>`;
-  const dKinds = (items, href) => { const ks = Object.keys(APPEAL).map(k => ({ k, xs: items.filter(x => x.kind === k) })).filter(x => x.xs.length).sort((a, b) => b.xs.length - a.xs.length);
-    return ks.length ? `<div class="dk">${ks.map(({ k, xs }, i) => `<a class="dk-t" href="${href(k)}"><img src="${esc(shot(xs[0].w, i + 1))}" alt="" referrerpolicy="no-referrer" loading="lazy">
-      <div><b>${esc(tr(...APPEAL[k]))}</b><small>${[...new Set(xs.map(x => nm(x.w.name)))].slice(0, 2).map(esc).join(tr("・", ", "))}${tr(`　体験 ${num(xs.length)}件`, ` · ${num(xs.length)}`)}</small></div></a>`).join("")}</div>` : ""; };
-  const dCard = (x, i) => `<a class="dc" href="${workUrl(x.w.id)}"><img src="${esc(i ? shot(x.w, i + 3) : (x.w.header || shot(x.w, 0)))}" alt="" referrerpolicy="no-referrer" loading="lazy">
-      <div class="dc-in"><span class="dc-g">${esc(nm(x.w.name))}</span><h3>${esc(x.appeal)}</h3><p>${evLine(x.ev)}</p>
-        <div class="dc-f"><span class="dc-v dc-v-${esc(x.verdict)}">${esc(tr(...VJ[x.verdict]))}</span><span>${pplWrote(x.people)}</span>
-          ${x.against ? `<span class="dc-w">${tr(`反対の声 ${num(x.against)}人`, `${num(x.against)} disagreed`)}</span>` : ""}
-          ${x.caution ? `<span class="dc-w">${tr("注意: ", "Note: ")}${esc(tr(...CJ[x.caution]))}</span>` : ""}${jpTag(x.w)}</div></div></a>`;
-  const discover = { items: appealItems, hero: dHero, kinds: dKinds, card: dCard, VJ, CJ, pplWrote, evLine };
-  window.ASS = Object.assign(window.ASS || {}, { moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, devName, discover, ensureJpLegend, workUrl, FACETS, facetHit, jpLegend, APPEAL, shot, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
+  window.ASS = Object.assign(window.ASS || {}, { moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, workUrl, INTENTS, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
     renderNav, store, sstore, dayBar, restoreScroll, fromPage, goBack, restoring });
   renderNav();
   // まもなく発売（メニューの下の枠。Anime の「まもなく放送」に当たる。signal/upcoming.py・接続口 api/soon）:
