@@ -13,11 +13,12 @@
   const T = (x, y, s, o = {}) => `<text x="${x}" y="${y}" font-size="${o.size || 14}" fill="${o.fill || INK2}" text-anchor="${o.anchor || "middle"}" font-weight="${o.bold ? 700 : 400}">${s}</text>`;
   const widthOf = el => Math.floor(el.getBoundingClientRect().width);
 
-  /* ---------- 表示している日 ---------- */
-  // 一番上の「今日は、どんなゲームを探す？」の枠（遊ぶ目的の 4 つのボタン）は外した（2026-11-09 オーナー「これいらない」。押しても同じ一覧になっていた）。
-  // 表示している日の欄は、今日の兆しの上に残す
-  A.dayBar($("intro"), "afterend");   // 表示している日は右寄せ（2026-10-15 のユーザーの指示）
-  $("intro").remove();
+  /* ---------- 紹介・表示している日 ---------- */
+  // 紹介（2026-11-09 オーナー: Anime の紹介の枠を Game 向けにしてトップに）。「今日は、どんなゲームを探す？」の 4 つのボタンは外した（オーナー「これいらない」）
+  $("intro").innerHTML = `<h2>${tr("世界のゲームプレイヤーの声から、まだ目立っていない変化を見つける。", "Find changes not yet in the spotlight, from game players around the world.")}</h2>
+    <p>${tr("プレイヤーの反応を毎日観測し、作品への関心の高まりや言語圏を越えた広がり、実際に遊んだ人が見つけた面白さをお届けします。",
+      "We observe players' reactions every day and bring you rising interest, spread across language areas, and the fun players actually found.")}</p>`;
+  A.dayBar($("intro"), "afterend");   // 表示している日は紹介のブロックの下に右寄せ（2026-10-15 のユーザーの指示）
 
   /* ---------- 今日の兆し ---------- */
   // 先頭の組（G.lead。ADR 0052）: 見出し・本文・引用と作品の列の先頭は、サーバーが 1 つの発見から作った組だけを使う（言語ごとに別の文を選ばない）。
