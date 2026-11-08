@@ -130,6 +130,14 @@ def time_to_us(s: str | None) -> int | None:
     return None if d is None else int(d.timestamp()) * 1_000_000 + d.microsecond
 
 
+def occurred_at(row: dict) -> datetime:
+    """発言の時刻: 投稿者の申告（createdAt）と受信の時刻の早いほう（Bluesky の AppView の sortAt と同じ考え方）。
+    申告は端末の時計の値で、未来の時刻もある（2026-11-08 の本番の受信で 11,628 件中 23 件が受信より 5 分以上先）。未来の発言を「最新」に数えない。
+    過去の日付の申告（取り込み）はそのまま過去に置き、最近の発言に数えない。"""
+    c, r = row.get("created_at"), row["received_at"]
+    return min(c, r) if c else r
+
+
 def parse_created_at(s: str | None) -> datetime | None:
     if not s or not isinstance(s, str):
         return None
@@ -320,7 +328,7 @@ class Bluesky(SourceReader):
                 yield Batch([], {**cur, "force_time": True})   # 別の instance の seq だった: 次の回は時刻の cursor で読む（Anime と同じ）
                 return
             raise ConnectionError(f"どの endpoint にも接続できなかった: {last_error}")
-        items = [SourceItem(SOURCE, uri, row["created_at"] or row["received_at"], _payload(row, author_hash(row["did"])), row["cid"] or None)
+        items = [SourceItem(SOURCE, uri, occurred_at(row), _payload(row, author_hash(row["did"])), row["cid"] or None)
                  for uri, row in st.rows.items()]
         nxt = {"endpoint": st.endpoint or used, "last_seq": st.last_seq, "last_time_us": st.last_time_us,
                "frames": n_frames, "malformed": len(st.malformed)}

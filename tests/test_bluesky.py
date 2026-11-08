@@ -218,3 +218,13 @@ def test_title_match_rejects_generic_phrases_seen_in_real_posts():
     ix2 = TitleIndex([("9", "Puzzle Game")], [], ["game"], 8)
     assert identify({"text": "Solved today's Puzzle Game in 2 guesses"}, ix2) == (None, None, None)  # 題名の中の語は文脈に数えない
     assert identify({"text": "Puzzle Game is my favorite game"}, ix2) == ("9", "Puzzle Game", "title")
+
+
+
+def test_occurred_at_is_never_later_than_receipt():
+    """申告の時刻が未来の発言は受信の時刻に置く。過去の日付の申告はそのまま（2026-11-08 の本番の受信で見つけた）。"""
+    from datetime import datetime, timezone
+    r = datetime(2026, 11, 8, 3, 0, tzinfo=timezone.utc)
+    assert bs.occurred_at({"created_at": datetime(2026, 11, 8, 14, 0, tzinfo=timezone.utc), "received_at": r}) == r
+    assert bs.occurred_at({"created_at": datetime(2020, 1, 1, tzinfo=timezone.utc), "received_at": r}).year == 2020
+    assert bs.occurred_at({"created_at": None, "received_at": r}) == r
