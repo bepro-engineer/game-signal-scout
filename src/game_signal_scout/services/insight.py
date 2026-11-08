@@ -8,10 +8,8 @@
 """
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
-import subprocess
 from collections import defaultdict
 from datetime import datetime, timezone
 
@@ -19,7 +17,6 @@ MAX_INPUTS = 40
 BATCH = 10
 TEXT_CHARS = 260
 MIN_SUPPORT = 2
-CLI = "/Users/Shared/scout-infra/bin/scout-llm"
 
 ASPECTS = {"fun": "遊びの面白さ", "combat": "戦闘・操作の手触り", "story": "物語・世界観", "visual": "映像・音", "volume": "ボリューム・やり込み",
            "difficulty": "難しさ", "perf": "動作の重さ・最適化", "bugs": "不具合・落ちる", "online": "オンライン・マッチング", "friends": "仲間と遊ぶ",
@@ -63,13 +60,9 @@ def pick(rows: list[dict]) -> list[dict]:
 
 
 def ask_llm(text: str, model: str, owner: str, timeout: int = 600) -> str:
-    """共有の枠を通して 1 回の推論（scout-llm chat。終了コードはいつも 0 で、結果は JSON）。"""
-    r = subprocess.run([CLI, "chat", "--owner", owner, "--model", model, "--prompt-b64", base64.b64encode(text.encode()).decode(),
-                        "--temperature", "0.1", "--num-ctx", "8192", "--timeout", str(timeout)], capture_output=True, text=True, timeout=timeout + 120)
-    out = json.loads(r.stdout or "{}")
-    if not out.get("ok"):
-        raise RuntimeError(f"LLM の失敗: {str(out.get('error'))[:200]}")
-    return out["content"]
+    """1 回の推論。入口は llm.chat だけ（共有の枠 llm_gate を通る。直接 Ollama や枠のコマンドを呼ばない）。owner は枠の設定（providers.toml [llm_gate] owner）。"""
+    from game_signal_scout import llm
+    return llm.chat(model, "", text, options={"temperature": 0.1, "num_ctx": 8192}, timeout=timeout).content
 
 
 def _json(content: str, opener: str, closer: str):

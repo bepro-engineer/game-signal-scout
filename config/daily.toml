@@ -27,11 +27,6 @@ min_distinct_configs = 5      # そのうち異なる機材構成の下限（投
 min_prev_reports = 5          # 直前の期間の報告の下限
 min_jump = 0.30               # 失敗の割合の変化（30 ポイント）
 
-[llm_gate]
-# 機械で 1 つの LLM 枠（scout-infra の scout_llm_gate）。Game は専用の LLM・常駐を持たない
-enabled = false
-config = ""                   # 枠の設定ファイルのパス（scout-infra の config/llm_gate.toml）
-
 [dashboard_digest]
 # 今日の兆し（Anime の ops/dashboard_digest.py を流用。値は Anime の config/daily.toml と同じ。声の取得元だけ Game のもの）
 enabled = true

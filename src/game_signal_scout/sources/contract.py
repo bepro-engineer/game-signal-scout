@@ -61,3 +61,22 @@ class SourceReader(ABC):
     @abstractmethod
     def read(self, cursor: dict | None) -> Iterator[Batch]:
         """cursor（前回の続きの位置。初回は None）から読み、束を順に返す。"""
+
+    # ---- 取得元の形を、共通の形へ直す（Adapter の責務。共通の正規化〔services/normalize〕が、記述の normalizer の種類に応じて呼ぶ）
+    # 取得元の形がすでに共通の形なら、既定のまま（何もしない）。取得元の名前で分ける処理は、ここ（各取得元のクラス）にだけ書く。
+
+    @staticmethod
+    def voice(item_id: str, payload: dict) -> dict:
+        """発言: author・text・lang・url・link・link_title・tags、作品が取得元で決まるなら appid。
+        取得元が持つなら stance（positive / negative）・playtime_minutes・flags（取得元が示す印）も。"""
+        return payload
+
+    @staticmethod
+    def profile(item_id: str, received_at, payload: dict) -> dict | None:
+        """作品の情報（game_profile の列）。作品でない項目は None。"""
+        raise NotImplementedError
+
+    @staticmethod
+    def report(item_id: str, payload: dict) -> tuple:
+        """動作の報告（player_report の列: item_id・appid・title・at・failed・config_hash・tool_version・notes）。"""
+        raise NotImplementedError

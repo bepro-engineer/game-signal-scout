@@ -143,7 +143,7 @@ def test_items_missing_from_the_next_dump_are_deleted(conn, tmp_path):
     reps = dump_records()
     collect_with(conn, make_dump(tmp_path / "reports_oct1_2026.tar.gz", reps))
     from game_signal_scout.services.normalize import normalize
-    normalize(conn)
+    normalize(conn, "protondb")
     res = collect_with(conn, make_dump(tmp_path / "reports_nov1_2026.tar.gz", reps[2:]))   # 新しい月に 2 件が消えた
     assert (res.inserted, res.deleted, res.anomalies) == (0, 2, [])
     assert (count(conn, "source_item"), count(conn, "player_report")) == (35, 35)            # 正規化した行も一緒に消える

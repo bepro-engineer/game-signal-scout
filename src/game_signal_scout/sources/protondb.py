@@ -74,6 +74,35 @@ def _text(f):
     return io.TextIOWrapper(f, encoding="utf-8")
 
 
+# ---- 報告を共通の動作の報告（player_report）の形へ直す
+CONFIG_KEYS = ("cpu", "gpu", "kernel", "os", "ram")
+
+
+def failed(record: dict) -> bool:
+    r = record.get("responses") or {}
+    return r.get("verdict") == "no" or r.get("startsPlay") == "no"
+
+
+def config_hash(record: dict) -> str:
+    s = record.get("systemInfo") or {}
+    return hashlib.sha256("|".join(str(s.get(k, "")) for k in CONFIG_KEYS).encode()).hexdigest()[:16]
+
+
+def notes(record: dict) -> str:
+    r = record.get("responses") or {}
+    parts = [f"{k}: {v}" for k, v in (r.get("notes") or {}).items() if isinstance(v, str) and v.strip()]
+    if isinstance(r.get("concludingNotes"), str) and r["concludingNotes"].strip():
+        parts.append("concludingNotes: " + r["concludingNotes"])
+    return " | ".join(parts)
+
+
+def report_row(item_id: str, record: dict) -> tuple:
+    r = record.get("responses") or {}
+    app = record.get("app") or {}
+    return (item_id, (app.get("steam") or {}).get("appId"), app.get("title"), datetime.fromtimestamp(record["timestamp"], timezone.utc),
+            failed(record), config_hash(record), r.get("protonVersion") or r.get("customProtonVersion"), notes(record))
+
+
 class ProtonDBDump(SourceReader):
     def _dump_path(self) -> Path:
         local = self.settings.get("local_path")
@@ -132,3 +161,7 @@ class ProtonDBDump(SourceReader):
                 path.unlink(missing_ok=True)
             raise SourceCorruptError(f"配布ファイルが壊れている: {dump}: {type(e).__name__}: {str(e)[:120]}", retryable=not local) from e
         yield Batch(items, pos(complete=True))
+
+    @staticmethod
+    def report(item_id: str, payload: dict) -> tuple:
+        return report_row(item_id, payload)

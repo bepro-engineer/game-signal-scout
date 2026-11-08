@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 import urllib.parse
@@ -25,6 +26,12 @@ from game_signal_scout.sources.contract import Batch, SourceCorruptError, Source
 
 KEEP = ("recommendationid", "language", "review", "timestamp_created", "timestamp_updated", "voted_up", "votes_up", "steam_purchase",
         "received_for_free", "written_during_early_access", "primarily_steam_deck", "refunded")
+
+
+STEAM_LANG = {"japanese": "ja", "english": "en", "schinese": "zh", "tchinese": "zh", "koreana": "ko", "russian": "ru", "german": "de", "french": "fr",
+              "spanish": "es", "latam": "es", "brazilian": "pt", "portuguese": "pt", "polish": "pl", "turkish": "tr", "italian": "it", "ukrainian": "uk", "thai": "th",
+              "swedish": "sv", "czech": "cs", "hungarian": "hu", "dutch": "nl", "danish": "da", "finnish": "fi", "norwegian": "no", "romanian": "ro",
+              "greek": "el", "bulgarian": "bg", "vietnamese": "vi", "indonesian": "id", "arabic": "ar", "malay": "ms"}
 
 
 class SteamReviews(SourceReader):
@@ -95,3 +102,11 @@ class SteamReviews(SourceReader):
         ts = int(r.get("timestamp_created") or 0)
         return SourceItem(self.name, str(r["recommendationid"]), datetime.fromtimestamp(ts, timezone.utc), payload,
                           version=str(r.get("timestamp_updated") or ts))
+
+    @staticmethod
+    def voice(item_id: str, payload: dict) -> dict:
+        """レビューを共通の発言の形へ。投稿者は持たない（レビュー 1 件を 1 人として数える: author はレビューの ID の hash）。作品は取得元で決まる。"""
+        return {"author": hashlib.sha256(f"steam_reviews:{item_id}".encode()).hexdigest()[:20], "text": (payload.get("review") or "").strip(),
+                "lang": STEAM_LANG.get(payload.get("language") or "", payload.get("language")), "appid": payload.get("appid"),
+                "flags": ["received_for_free"] if payload.get("received_for_free") else [],
+                "stance": "positive" if payload.get("voted_up") else "negative", "playtime_minutes": payload.get("playtime_at_review")}

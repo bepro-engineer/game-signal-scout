@@ -1,70 +1,55 @@
 """正規化の Service: 取得元の形の項目を、分析に使う共通の行にする。どの正規化を使うかは取得元の記述（config/sources.toml の normalizer）で選ぶ
-（取得元の名前で分岐しない）。normalizer のない取得元は正規化しない。
+（取得元の名前で分岐しない）。normalizer のない取得元は正規化しない。正規化は種類ごとで、取得元の形を共通の形へ直すのは
+その取得元のクラスの hook（sources/contract.SourceReader の voice・profile・report）。
 
-- protondb: 報告 → player_report（遊べたか・機材構成の hash・記述）
-- voices: どの取得元の発言も → player_post（作品の同定: Steam のストアのリンクの app ID、なければ題名の一致。services/identify）
-- steam_reviews: プレイヤーのレビュー → player_post（作品は取得元で決まる: matched_by = source。肯定・否定と、書いた時点の遊んだ時間）
-- steam_store: 作品の情報 → game_profile（画像・説明・ジャンル・遊び方・機種・日本語・発売日。取得元に依らない作品の項目）
+- voices: 発言 → player_post（宣伝などの印・言語・ストアのリンクの app ID・作品の同定は、どの取得元にも同じに当てる）
+- profiles: 作品の情報 → game_profile
+- reports: 動作の報告 → player_report
+- upcoming・assets・activity: これから発売・作品の画像・遊ばれている規模（取得元が共通の形で渡す）
 
-ProtonDB の報告の対応:
-- failed: 遊べない（verdict = no）か、起動しない（startsPlay = no）。検証P で事前に固定した定義。
-- config_hash: 機材構成（CPU・GPU・カーネル・OS・メモリ）の hash。投稿者の ID がないので、独立した報告者の近似に使う。生の値は持たない。
-- notes: 自由記述の欄をまとめたもの（分析の根拠の確認に使う。公開しない）。
+1 つの取得元の正規化の失敗で、ほかの取得元を止めない（取得元ごとに記録する。Anime と同じ）。
 """
 from __future__ import annotations
 
 import re
 
-import hashlib
-from datetime import datetime, timezone
-
 from game_signal_scout.repositories import report as repo
 
-CONFIG_KEYS = ("cpu", "gpu", "kernel", "os", "ram")
+def _reader(source: str, settings: dict | None = None):
+    """取得元のクラス（記述の adapter）。取得元の形を共通の形へ直す hook（voice・profile・report）を持つ。"""
+    from game_signal_scout.sources import factory
+    from game_signal_scout.sources.contract import SourceReader
+    spec = (settings or {}).get("adapter")
+    try:
+        return factory.reader_class(source, {source: {"adapter": spec}} if spec else None)
+    except ValueError:   # 記述のない取得元（項目がすでに共通の形）: 直さずに使う
+        return SourceReader
 
 
-def failed(record: dict) -> bool:
-    r = record.get("responses") or {}
-    return r.get("verdict") == "no" or r.get("startsPlay") == "no"
-
-
-def config_hash(record: dict) -> str:
-    s = record.get("systemInfo") or {}
-    return hashlib.sha256("|".join(str(s.get(k, "")) for k in CONFIG_KEYS).encode()).hexdigest()[:16]
-
-
-def notes(record: dict) -> str:
-    r = record.get("responses") or {}
-    parts = [f"{k}: {v}" for k, v in (r.get("notes") or {}).items() if isinstance(v, str) and v.strip()]
-    if isinstance(r.get("concludingNotes"), str) and r["concludingNotes"].strip():
-        parts.append("concludingNotes: " + r["concludingNotes"])
-    return " | ".join(parts)
-
-
-def protondb_row(item_id: str, record: dict) -> tuple:
-    r = record.get("responses") or {}
-    app = record.get("app") or {}
-    return (item_id, (app.get("steam") or {}).get("appId"), app.get("title"), datetime.fromtimestamp(record["timestamp"], timezone.utc),
-            failed(record), config_hash(record), r.get("protonVersion") or r.get("customProtonVersion"), notes(record))
-
-
-def normalize_all(conn, cfg: dict | None = None) -> dict[str, int]:
-    """記述に normalizer のある取得元をすべて正規化する。取得元ごとの入れた数。"""
+def normalize_all(conn, cfg: dict | None = None) -> dict:
+    """記述に normalizer のある取得元をすべて正規化する。counts: 取得元ごとの入れた数、errors: 失敗した取得元と誤り。"""
     import importlib
     from game_signal_scout.sources import factory
     cfg = cfg or factory.load_sources_config()
-    out = {}
+    out, errors = {}, {}
     for name, sc in cfg.items():
         ref = sc.get("normalizer") if isinstance(sc, dict) else None
         if not ref:
             continue
         mod, fn = ref.split(":")
-        out[name] = getattr(importlib.import_module(mod), fn)(conn, name, sc)
-    return out
+        try:
+            out[name] = getattr(importlib.import_module(mod), fn)(conn, name, sc)
+        except Exception as e:  # noqa: BLE001 — 1 つの取得元の失敗で、ほかの取得元を止めない
+            conn.rollback()
+            errors[name] = f"{type(e).__name__}: {str(e)[:200]}"
+    if errors and not out:
+        raise RuntimeError(f"すべての取得元の正規化に失敗: {errors}")
+    return {"counts": out, "errors": errors}
 
 
-def protondb(conn, source: str, settings: dict | None = None) -> int:
-    return normalize(conn, source)
+def reports(conn, source: str, settings: dict | None = None) -> int:
+    """動作の報告 → player_report（取得元の形は、その取得元のクラスの report が直す）。"""
+    return normalize(conn, source, settings=settings)
 
 
 STEAM_APP = re.compile(r"store\.steampowered\.com/app/(\d{1,10})")   # ストアのリンクの app ID（どの取得元の本文にも同じに当てる）
@@ -90,68 +75,41 @@ def voices(conn, source: str, settings: dict | None = None, batch: int = 2000) -
     conn.commit()
     index = None
     total = 0
+    shape = _reader(source, settings).voice
     while rows := post_repo.unnormalized(conn, source, batch):
         if index is None:
             index = TitleIndex(titles, args[0], args[1], args[2], game_only=args[3])
         out = []
-        for item_id, occurred_at, p in rows:
+        for item_id, occurred_at, raw in rows:
+            p = shape(item_id, raw)
             # どの取得元の発言にも同じ処理（取得元の名前・種類で分けない。Adapter が渡すのは取得元の形を直した素材だけ）:
             # ① 本文・リンクの中のストアのリンクの app ID ② 宣伝・告知・ニュースなどの印 ③ 言語（取得元が示さなければ共通の判定器）
             text, link = p.get("text") or "", p.get("link") or p.get("url") or ""
             p = {**p, "steam_appids": sorted({m for s in (text, link) for m in STEAM_APP.findall(s)})}
-            flags = flags_for(PostText(text=text, link_title=p.get("link_title") or "", tags=p.get("tags") or [], has_link=bool(p.get("link"))))
+            flags = list(dict.fromkeys([*(p.get("flags") or []), *flags_for(PostText(text=text, link_title=p.get("link_title") or "", tags=p.get("tags") or [], has_link=bool(p.get("link"))))]))
             lang = p.get("lang") or detect_lang(text)
             # 作品が取得元で決まる発言（作品ごとの掲示板・作品のページのコメント）は、その作品。ほかは本文から同定する
             appid, title, how = (str(p["appid"]), None, "source") if p.get("appid") else identify(p, index)
             out.append({"source": source, "item_id": item_id, "at": occurred_at, "author": p.get("author") or "", "lang": lang,
                         "appid": appid, "title": title, "matched_by": how, "flags": flags, "text": text,
-                        "url": p.get("url") if str(p.get("url") or "").startswith("https://") else None, "id_version": ver})
+                        "url": p.get("url") if str(p.get("url") or "").startswith("https://") else None, "id_version": ver,
+                        "stance": p.get("stance"), "playtime_minutes": p.get("playtime_minutes")})
         with conn.transaction():
             total += post_repo.insert(conn, out)
         conn.commit()
     return total
 
 
-# 遊び方（Steam のカテゴリの ID → 利用者の言葉）。作品を選ぶ切り口の正本はこの言葉で、取得元のカテゴリの名前を画面に出さない
-STEAM_MODES = {2: "ひとりで遊べる", 9: "協力プレイ", 38: "協力プレイ", 39: "協力プレイ", 24: "画面分割・同じ画面で", 37: "画面分割・同じ画面で",
-               49: "対戦", 36: "対戦", 47: "対戦", 28: "コントローラーで遊べる"}
-STEAM_PLATFORMS = {"windows": "Windows", "mac": "Mac", "linux": "Linux・Steam Deck"}
-
-
-def steam_store_row(item_id: str, received_at, p: dict) -> dict | None:
-    if p.get("type") != "game" or not p.get("name"):
-        return None
-    modes = list(dict.fromkeys(STEAM_MODES[c["id"]] for c in p.get("categories") or [] if c.get("id") in STEAM_MODES))
-    langs = p.get("supported_languages") or ""
-    ja_text = "日本語" in langs if langs else None
-    ja_voice = None
-    if ja_text:
-        i = langs.find("日本語")
-        ja_voice = langs[i + 3:i + 40].lstrip().startswith("<strong>*</strong>")   # 「*」の印は音声も対応
-    return {"appid": p.get("appid") or item_id, "source": "", "item_id": item_id, "title": p["name"], "summary": (p.get("short_description") or "").strip() or None,
-            "image_url": p.get("header_image"), "genres": p.get("genres") or [], "modes": modes,
-            "platforms": [label for k, label in STEAM_PLATFORMS.items() if (p.get("platforms") or {}).get(k)],
-            "ja_text": ja_text, "ja_voice": ja_voice, "released": p.get("release_date"),
-            "store_url": f"https://store.steampowered.com/app/{p.get('appid') or item_id}/", "fetched_at": received_at,
-            "coming_soon": p.get("coming_soon"),
-            "names": {**({"en": p["name_en"]} if p.get("name_en") else {}), **(p.get("names") or {})} or None,
-            # ゲーム内容: 日本語の取得で返った文が日本語ならそれ（日本語の文がない作品は英語の文が返る）、英語は英語の取得の文
-            "about_ja": p.get("about") if JA_CHARS.search(p.get("about") or "") else None,
-            "about_en": p.get("about_en") or (p.get("about") if p.get("about") and not JA_CHARS.search(p["about"]) else None)}
-
-
-JA_CHARS = re.compile(r"[\u3040-\u30ff]")   # かな（漢字だけの中国語の文を日本語と取らない）
-
-
-def steam_store(conn, source: str, settings: dict | None = None, batch: int = 500) -> int:
-    """作品の情報（Steam のストア）→ game_profile。作品でない項目は飛ばす（行を作らない）。"""
+def profiles(conn, source: str, settings: dict | None = None, batch: int = 500) -> int:
+    """作品の情報 → game_profile（取得元の形は、その取得元のクラスの profile が直す）。作品でない項目は飛ばす（行を作らない）。"""
     from game_signal_scout.repositories import catalog
+    row_of = _reader(source, settings).profile
     total, seen = 0, set()
     while rows := [r for r in catalog.unnormalized(conn, source, batch) if r[0] not in seen]:
         out = []
         for item_id, received_at, p in rows:
             seen.add(item_id)
-            if row := steam_store_row(item_id, received_at, p):
+            if row := row_of(item_id, received_at, p):
                 out.append({**row, "source": source})
         with conn.transaction():
             total += catalog.upsert(conn, out)
@@ -159,33 +117,7 @@ def steam_store(conn, source: str, settings: dict | None = None, batch: int = 50
     return total
 
 
-STEAM_LANG = {"japanese": "ja", "english": "en", "schinese": "zh", "tchinese": "zh", "koreana": "ko", "russian": "ru", "german": "de", "french": "fr",
-              "spanish": "es", "latam": "es", "brazilian": "pt", "portuguese": "pt", "polish": "pl", "turkish": "tr", "italian": "it", "ukrainian": "uk", "thai": "th",
-              "swedish": "sv", "czech": "cs", "hungarian": "hu", "dutch": "nl", "danish": "da", "finnish": "fi", "norwegian": "no", "romanian": "ro",
-              "greek": "el", "bulgarian": "bg", "vietnamese": "vi", "indonesian": "id", "arabic": "ar", "malay": "ms"}
-
-
-def steam_reviews(conn, source: str, settings: dict | None = None, batch: int = 2000) -> int:
-    """プレイヤーのレビュー → player_post。投稿者は持たない（レビュー 1 件を 1 人として数える: author はレビューの ID の hash）。"""
-    from game_signal_scout.repositories import post as post_repo
-    total = 0
-    while rows := post_repo.unnormalized(conn, source, batch):
-        out = []
-        for item_id, occurred_at, p in rows:
-            text = (p.get("review") or "").strip()
-            out.append({"source": source, "item_id": item_id, "at": occurred_at, "author": hashlib.sha256(f"{source}:{item_id}".encode()).hexdigest()[:20],
-                        "lang": STEAM_LANG.get(p.get("language") or "", p.get("language")), "appid": p.get("appid"), "title": None, "matched_by": "source",
-                        "flags": ["received_for_free"] if p.get("received_for_free") else [], "text": text,
-                        "stance": "positive" if p.get("voted_up") else "negative", "playtime_minutes": p.get("playtime_at_review")})
-        with conn.transaction():
-            total += post_repo.insert(conn, out)
-        conn.commit()
-        if len(rows) < batch:
-            break
-    return total
-
-
-def steam_upcoming(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
+def upcoming(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
     """これから発売の作品の一覧 → game_upcoming。"""
     from datetime import date
     from game_signal_scout.repositories import catalog
@@ -198,7 +130,7 @@ def steam_upcoming(conn, source: str, settings: dict | None = None, batch: int =
     return total
 
 
-def steam_assets(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
+def assets(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
     """作品の画像の場所 → game_assets（版が変われば置き換える）。"""
     from game_signal_scout.repositories import catalog
     total = 0
@@ -209,7 +141,7 @@ def steam_assets(conn, source: str, settings: dict | None = None, batch: int = 1
     return total
 
 
-def steam_charts(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
+def activity(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
     """遊ばれている規模（Steam の順位）→ game_activity。"""
     from datetime import date
     from game_signal_scout.repositories import catalog
@@ -224,11 +156,12 @@ def steam_charts(conn, source: str, settings: dict | None = None, batch: int = 1
     return total
 
 
-def normalize(conn, source: str = "protondb", batch: int = 5000) -> int:
-    """ProtonDB: まだ正規化していない項目をすべて正規化する。入れた数（何度流しても、新しい項目がなければ 0）。"""
+def normalize(conn, source: str, batch: int = 5000, settings: dict | None = None) -> int:
+    """動作の報告: まだ正規化していない項目をすべて正規化する。入れた数（何度流しても、新しい項目がなければ 0）。"""
+    row_of = _reader(source, settings).report
     total = 0
     while rows := repo.unnormalized(conn, source, batch):
         with conn.transaction():
-            total += repo.normalize_new(conn, source, (protondb_row(i, p) for i, p in rows))
+            total += repo.normalize_new(conn, source, (row_of(i, p) for i, p in rows))
         conn.commit()
     return total

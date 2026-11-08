@@ -28,8 +28,16 @@ def run(conn, tmp_path, monkeypatch):
     for r in recs:
         r["app"]["title"] = {"2246340": "Monster Hunter Wilds", "252490": "Rust Console Edition"}[r["app"]["steam"]["appId"]]
     path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", recs)
+    # 作品の辞書は作品の情報（game_profile）だけから作る（観測の取得元の表は読まない。#3 G3）
+    from game_signal_scout.repositories import catalog
+    at = datetime(2026, 10, 1, tzinfo=timezone.utc)
+    works = (("2246340", "Monster Hunter Wilds"), ("252490", "Rust Console Edition"))
+    for a, _ in works:
+        conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('works', %s, %s, %s, '{}')", (a, at, at))
+    catalog.upsert(conn, [{"appid": a, "source": "works", "item_id": a, "title": t, "genres": [], "modes": [], "platforms": [], "fetched_at": at} for a, t in works])
+    conn.commit()
     cfg = {"protondb": {"adapter": "game_signal_scout.sources.protondb:ProtonDBDump", "local_path": str(path),
-                        "normalizer": "game_signal_scout.services.normalize:protondb"},
+                        "normalizer": "game_signal_scout.services.normalize:reports"},
            "bluesky": {"adapter": "game_signal_scout.sources.bluesky:Bluesky", "normalizer": "game_signal_scout.services.normalize:voices",
                        "endpoints": ["wss://fake.invalid/a"], "batch_seconds": 5, "idle_seconds": 0.05, "context_words": WORDS,
                        "ambiguous_titles": ["Rust"]}}

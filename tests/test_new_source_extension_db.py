@@ -60,13 +60,20 @@ def test_a_new_source_flows_to_documents_without_changing_common_code(conn, monk
 
 
 def test_common_code_has_no_source_name_branches():
-    """共通の処理（収集・正規化・同定・集計・公開・画面・運用）に、取得元の名前の文字列がない（取得元ごとの読み方は sources/ だけ）。"""
+    """共通の処理（収集・正規化・同定・集計・公開・画面・運用）に、取得元の名前がない（取得元ごとの読み方は sources/ だけ）。
+    名前は決め打ちせず、記述（config/sources.toml・config/map_sources.toml）にあるすべての取得元から作る。文字列も関数名も調べる（#3 G9）。"""
     import re
+    import tomllib
     from pathlib import Path
-    root = Path(__file__).parents[1] / "src/game_signal_scout"
-    names = re.compile(r"""['"](protondb|bluesky|steam_reviews|steam_charts|steam_upcoming|gog_reviews|nicopedia|pantip_games|blizzard_forums|hatena_games)['"]""")
-    found = [f"{p.relative_to(root)}:{i}" for p in root.rglob("*.py") if "sources" not in p.parts
-             for i, line in enumerate(p.read_text().splitlines(), 1) if names.search(line) and "def normalize(" not in line]
+    top = Path(__file__).parents[1]
+    root = top / "src/game_signal_scout"
+    names = set(tomllib.loads((top / "config/sources.toml").read_text()))
+    names |= set((tomllib.loads((top / "config/map_sources.toml").read_text()).get("sources") or {}))
+    assert len(names) > 30
+    alt = "|".join(sorted(map(re.escape, names), key=len, reverse=True))
+    pat = re.compile(rf"""['"]({alt})['"]|\bdef ({alt})\b|\bdef ({alt})_""")
+    found = [f"{p.relative_to(root)}:{i}: {line.strip()[:80]}" for p in root.rglob("*.py") if "sources" not in p.parts
+             for i, line in enumerate(p.read_text().splitlines(), 1) if pat.search(line)]
     assert found == []
 
 

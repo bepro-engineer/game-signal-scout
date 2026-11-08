@@ -46,7 +46,7 @@ THEMES: list[tuple[str, str, re.Pattern]] = [(k, label, re.compile(p, re.I)) for
 FIX_KEYS = {"oob", "workaround"}   # 「直った」の根拠は「遊べる」報告。不具合の語（online など）は「online で遊べる」にも当たるので出さない
 MIN_REPORTS = 2      # この数以上の報告に出た内容だけを出す（1 件だけの語は個人の事情と区別できない）
 
-# ProtonDB の記述の項目名（normalize.notes の "項目: 本文 | 項目: 本文" の形）
+# ProtonDB の記述の項目名（sources.protondb.notes の "項目: 本文 | 項目: 本文" の形）
 LABELS = {"verdict": "結論", "concludingNotes": "補足", "customizationsUsed": "設定の変更", "significantBugs": "大きな不具合",
           "inputFaults": "入力の不具合", "stabilityFaults": "安定性", "performanceFaults": "性能", "graphicalFaults": "表示の不具合",
           "audioFaults": "音の不具合", "windowingFaults": "ウィンドウ", "saveGameFaults": "セーブ", "launchFlagsUsed": "起動の設定",

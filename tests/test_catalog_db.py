@@ -47,9 +47,9 @@ def run(conn, tmp_path, monkeypatch):
     recs = [report("2246340", T0 + i * 3600, False, i) for i in range(8)]
     path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", recs)
     cfg = {"protondb": {"adapter": "game_signal_scout.sources.protondb:ProtonDBDump", "local_path": str(path),
-                        "normalizer": "game_signal_scout.services.normalize:protondb"},
-           "steam_charts": {"adapter": "game_signal_scout.sources.steam_charts:SteamCharts", "normalizer": "game_signal_scout.services.normalize:steam_charts"},
-           "steam_store": {"adapter": "game_signal_scout.sources.steam_store:SteamStore", "normalizer": "game_signal_scout.services.normalize:steam_store",
+                        "normalizer": "game_signal_scout.services.normalize:reports"},
+           "steam_charts": {"adapter": "game_signal_scout.sources.steam_charts:SteamCharts", "normalizer": "game_signal_scout.services.normalize:activity"},
+           "steam_store": {"adapter": "game_signal_scout.sources.steam_store:SteamStore", "normalizer": "game_signal_scout.services.normalize:profiles",
                            "active_days": 100000, "max_games": 10, "refresh_days": 30, "batch_size": 1}}
     monkeypatch.setattr(factory, "load_sources_config", lambda: cfg)
     http = FakeHttp({"GetMostPlayedGames": {"response": {"rollup_date": T0 + 7 * 86400, "ranks": [

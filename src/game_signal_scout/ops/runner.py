@@ -112,7 +112,7 @@ def job_collect(ctx: Context) -> JobResult:
 def job_normalize(ctx: Context) -> JobResult:
     from game_signal_scout.services.normalize import normalize_all
     out = normalize_all(ctx.conn)
-    return JobResult(output_count=sum(out.values()), detail=out)
+    return JobResult(output_count=sum(out["counts"].values()), detail={**out["counts"], **({"errors": out["errors"]} if out["errors"] else {})})
 
 
 def analysis_range(day: date, p: dict) -> tuple[datetime, datetime]:
@@ -168,25 +168,24 @@ def job_insight(ctx: Context) -> JobResult:
 def job_observe(ctx: Context) -> JobResult:
     """観測の集計（Anime の sources/observations をそのまま流用: 日 × 作品 × 言語の独立した投稿者。画面と今日の兆しの材料）。直近 28 日を作り直す。"""
     from game_signal_scout import observations
-    from game_signal_scout.days import default_day
-    d = default_day()
+    d = ctx.day   # 日次の対象日（daily_run が default_day で決める。段ごとに別の日を使わない。#3 G6）
     res = observations.run(ctx.conn, observations.days_to_refresh(ctx.conn, d))
     errs = [r for r in res if r.get("error")]
-    if errs:
+    if errs and len(errs) == len(res):   # 取得元 × 日の一部の失敗では段を止めない（取得元 × 日ごとに記録して続ける。Anime と同じ）
         raise RuntimeError(f"観測の集計の失敗: {errs[0]}")
-    return JobResult(output_count=sum(1 for r in res if r.get("state") == "complete"), detail={"day": d.isoformat(), "days": len(res)})
+    return JobResult(output_count=sum(1 for r in res if r.get("state") == "complete"),
+                     detail={"day": d.isoformat(), "days": len(res), **({"errors": errs[:20]} if errs else {})})
 
 
 def job_digest(ctx: Context) -> JobResult:
     """今日の兆し（Anime の ops/jobs.dashboard_digest をそのまま流用）。観測した最新の日について、プレイヤーの声から発見を 1 つ確定して書き、
     job_artifact に保存する。[dashboard_digest] enabled のときだけ。失敗しても日次（公開）を止めない。同じ入力の記録があれば作り直さない。"""
     import sys
-    from game_signal_scout.days import default_day
     from game_signal_scout.ops import dashboard_digest as dd
     from game_signal_scout.signal import content
     if not (ctx.cfg.get("dashboard_digest") or {}).get("enabled", False):
         return JobResult(detail={"status": "disabled"})
-    day = default_day()
+    day = ctx.day
     try:
         vc = content.day_ctx(ctx.cfg, day)
     except content.NoObservedDayError as e:      # 観測した日がまだない（取得元が観測を始める前）: 書く材料がない。失敗にしない
@@ -256,7 +255,8 @@ def _run_job(ctx: Context, run_id: str, name: str, attempt: int) -> dict:
 def daily_run(day: date | None = None, only: list[str] | None = None, attempt: int = 1, reader_factory=None) -> tuple[int, dict]:
     cfg = config.load_daily_config()
     dr = cfg["daily_run"]
-    day = day or (datetime.now(timezone.utc).date() - timedelta(days=1))
+    from game_signal_scout.days import default_day
+    day = day or default_day()   # 対象日はどの段も同じ（日本時間 3:00 区切りの、終わって落ち着いた最新の日。Anime と同じ）
     conn = db.connect()
     ctx = Context(conn, day, cfg, reader_factory)
     run_id = f"{day.isoformat()}-{datetime.now(timezone.utc):%Y%m%dT%H%M%S%f}"

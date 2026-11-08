@@ -21,7 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 test = ["pytest>=8", "httpx>=0.27"]
 # 機械で 1 つの LLM 枠（共有の部品。scout-infra）。[llm_gate] enabled を入れる機械にだけ入れる
-gate = ["scout-llm-gate @ git+ssh://git@github.com/bepro-engineer/scout-infra.git"]
+gate = ["scout-llm-gate @ git+ssh://git@github.com/bepro-engineer/scout-infra.git@e53c4ba425aff6729c5c47fd4319f9f4ae69a57f"]
 
 [build-system]
 requires = ["setuptools>=68"]

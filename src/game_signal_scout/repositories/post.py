@@ -21,12 +21,9 @@ def insert(conn, rows: list[dict]) -> int:
 
 
 def known_titles(conn) -> list[tuple[str, str]]:
-    """作品の辞書の材料: (appid, 題名)。ProtonDB の報告にある作品の最新の題名と、作品の情報の題名（各言語の表示名を含む）。"""
-    # 作品の情報（Steam のストアの日本語の題名）も足す（日本語・中国語などの発言の同定）
-    return conn.execute("SELECT DISTINCT ON (appid) appid, title FROM player_report WHERE appid ~ '^[0-9]+$' AND title IS NOT NULL "
-                        "ORDER BY appid, at DESC").fetchall() + conn.execute(
-        "SELECT appid, title FROM game_profile WHERE title IS NOT NULL UNION SELECT appid, n.value FROM game_profile, jsonb_each_text(names) n "
-        "WHERE names IS NOT NULL").fetchall()
+    """作品の辞書の材料: (appid, 題名)。作品の情報（game_profile）の題名と各言語の表示名だけ（観測の取得元の表は読まない。どの取得元がなくても同じ辞書）。"""
+    return conn.execute("SELECT appid, title FROM game_profile WHERE title IS NOT NULL UNION SELECT appid, n.value FROM game_profile, jsonb_each_text(names) n "
+                        "WHERE names IS NOT NULL").fetchall()
 
 
 EXCLUDE = ["affiliate", "promo", "stream", "autopost", "adult", "link_only", "many_hashtags", "piracy", "news"]   # news: ニュース・告知はプレイヤーの声として数えない（Anime と同じ。2026-11-08 Issue #3）

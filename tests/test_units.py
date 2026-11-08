@@ -90,16 +90,16 @@ def test_anime_dsn_variable_is_never_used(monkeypatch, tmp_path):
 
 
 def test_normalize_definition_of_failure():
-    assert normalize.failed(report("1", T0, True, 1))
+    assert protondb.failed(report("1", T0, True, 1))
     r = report("1", T0, False, 1)
     r["responses"]["startsPlay"] = "no"
-    assert normalize.failed(r)
-    assert not normalize.failed(report("1", T0, False, 1))
-    assert normalize.config_hash(report("1", T0, False, 1)) != normalize.config_hash(report("1", T0, False, 2))
+    assert protondb.failed(r)
+    assert not protondb.failed(report("1", T0, False, 1))
+    assert protondb.config_hash(report("1", T0, False, 1)) != protondb.config_hash(report("1", T0, False, 2))
 
 
 def _rows(reps):
-    return [(r["app"]["steam"]["appId"], r["timestamp"], normalize.failed(r), normalize.config_hash(r), str(i)) for i, r in enumerate(reps)]
+    return [(r["app"]["steam"]["appId"], r["timestamp"], protondb.failed(r), protondb.config_hash(r), str(i)) for i, r in enumerate(reps)]
 
 
 def test_shift_detects_breakage_and_merges_overlapping_windows():

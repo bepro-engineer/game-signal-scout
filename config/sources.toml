@@ -13,11 +13,11 @@ batch_size = 2000        # 1 回の保存の件数（この区切りで続きの
 min_snapshot_ratio = 0.9 # 新しい配布物が保存済みのこの割合より少なければ、壊れた配布物の疑いとして削除の追従をしない
 retention_days = 0       # 保持期限（日。0 = 無期限）。検証で使う一時の DB では短くする
 min_interval_hours = 24  # 前回の成功からこの時間は取りに行かない（配布物は月 1 回。一覧の確認も 1 日 1 回で足りる）
-normalizer = "game_signal_scout.services.normalize:protondb"   # 正規化の選び方（取得元の名前で分岐しない）
+normalizer = "game_signal_scout.services.normalize:reports"   # 正規化の選び方（取得元の名前で分岐しない）
 
 [steam_reviews]
 adapter = "game_signal_scout.sources.steam_reviews:SteamReviews"
-normalizer = "game_signal_scout.services.normalize:steam_reviews"
+normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（肯定・否定・遊んだ時間つき）。AI が読んで、作品ごとの体験・満足と不満・変化をまとめる材料（services/insight）。
 # 2026-11-08 から使う（Issue #2「権利に振り回されすぎ、一切気にするな」を受けた判断。非公開・非商用。止めるときは enabled = false にして保存分を消す）
 enabled = true
@@ -36,7 +36,7 @@ poll_seconds = 86400
 
 [steam_charts]
 adapter = "game_signal_scout.sources.steam_charts:SteamCharts"
-normalizer = "game_signal_scout.services.normalize:steam_charts"
+normalizer = "game_signal_scout.services.normalize:activity"
 # 役割: 遊ばれている規模（Steam の最も遊ばれているゲームの上位 100。キー不要。Oshi Charts と同じ種類）。補助の材料で、満足度の根拠にしない。
 # 作品の情報（steam_store）より先に読む（上位の作品も作品の情報を揃える対象になる）
 min_interval_hours = 20
@@ -57,7 +57,7 @@ min_interval_hours = 6
 
 [steam_upcoming]
 adapter = "game_signal_scout.sources.steam_upcoming:SteamUpcoming"
-normalizer = "game_signal_scout.services.normalize:steam_upcoming"
+normalizer = "game_signal_scout.services.normalize:upcoming"
 # 役割: これから発売の作品（Steam の人気の近日発売の上位。キー不要）。Anime の「まもなく放送」に当たる（画面のメニューの下の枠・api/soon）。
 # 作品の情報（steam_store）より先に読む（一覧の作品も作品の情報を揃える対象になる）
 max_items = 100
@@ -65,13 +65,13 @@ min_interval_hours = 20
 
 [steam_assets]
 adapter = "game_signal_scout.sources.steam_assets:SteamAssets"
-normalizer = "game_signal_scout.services.normalize:steam_assets"
+normalizer = "game_signal_scout.services.normalize:assets"
 # 役割: 作品の画像の場所（縦長の表紙・横長の帯。IStoreBrowseService/GetItems。キー不要・50 作品ずつ）。画面の作品の画像の枠は縦長（Anime と同じ）
 min_interval_hours = 20
 
 [steam_store]
 adapter = "game_signal_scout.sources.steam_store:SteamStore"
-normalizer = "game_signal_scout.services.normalize:steam_store"
+normalizer = "game_signal_scout.services.normalize:profiles"
 # 役割: 作品の情報（画像・短い説明・ジャンル・遊び方・機種・日本語・発売日）。利用者がゲームを選ぶための項目（game_profile）。レビューは取らない。
 # 対象: プレイヤーの報告・発言の多い作品（repositories/catalog.active_apps）のうち、情報がない・refresh_days より古いもの。
 active_days = 90

@@ -1,7 +1,7 @@
 """推論エンジン（LLM の対話・意味表現）の境界（Port と Adapter。ADR 0054）。
 
 業務の処理は chat / embed / model_digest だけを呼び、HTTP・応答の形・接続先・エンジンの名前を知らない。
-すべての要求は機械で 1 つの LLM 枠（llm_gate。ADR 0062）を通る。接続先は config/providers.toml [ollama]（1 か所。環境変数 ASS_OLLAMA_URL で上書き）。エンジンを替えるときは _ENGINES に 1 つ足し、設定の engine で選ぶ。
+すべての要求は機械で 1 つの LLM 枠（llm_gate。ADR 0062）を通る。接続先は config/providers.toml [ollama]（1 か所。環境変数 GSS_OLLAMA_URL で上書き）。エンジンを替えるときは _ENGINES に 1 つ足し、設定の engine で選ぶ。
 """
 from __future__ import annotations
 
@@ -38,8 +38,8 @@ def settings() -> dict:
     s = dict(config.load_toml("providers.toml").get("ollama") or {})
     if not s.get("base_url"):
         raise KeyError("config/providers.toml [ollama] base_url がない")
-    if os.environ.get("ASS_OLLAMA_URL"):
-        s["base_url"] = os.environ["ASS_OLLAMA_URL"]
+    if os.environ.get("GSS_OLLAMA_URL"):
+        s["base_url"] = os.environ["GSS_OLLAMA_URL"]
     s["base_url"] = s["base_url"].rstrip("/")
     s.setdefault("engine", "ollama")
     s.setdefault("timeout_seconds", 180)
