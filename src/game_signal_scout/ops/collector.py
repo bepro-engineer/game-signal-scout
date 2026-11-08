@@ -2,7 +2,9 @@
 
 - 対象: config/sources.toml で resident = true の取得元（声の取得元はすべて同じ形で常駐。取得元の名前で分けない）。
 - 1 周期 = 取得元の read の束（services/collect）を保存する。次の周期まで poll_seconds 待つ（Anime の cycle_wait と同じ考え方。0 なら続けて受信）。
-- DB の接続は周期のあいだだけ持ち、待つあいだは閉じる（Game は取得元が多く、共有の PostgreSQL の接続の上限に近づかないため。Anime との違い）。
+- DB の接続の持ち方は、資源の条件で決まる共通の規則（取得元・システムの名前で分けない。#3 G10）:
+  次の周期までの待ち（poll_seconds）が [collector] hold_connection_below_seconds より短い取得元は接続を持ち続け、
+  それ以上待つ取得元は周期のあいだだけ接続し、待つあいだは閉じる（共有の PostgreSQL の接続の上限に近づかないため）。
 - 二重起動: 周期のあいだ DB の advisory lock（collect:source:<取得元>）を持つ。取れなければその周期を飛ばす。launchd が同じ名前を 1 つだけ動かす。
 - 止め方: SIGTERM / SIGINT で、周期の区切りで止まる（Anime と同じ）。1 周期の失敗で止めない（記録して error_backoff_seconds 待って次へ）。
 - 生きている印: runtime/sources/<取得元>.heartbeat（周期ごと。ops/status が読む）。使えない取得元（記述がない・無効・常駐でない）は 0 で終わる。
@@ -35,11 +37,16 @@ def heartbeat_path(source: str):
     return config.RUNTIME / "sources" / f"{source}.heartbeat"
 
 
-def cycle(source: str, reader, stop=lambda: False) -> bool:
-    """1 周期: 接続 → lock → 収集 → 記録 → 閉じる。成功なら True。"""
+def holds_connection(poll_seconds: int, cfg: dict | None = None) -> bool:
+    """待ちが短い取得元は接続を持ち続ける（資源の条件による共通の規則）。"""
+    c = (cfg if cfg is not None else config.load_daily_config()).get("collector") or {}
+    return poll_seconds < int(c.get("hold_connection_below_seconds", 60))
+
+
+def cycle(source: str, reader, stop=lambda: False, conns: tuple | None = None) -> bool:
+    """1 周期: 接続 → lock → 収集 → 記録 → 閉じる。成功なら True。conns（接続・lock の接続）を渡されたら、それを使い閉じない。"""
     from game_signal_scout.services.collect import collect
-    conn = db.connect()
-    lock = db.connect(autocommit=True)
+    conn, lock = conns or (db.connect(), db.connect(autocommit=True))
     try:
         if not session.try_advisory_lock(lock, f"collect:source:{source}"):
             log("locked", source=source)
@@ -70,8 +77,9 @@ def cycle(source: str, reader, stop=lambda: False) -> bool:
         return ok
     finally:
         reader.conn = None
-        lock.close()
-        conn.close()
+        if conns is None:
+            lock.close()
+            conn.close()
 
 
 def run(source: str, once: bool = False, max_cycles: int | None = None, reader=None, sleep=time.sleep) -> int:
@@ -94,9 +102,12 @@ def run(source: str, once: bool = False, max_cycles: int | None = None, reader=N
     prev = {s: signal.signal(s, _term) for s in (signal.SIGTERM, signal.SIGINT)}
     log("start", source=source, once=once)
     cycles = 0
+    held = None
     try:
         while not stop["flag"]:
-            ok = cycle(source, reader, stop=lambda: stop["flag"])
+            if holds_connection(poll) and (held is None or any(c.closed or c.broken for c in held)):
+                held = (db.connect(), db.connect(autocommit=True))
+            ok = cycle(source, reader, stop=lambda: stop["flag"], conns=held)
             hb.write_text(datetime.now(timezone.utc).isoformat())
             cycles += 1
             if once or (max_cycles and cycles >= max_cycles):
@@ -106,6 +117,8 @@ def run(source: str, once: bool = False, max_cycles: int | None = None, reader=N
                     break
                 sleep(1)
     finally:
+        for c in held or ():
+            c.close()
         for s, h in prev.items():
             signal.signal(s, h)
         log("end", source=source, cycles=cycles, reason="signal" if stop["flag"] else "once")

@@ -56,3 +56,8 @@ pool_max_size = 4
 # 起動の定義（ops/launchd）。python -m game_signal_scout launchd は runtime/launchd に plist を書くだけ（反映は本人の承認の後）
 hour = 6                      # daily-run を起動する時刻（機械の時刻）
 minute = 15
+
+[collector]
+# 常駐の収集器の DB の接続の持ち方（資源の条件による共通の規則。取得元・システムの名前で分けない）。
+# 次の周期までの待ち（取得元の poll_seconds）がこれより短い取得元は接続を持ち続け、それ以上なら待つあいだ閉じる
+hold_connection_below_seconds = 60

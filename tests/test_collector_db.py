@@ -65,3 +65,11 @@ def test_daily_collect_does_not_read_resident_sources(reader, conn):
     assert factory.sources(CFG) == [] and collector.residents(CFG) == ["src_x"]
     code, out = runner.daily_run(date(2026, 10, 31), only=["collect"], reader_factory=lambda n: pytest.fail(f"読んではいけない: {n}"))
     assert code == runner.EXIT_OK and out["jobs"][0]["detail"] == {}
+
+
+def test_connection_holding_is_a_common_resource_rule():
+    """接続の持ち方は、待ちの長さで決まる共通の規則（取得元・システムの名前で分けない。#3 G10）。"""
+    from game_signal_scout.ops import collector
+    cfg = {"collector": {"hold_connection_below_seconds": 60}}
+    assert collector.holds_connection(0, cfg) and collector.holds_connection(59, cfg)
+    assert not collector.holds_connection(60, cfg) and not collector.holds_connection(600, cfg)
