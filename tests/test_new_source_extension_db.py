@@ -151,3 +151,12 @@ def test_every_observed_source_is_optional(monkeypatch):
         rest = {k: v for k, v in srcs.items() if k != drop}
         monkeypatch.setattr(config, "load_toml", lambda name, rest=rest: {"sources": rest} if name == "map_sources.toml" else real(name))
         assert set(observations.sources()) == set(rest) and set(dd.voice_sources({"dashboard_digest": {"voice_sources": "all"}})) == set(rest)
+
+
+def test_digest_candidates_skip_works_without_profile(conn, monkeypatch):
+    """今日の兆しの候補は画面に出せる作品だけ（作品の情報がまだない作品の声で止まらない。2026-11-08 KeyError）。"""
+    from game_signal_scout.ops import dashboard_digest as dd
+    monkeypatch.setattr(dd, "day_works", lambda conn, source, day, limit: [{"work_id": 899770, "voices": 9}, {"work_id": 1245620, "voices": 5}])
+    from game_signal_scout.ops import work
+    monkeypatch.setattr(work, "publishable_works", lambda conn, ids: {1245620})
+    assert [w["work_id"] for w in dd._candidate_works(conn, "x", DAY, {})] == [1245620]

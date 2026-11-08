@@ -795,6 +795,9 @@ def _candidate_works(conn, source: str, day: date, changes: dict | None) -> list
     """候補 = その日にプレイヤー本人の声の多い作品（仕様 §1）＋ 作品自身の普段と比べて動いた作品（声の数が少なくても、変化の中身を確かめる）。その Source の中で。"""
     from game_signal_scout.ops.finding_assess import CHANGE as CH
     rows = day_works(conn, source, day, limit=10_000)
+    from game_signal_scout.ops.work import publishable_works
+    ok = publishable_works(conn, [w["work_id"] for w in rows])   # 画面に出せる作品だけ（作品の情報があり、ゲームであるもの。画面と同じ条件）
+    rows = [w for w in rows if w["work_id"] in ok]
     top = rows[:MAX_CARDS]
     have = {w["work_id"] for w in top}
 
