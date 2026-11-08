@@ -2,7 +2,7 @@
 
 PC・家庭用ゲームのプレイヤーの声（レビュー・掲示板・SNS など多くの取得元）から、ほかでは見えにくい変化（アップデートの影響・不満・評価の変化・言語圏を越えた広がり）を見つけ、限られた休日に遊ぶゲームを選ぶ材料にする試作です。価値の検証と経緯は [Issue #1](https://github.com/bepro-engineer/game-signal-scout/issues/1) が正本です。
 
-**外への公開はしていません。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（127.0.0.1:8720、自分の機械だけ）、毎日 6:15 の daily-run（`launchd --apply`）。10 分ごとの poll（掲示板の新着）も 2026-11-08 に登録しました。
+**外への公開はしていません。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（127.0.0.1:8720、自分の機械だけ）、毎日 6:15 の daily-run（`launchd --apply`）。声の取得元は、どれも同じ形の常駐の収集器（取得元ごとの `collect-<取得元>`。Anime と同じ）で読みます。
 
 
 > **取得元はすべて同列の交換可能な入力で、どれもなくてまったく困らない（外しても残りの取得元だけで動く）。特定の取得元を中心に置かない・目立たせない・個別に名前を挙げて取り上げない**（オーナーの厳命。[CLAUDE.md](CLAUDE.md)）。
@@ -15,7 +15,7 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 |---|---|---|
 | 入口（Controller） | `cli.py`、`web/app.py`・`web/routers/` | コマンド（1 行の JSON）と Viewer のルート（`/`・`/spread.html` などのページ、`/api/days`・`/api/days/<日>`・`/api/pages`・`/api/search`・`/api/soon`・`/api/works/<id>`、`/healthz`） |
 | 画面（View） | `web/pages.py`・`web/templates`・`web/static` | Anime の web をそのまま流用（ページの枠は HTML、中身は JS が `/api/…` の文書から組む。日英） |
-| 運用 | `ops/` | 段（collect → normalize → observe → analyze → insight → digest → publish）の実行と記録（`job_run`）・排他・再試行、短い間隔の収集（`poll`）・launchd の定義 |
+| 運用 | `ops/` | 段（collect → normalize → observe → analyze → insight → digest → publish）の実行と記録（`job_run`）・排他・再試行、常駐の収集器（`collector`。取得元ごとに同じ形）・launchd の定義 |
 | 業務（Service） | `services/`・`observations.py`・`foundation/`・`signal/`・`publication/`・`ops/dashboard_digest.py`・`web/services/` | 収集・正規化・作品の同定、観測の集計（`obs_*`）と系列、画面の文書（Anime の content を流用）、今日の兆し（共有の LLM）、公開（検査して `public_document` を置き換え） |
 | データ（Repository） | `repositories/` | SQL はここだけ（試験 `test_sql_only_in_repositories`） |
 | 取得元 | `sources/` | 取得元の契約（`SourceReader`）、記述から作る Factory、節度のある取得（`Fetcher`）、共通の読み方（`feeds.py`）と取得元ごとの読み方 |
@@ -79,7 +79,7 @@ Anime の `ops/launchd`（agent の形）と `sources/runner` を移植してい
 |------|------|------|
 | `daily-run` | 毎日 6:15 | collect → normalize → analyze → publish |
 | `web` | 常駐 | Viewer（127.0.0.1:8720） |
-| `poll` | 10 分ごと（2026-11-08 登録） | `poll`（`poll = true` の掲示板の取得元を collect → 正規化。新着だけを返すフィードの取りこぼしを防ぐ） |
+| `collect-<取得元>` | 常駐（異常終了のときだけ起動し直す） | 声の取得元ごとの収集器（どの取得元も同じ形。`source-collect --source <取得元>`。間隔は記述の `poll_seconds`。Anime と同じ） |
 
 - `python -m game_signal_scout launchd` は定義を `runtime/launchd` に書くだけです（見るため）。
 - `python -m game_signal_scout launchd --apply` は `~/Library/LaunchAgents` に書き、変わった・新しい定義を bootout → bootstrap し、一覧にない定義を消します。

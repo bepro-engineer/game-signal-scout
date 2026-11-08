@@ -58,7 +58,6 @@ pool_min_size = 1
 pool_max_size = 4
 
 [launchd]
-poll_minutes = 10        # 短い間隔の収集（ops/poll。config/sources.toml の poll = true の取得元）
 # 起動の定義（ops/launchd）。python -m game_signal_scout launchd は runtime/launchd に plist を書くだけ（反映は本人の承認の後）
 hour = 6                      # daily-run を起動する時刻（機械の時刻）
 minute = 15

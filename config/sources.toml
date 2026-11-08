@@ -31,8 +31,8 @@ num_per_page = 100
 max_pages_per_app = 400   # 量の多い作品の 28 日分（約 3 万件）まで遡れる上限。過去がそろった作品は保存済みに届いたら止まる
 max_age_days = 28        # 28 日前より古いレビューに届いたら、その作品を終える（観測の集計の 28 日の系列）
 retention_days = 60
-min_interval_hours = 20
-
+resident = true
+poll_seconds = 86400
 
 [steam_charts]
 adapter = "game_signal_scout.sources.steam_charts:SteamCharts"
@@ -86,8 +86,6 @@ adapter = "game_signal_scout.sources.feeds:Discourse"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Blizzard の公式掲示板。Discourse の公開 JSON。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 sites = [
   { base = "https://us.forums.blizzard.com/en/overwatch", appid = 2357570, lang = "en" },
   { base = "https://us.forums.blizzard.com/en/d4", appid = 2344520, lang = "en" },
@@ -105,14 +103,14 @@ sites = [
   { base = "https://tw.forums.blizzard.com/zh/overwatch", appid = 2357570, lang = "zh-Hant" },
   { base = "https://us.forums.blizzard.com/es/overwatch", appid = 2357570, lang = "es" },
 ]
+resident = true
+poll_seconds = 600
 
 [game_official_forums]
 adapter = "game_signal_scout.sources.feeds:Discourse"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（ゲームの公式掲示板。Discourse の公開 JSON。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 sites = [
   { base = "https://forums.flightsimulator.com", appid = 2537590 },
   { base = "https://forums.eveonline.com", appid = 8500 },
@@ -122,47 +120,47 @@ sites = [
   { base = "https://forum.lastepoch.com", appid = 899770 },
   { base = "https://forum.enlisted.net" },
 ]
+resident = true
+poll_seconds = 600
 
 [gamekult]
 adapter = "game_signal_scout.sources.feeds:Discourse"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Gamekult の掲示板。Discourse の公開 JSON。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 sites = [
   { base = "https://www.gamekult.com/forum", lang = "fr" },
 ]
+resident = true
+poll_seconds = 600
 
 [neogaf]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（NeoGAF。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://www.neogaf.com/forums/gaming-discussion.2/index.rss", lang = "en" },
 ]
+resident = true
+poll_seconds = 600
 
 [tildes]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Tildes。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://tildes.net/~games/topics.atom", lang = "en" },
 ]
+resident = true
+poll_seconds = 600
 
 [ptt_games]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（PTT のゲームの板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://www.ptt.cc/atom/Steam.xml", lang = "zh-Hant" },
   { url = "https://www.ptt.cc/atom/PlayStation.xml", lang = "zh-Hant" },
@@ -173,38 +171,38 @@ feeds = [
   { url = "https://www.ptt.cc/atom/GTA.xml", lang = "zh-Hant" },
   { url = "https://www.ptt.cc/atom/FFXIV.xml", lang = "zh-Hant" },
 ]
+resident = true
+poll_seconds = 600
 
 [keylol]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（其乐 Keylol。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://keylol.com/forum.php?mod=rss&fid=161", lang = "zh-Hans" },
   { url = "https://keylol.com/forum.php?mod=rss&fid=148", lang = "zh-Hans" },
   { url = "https://keylol.com/forum.php?mod=rss&fid=127", lang = "zh-Hans" },
 ]
+resident = true
+poll_seconds = 600
 
 [stage1st_games]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Stage1st のゲームの板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://stage1st.com/2b/forum.php?mod=rss&fid=4", lang = "zh-Hans" },
 ]
+resident = true
+poll_seconds = 600
 
 [computerbase]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（ComputerBase のゲームの板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://www.computerbase.de/forum/forums/actionspiele.124/index.rss", lang = "de" },
   { url = "https://www.computerbase.de/forum/forums/battlefield.153/index.rss", lang = "de" },
@@ -215,117 +213,117 @@ feeds = [
   { url = "https://www.computerbase.de/forum/forums/xbox.221/index.rss", lang = "de" },
   { url = "https://www.computerbase.de/forum/forums/nintendo.223/index.rss", lang = "de" },
 ]
+resident = true
+poll_seconds = 600
 
 [pcgh_extreme]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（PCGH Extreme。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://extreme.pcgameshardware.de/forums/-/index.rss", lang = "de" },
 ]
+resident = true
+poll_seconds = 600
 
 [mein_mmo]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Mein-MMO のコメント。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://mein-mmo.de/comments/feed/", lang = "de" },
 ]
+resident = true
+poll_seconds = 600
 
 [playua]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（PlayUA のコメント。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://playua.net/comments/feed/", lang = "uk" },
 ]
+resident = true
+poll_seconds = 600
 
 [true_gaming]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（True Gaming。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://true-gaming.net/boards/forums/-/index.rss", lang = "ar" },
 ]
+resident = true
+poll_seconds = 600
 
 [outerspace]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Outer Space。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://forum.outerspace.com.br/index.php?forums/-/index.rss", lang = "pt" },
 ]
+resident = true
+poll_seconds = 600
 
 [adrenaline]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Adrenaline の掲示板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://forum.adrenaline.com.br/forums/-/index.rss", lang = "pt" },
   { url = "https://forum.adrenaline.com.br/forums/jogos.183/index.rss", lang = "pt" },
 ]
+resident = true
+poll_seconds = 600
 
 [guildwars2_forum]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Guild Wars 2 の公式掲示板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://en-forum.guildwars2.com/discover/all.xml/", appid = 1284210, lang = "en" },
 ]
+resident = true
+poll_seconds = 600
 
 [cdpr_forum]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（CD PROJEKT RED の掲示板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://forums.cdprojektred.com/index.php?forums/-/index.rss" },
 ]
+resident = true
+poll_seconds = 600
 
 [studio_forums]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（作品の公式の掲示板の RSS。Warframe・Stardew Valley・Kerbal Space Program・BeamNG.drive。キー不要）。作品は掲示板で決まる
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [
   { url = "https://forums.warframe.com/discover/all.xml/", appid = 230410, lang = "en" },
   { url = "https://forums.stardewvalley.net/forums/-/index.rss", appid = 413150, lang = "en" },
   { url = "https://forum.kerbalspaceprogram.com/discover/all.xml/", appid = 220200, lang = "en" },
   { url = "https://www.beamng.com/forums/-/index.rss", appid = 284160, lang = "en" },
 ]
+resident = true
+poll_seconds = 600
 
 [lemmy_games]
 adapter = "game_signal_scout.sources.feeds:Lemmy"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Lemmy のゲームのコミュニティ。公開 API。キー不要。台帳 config/source_candidates.toml の lemmy_games）
 game_only = true
-poll = true
-min_interval_hours = 0
 communities = [
   { base = "https://lemmy.world", name = "games" },
   { base = "https://lemmy.world", name = "pcgaming" },
@@ -339,16 +337,18 @@ communities = [
   { base = "https://lemmy.world", name = "indiegaming" },
   { base = "https://lemmy.world", name = "cyberpunk2077", appid = 1091500 },
 ]
+resident = true
+poll_seconds = 600
 
 [mastodon_games]
 adapter = "game_signal_scout.sources.feeds:MastodonTags"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Mastodon のゲームのハッシュタグ。公開 API。キー不要。台帳の mastodon_tags）。宣伝の bot が多いので bot と URL だけの投稿は採らない
 game_only = true
-poll = true
-min_interval_hours = 0
 base = "https://mastodon.social"
 tags = ["gaming", "pcgaming", "videogames", "steam", "ゲーム", "nintendoswitch", "ps5"]
+resident = true
+poll_seconds = 600
 
 [gog_reviews]
 adapter = "game_signal_scout.sources.gog_reviews:GogReviews"
@@ -359,7 +359,8 @@ active_days = 90
 max_age_days = 28
 max_pages_per_app = 20
 refresh_days = 7
-min_interval_hours = 6
+resident = true
+poll_seconds = 21600
 
 [nicopedia]
 adapter = "game_signal_scout.sources.nicopedia:Nicopedia"
@@ -370,17 +371,18 @@ active_days = 90
 max_pages = 3
 crawl_delay = 5
 refresh_days = 7
-min_interval_hours = 6
+resident = true
+poll_seconds = 21600
 
 [pantip_games]
 adapter = "game_signal_scout.sources.pantip:Pantip"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Pantip のゲームのタグの話題とコメント。タイ語。キー不要。Anime の sources/pantip を流用。台帳の pantip_chalermkrung は音楽の部屋だったのでタグで読む）
 game_only = true
-poll = true
-min_interval_hours = 0
 tags = ["เกม", "เกมคอมพิวเตอร์", "PlayStation", "Nintendo Switch", "Steam"]
 max_comment_pages = 3
+resident = true
+poll_seconds = 1800
 
 [hatena_games]
 adapter = "game_signal_scout.sources.feeds:HatenaComments"
@@ -388,81 +390,80 @@ normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（ゲームの記事へのはてなブックマークのコメント。日本語。公式のエントリー情報取得 API。キー不要。台帳の hatena_bookmark_comments）
 # 記事は各誌の RSS から見つけ、記事の時刻から 12・72 時間の時点でコメントを読む。Crawl-delay 5 を守る
 game_only = true
-poll = true
-min_interval_hours = 0
 crawl_delay = 5
 recheck_hours = [12, 72]
 feeds = ["https://www.4gamer.net/rss/index.xml", "https://automaton-media.com/feed/", "https://www.gamespark.jp/rss/index.rdf"]
+resident = true
+poll_seconds = 1800
 
 [elotrolado]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（ElOtroLado。スペイン語のゲームの総合掲示板の新着。RSS。キー不要）。スペイン語の声が手薄なため（台帳の手薄な言語）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [{ url = "https://www.elotrolado.net/feed.php", lang = "es" }]
+resident = true
+poll_seconds = 600
 
 [gtplanet]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（GTPlanet。レースゲームの掲示板の新着。英語。RSS。キー不要）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [{ url = "https://www.gtplanet.net/forum/forums/-/index.rss", lang = "en" }]
+resident = true
+poll_seconds = 600
 
 [spaziogames]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（SpazioGames の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [{ url = "https://forum.spaziogames.it/forums/-/index.rss", lang = "it" }]
+resident = true
+poll_seconds = 600
 
 [tomshw_it]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Tom's Hardware Italia の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [{ url = "https://forum.tomshw.it/forums/-/index.rss", lang = "it" }]
+resident = true
+poll_seconds = 600
 
 [cdaction]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（CD-Action の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [{ url = "https://forum.cdaction.pl/discover/all.xml/", lang = "pl" }]
+resident = true
+poll_seconds = 600
 
 [pcgames_de]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（PC Games の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [{ url = "https://forum.pcgames.de/forums/-/index.rss", lang = "de" }]
+resident = true
+poll_seconds = 600
 
 [famiboards]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（Famiboardsの新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
 game_only = true
-poll = true
-min_interval_hours = 0
 feeds = [{ url = "https://famiboards.com/forums/-/index.rss", lang = "en" }]
+resident = true
+poll_seconds = 600
 
 [bluesky]
 # 役割: プレイヤーの声（SNS。キー不要）
 adapter = "game_signal_scout.sources.bluesky:Bluesky"
 normalizer = "game_signal_scout.services.normalize:voices"
 enabled = true
-poll = true
 error_backoff_seconds = 30
 endpoints = ["wss://jetstream.us-east.bsky.network/xrpc/network.bsky.jetstream.subscribeEvents",
              "wss://jetstream.us-west.bsky.network/xrpc/network.bsky.jetstream.subscribeEvents"]
@@ -472,7 +473,6 @@ batch_seconds = 60
 idle_seconds = 20
 switch_rewind_seconds = 60
 retention_days = 30
-min_interval_hours = 0
 context_words = ["game", "games", "gaming", "play", "playing", "played", "patch", "update", "steam", "steam deck", "ps5", "ps4", "playstation",
                  "xbox", "game pass", "nintendo", "switch 2", "pc", "dlc", "season", "boss", "mod", "mods", "bug", "crash", "crashes", "fps",
                  "early access", "patch notes", "indie game", "gamedev", "videogames", "video game", "ゲーム", "プレイ", "アプデ", "攻略",
@@ -483,3 +483,5 @@ min_title_chars = 8
 title_context_words = ["game", "games", "gaming", "videogame", "video game", "steam", "steam deck", "ps5", "ps4", "playstation", "xbox",
                        "nintendo", "switch 2", "dlc", "early access", "patch notes", "speedrun", "gamedev", "indie game", "ゲーム", "プレイ",
                        "アプデ", "攻略", "神ゲー", "クソゲー", "プレステ", "任天堂", "游戏", "遊戲", "게임"]
+resident = true
+poll_seconds = 0

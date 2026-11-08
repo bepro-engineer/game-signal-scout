@@ -33,10 +33,11 @@ def reader(http, **kw):
     return factory.create("steam_reviews", http, {"steam_reviews": {**cfg["steam_reviews"], "appids": ["10"], "max_pages_per_app": 3, "max_age_days": 0, **kw}})
 
 
-def test_enabled_for_daily_collect():
-    """2026-11-08 から日次で読む（Issue #2 の本人の指示を受けた判断。止めるときは enabled = false）。"""
+def test_enabled_as_resident_like_every_voice_source():
+    """声の取得元として、ほかの声の取得元と同じ形で常駐して読む（止めるときは enabled = false）。"""
+    from game_signal_scout.ops.collector import residents
     assert factory.load_sources_config()["steam_reviews"]["enabled"] is True
-    assert "steam_reviews" in factory.sources()
+    assert "steam_reviews" in residents(factory.load_sources_config()) and "steam_reviews" not in factory.sources()
 
 
 def test_pages_with_cursor_and_stops_when_cursor_repeats():

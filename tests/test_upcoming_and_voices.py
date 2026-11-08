@@ -110,11 +110,13 @@ def test_feed_and_discourse_sources_read_only_new_items():
     assert list(d.read(b.cursor))[0].items == []
 
 
-def test_poll_sources_are_the_feed_forums():
-    from game_signal_scout.ops.poll import pollers
+def test_every_voice_source_is_resident_in_the_same_way():
+    """取得の仕組みは Anime と同じ（取得元ごとの常駐の収集器）。声の取得元（観測の集計に入れる取得元）はどれも同じ形で常駐し、違いは間隔（poll_seconds）だけ。"""
+    from game_signal_scout import observations
+    from game_signal_scout.ops.collector import residents
     cfg = factory.load_sources_config()
-    p = pollers(cfg)
-    assert {"blizzard_forums", "ptt_games", "computerbase"} <= set(p) and "steam_reviews" not in p
+    voice = set(observations.sources())
+    assert voice <= set(residents(cfg)) and all("poll_seconds" in cfg[s] for s in voice)
 
 
 def test_lemmy_and_mastodon_skip_bots_and_old_items():

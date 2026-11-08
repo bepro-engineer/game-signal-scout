@@ -8,7 +8,7 @@ Mac mini で動いています（2026-11-08 から。外への公開はしてい
 |---|---|---|---|
 | `com.bepro.game-signal-scout.daily-run` | 毎日 6:15 | collect → normalize → observe → analyze → insight → digest → publish（`--retry`: 再試行できる失敗は 30 分ごとに 3 回まで） | 動作中 |
 | `com.bepro.game-signal-scout.web` | 常駐 | Viewer（127.0.0.1:8720） | 動作中 |
-| `com.bepro.game-signal-scout.poll` | 10 分ごと | `poll = true` の掲示板の取得元を collect → 正規化 | 動作中（2026-11-08 オーナーの承認で登録） |
+| `com.bepro.game-signal-scout.collect-<取得元>` | 常駐（異常終了のときだけ起動し直す） | 声の取得元ごとの収集器（どの取得元も同じ形。間隔は `poll_seconds`。DB の接続は周期のあいだだけ） | 動作中 |
 
 ## 2. 確かめ方
 
@@ -19,7 +19,7 @@ curl -s http://127.0.0.1:8720/api/days     # 画面に出している日
 launchctl list | grep game-signal-scout
 ```
 
-ログは `runtime/logs/`（`daily-run.launchd.log`・`web.launchd.log`・`poll.launchd.log`）です。
+ログは `runtime/logs/`（`daily-run.launchd.log`・`web.launchd.log`・`collect-<取得元>.launchd.log`）です。
 
 ## 3. 再試行・再開・障害
 

@@ -47,7 +47,7 @@ DB          PostgreSQL（共有のサーバーの論理 DB game_signal_scout）
 1. 読み方が共通の形なら、`config/sources.toml` に記述（`adapter`・`normalizer = "…normalize:voices"`・URL）を足す。違う形なら `sources/<名前>.py` に `SourceReader` の子クラスを書く（payload は `author`・`text`・`lang`、作品が決まるなら `appid`）。
 2. `config/map_sources.toml` に `[sources.<名前>]`（`reader = "foundation"`・`production = true`・`label = [日本語, 英語]`）を足す。
 3. 試験（偽の応答）を足す。共通の処理は変えない。
-4. 新着だけを返すフィードは `poll = true`（10 分ごとの `poll`）。
+4. 声の取得元は `resident = true` と `poll_seconds`（取得の間隔）を書く。どの取得元も同じ常駐の収集器（`ops/collector`。Anime の `sources/runner` と同じ。launchd の `collect-<取得元>`）が読む。
 
 **証明**: `tests/test_new_source_extension_db.py` は、試験の中だけで定義した架空の取得元を、記述だけで登録します。そのうえで、共通の処理を 1 行も変えずに、収集 → 正規化 → 同定（取得元で・題名で）→ 観測の集計 → 公開の文書 → 作品詳細の取得元の切り替え → ダッシュボードまで進むことを確かめます。同じファイルで、共通の処理に取得元の名前の文字列がないことも確かめます。
 

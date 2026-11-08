@@ -172,9 +172,10 @@ def test_no_source_has_special_structure():
     allowed = {"reader", "production", "label", "history"}
     assert all(set(v) <= allowed for v in m.values()), {k: set(v) - allowed for k, v in m.items() if set(v) - allowed}
     s = tomllib.loads((root / "config/sources.toml").read_text())
-    assert not any(isinstance(v, dict) and v.get("resident") for v in s.values())          # 専用の常駐はない。どれも同じ取得の流れ
+    voice = set(m)
+    assert all(s[k].get("resident") for k in voice if k in s)                              # 声の取得元はどれも同じ形で常駐（特定の取得元だけの常駐はない）
     from game_signal_scout.ops import launchd
-    assert set(launchd.services(root)) == {"daily-run", "web", "poll"}                    # 取得元ごとの起動の定義はない
+    assert set(launchd.services(root)) == {"daily-run", "web"} | {f"collect-{k}" for k in voice if k in s and s[k].get("enabled", True)}
     names = [k for k in s if isinstance(s[k], dict) and s[k].get("adapter")]
     texts = [p for p in list((root / "migrations").rglob("*.py")) + [root / "pyproject.toml", root / "config/daily.toml"]]
     found = [f"{p.name}:{n}" for p in texts for n in names if n in p.read_text().lower() and len(n) > 6]
