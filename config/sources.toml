@@ -296,6 +296,7 @@ poll = true
 min_interval_hours = 0
 feeds = [
   { url = "https://forum.adrenaline.com.br/forums/-/index.rss", lang = "pt" },
+  { url = "https://forum.adrenaline.com.br/forums/jogos.183/index.rss", lang = "pt" },
 ]
 
 [guildwars2_forum]
@@ -402,3 +403,21 @@ min_interval_hours = 0
 crawl_delay = 5
 recheck_hours = [12, 72]
 feeds = ["https://www.4gamer.net/rss/index.xml", "https://automaton-media.com/feed/", "https://www.gamespark.jp/rss/index.rdf"]
+
+[elotrolado]
+adapter = "game_signal_scout.sources.feeds:FeedForum"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（ElOtroLado。スペイン語のゲームの総合掲示板の新着。RSS。キー不要）。スペイン語の声が手薄なため（台帳の手薄な言語）
+game_only = true
+poll = true
+min_interval_hours = 0
+feeds = [{ url = "https://www.elotrolado.net/feed.php", lang = "es" }]
+
+[gtplanet]
+adapter = "game_signal_scout.sources.feeds:FeedForum"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（GTPlanet。レースゲームの掲示板の新着。英語。RSS。キー不要）
+game_only = true
+poll = true
+min_interval_hours = 0
+feeds = [{ url = "https://www.gtplanet.net/forum/forums/-/index.rss", lang = "en" }]

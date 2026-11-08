@@ -128,3 +128,13 @@ label = ["はてなブックマークのコメント", "Hatena Bookmark comments
 reader = "foundation"
 production = true
 label = ["作品の公式の掲示板", "Official studio forums"]
+
+[sources.elotrolado]
+reader = "foundation"
+production = true
+label = ["ElOtroLado", "ElOtroLado"]
+
+[sources.gtplanet]
+reader = "foundation"
+production = true
+label = ["GTPlanet", "GTPlanet"]
