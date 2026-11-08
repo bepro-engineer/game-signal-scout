@@ -1,8 +1,8 @@
-# Game Signal Scout（非公開の試作）
+# Game Signal Scout
 
 PC・家庭用ゲームのプレイヤーの声（レビュー・掲示板・SNS など多くの取得元）から、ほかでは見えにくい変化（アップデートの影響・不満・評価の変化・言語圏を越えた広がり）を見つけ、限られた休日に遊ぶゲームを選ぶ材料にする試作です。価値の検証と経緯は [Issue #1](https://github.com/bepro-engineer/game-signal-scout/issues/1) が正本です。
 
-**インターネットへの公開は準備中です（Issue #6）。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（VAIO の共通の入口が中継する裏の口）、毎日 6:15 の daily-run（`launchd --apply`）。声の取得元は、どれも同じ形の常駐の収集器（取得元ごとの `collect-<取得元>`。Anime と同じ）で読みます。
+**2026-11-08 から `https://game-signal-scout.com/` で公開しています（Issue #6。入口は Anime と同じ VAIO の Apache のポート 80）。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（VAIO の共通の入口が中継する裏の口）、毎日 6:15 の daily-run（`launchd --apply`）。声の取得元は、どれも同じ形の常駐の収集器（取得元ごとの `collect-<取得元>`。Anime と同じ）で読みます。
 
 
 > **取得元はすべて同列の交換可能な入力で、どれもなくてまったく困らない（外しても残りの取得元だけで動く）。特定の取得元を中心に置かない・目立たせない・個別に名前を挙げて取り上げない**（オーナーの厳命。[CLAUDE.md](CLAUDE.md)）。

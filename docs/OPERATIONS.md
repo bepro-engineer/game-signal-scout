@@ -1,6 +1,6 @@
 # 運用（OPERATIONS）
 
-Mac mini で動いています（2026-11-08 から。外への公開はしていません）。DB は共有の PostgreSQL（VAIO）の `game_signal_scout`。接続文字列は `runtime/db.env`（Git の外）だけにあります。
+Mac mini で動いています（2026-11-08 から。公開は `https://game-signal-scout.com/`。入口は §7）。DB は共有の PostgreSQL（VAIO）の `game_signal_scout`。接続文字列は `runtime/db.env`（Git の外）だけにあります。
 
 ## 1. 動いているもの（launchd。`python -m game_signal_scout launchd --apply` で登録）
 
@@ -42,7 +42,8 @@ DB は共有の PostgreSQL のバックアップに含まれます（Game 専用
 ## 6. 実証済みと未実証
 
 - 実証済み: 日次の各段・Viewer・取得元ごとの収集（手動の 1 回）・試験（一時の PostgreSQL）。
-- 未実証: 障害からの自動復旧の実地（試験だけ）、外への公開（していない）。
+- 実証済み（2026-11-08）: 公開の名前から HTTPS で、画面 4 種・文書の API・静的ファイルがすべて 200、`/healthz` は 403、www と http は https の正の名前へ転送、スマートフォンの幅（320・390）で横のはみ出しなし。
+- 未実証: 障害からの自動復旧の実地（試験だけ）、スマートフォンの実機での表示（オーナーの確認）。
 
 ## 7. 入口（Anime と同じ形。Issue #6）
 
