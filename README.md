@@ -37,7 +37,7 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 | Bluesky（Jetstream。Anime の取得元を移植） | キー不要の公式の live tail。ゲームの文脈の語か Steam のストアのリンクがある投稿だけを保存し、削除・アカウントの停止に追従する。投稿者は HMAC（`init-author-key` で鍵を作る）。**常駐で受信する**（`resident = true`。launchd の `collect-bluesky` が `source-collect --source bluesky` を動かし、日次の collect は読まない）。作品の同定は正規化で行う（Steam のリンク、または題名の一致。規則は `services/identify.py`） |
 | Steam のユーザーレビュー（`GetAppReviews`） | **無効**（`enabled = false`）。利用条件が未解決のため、偽の応答による試験だけ |
 
-`python -m game_signal_scout status` は、段ごとの最後の結果・取得元ごとの件数とデータの鮮度・分析の結果・公開の状態を分けて出します（監視が読む形）。共有の PostgreSQL に Game の DB を作る手順は [docs/database.md](docs/database.md) です（未実行）。
+`python -m game_signal_scout status` は、段ごとの最後の結果・取得元ごとの件数とデータの鮮度・分析の結果・公開の状態を分けて出します（監視が読む形）。共有の PostgreSQL に Game の DB を作った手順は [docs/database.md](docs/database.md) です（2026-11-08 に実行済み）。
 
 ## Viewer
 
@@ -46,7 +46,9 @@ python -m game_signal_scout daily-run   # 収集 → 正規化 → 分析 → �
 python -m game_signal_scout web         # http://127.0.0.1:8720/
 ```
 
-- 変化の一覧（遊べなくなった・直った作品）、取得元ごとのデータの鮮度と段の結果、作品ごとの週の推移と、変化の根拠になったプレイヤーの記述を出します。
+- 変化ごとに「何が・いつから・どれだけ変わったか・その後どうか」を日本語の 1 文で出し、根拠の報告に書かれていた内容（起動直後に落ちる・NVIDIA・更新の後から など）を件数つきで並べます（`publication/themes.py`。語の一致で数え、原因は言い切りません）。最近 60 日の変化を上に、それより前はたたみます。
+- 作品のページは、変化の説明・根拠の報告の原文（項目名だけ日本語）・週ごとの推移です。Bluesky の発言は作品への結び付けの正しさをまだ測っていないので「参考（未検証）」として下に置きます。
+- 文書を作るプログラムを替えると、次の回で文書を作り直します（プログラムの指紋を材料の版に含める）。
 - 表 `public_document`・`public_build` を読むだけです（Anime と同じ形）。検査に通らなかった回は表を変えず、画面は前の内容のまま「前の内容のまま」と出します。
 - 接続のたびに Game の DB であることを確かめます。DB に届かなければ 503 を返します。
 
