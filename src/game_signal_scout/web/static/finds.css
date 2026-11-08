@@ -53,3 +53,8 @@
 .fcs[data-n="1"] .fc > div { padding: 22px 26px; } .fcs[data-n="1"] .fc b { font-size: 22px; } .fcs[data-n="1"] .fc-e { font-size: 15px; }
 @media (max-width: 900px) { .fcs { grid-template-columns: repeat(min(var(--n, 3), 2), minmax(0, 1fr)); } }
 @media (max-width: 600px) { .fcs { grid-template-columns: minmax(0, 1fr); } .fcs[data-n="1"] .fc { flex-direction: column; } .fcs[data-n="1"] .fc-i { width: 100%; min-height: 0; aspect-ratio: 16 / 9; } .fcs[data-n="1"] .fc b { font-size: 19px; } .fcs[data-n="1"] .fc > div { padding: 14px 16px; } }
+/* カードの中の 買う前に知っておきたいこと（その作品の不満・注意） */
+.fc-n { margin: 6px 0 0; padding: 8px 10px; border-radius: 8px; background: #FCF3F1; }
+.fc-n > span { display: block; font-size: 12px; font-weight: 700; color: #A8402F; margin: 0 0 2px; }
+.fc-n ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.fc-n li { font-size: 12px; line-height: 1.55; color: #20283D; } .fc-n li em { font-style: normal; font-weight: 700; color: #A8402F; margin-right: 6px; } .fc-n li small { margin-left: 6px; color: #697386; font-size: 11px; }

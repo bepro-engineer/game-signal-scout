@@ -1,6 +1,6 @@
-// 見つけた面白さ（#2。2026-11-09 オーナーが見本で決めた形）: 世界のプレイヤーが実際に遊んで書いた「何をして → 何が起きて → 何が面白かったか」。
+// 注目の作品（#2。2026-11-09 オーナーが見本で決めた形。旧「見つけた面白さ」）: 世界のプレイヤーが実際に遊んで書いた「何をして → 何が起きて → 何が面白かったか」。
 // 並び: 面白さの種類の札（体験のある種類だけ・件数つき。押すと絞る）→ 日本語の凡例 → カード（場面の絵 → 作品の表紙と作品名 → 面白さの一文 → したこと → 起きたこと → 人数・反対の声・日本語）
-// → 買う前に知っておきたいこと（不満・注意のある体験だけ）。カードは日本語の対応の高い順（音声 → 字幕 → UI）、同じ段階の中は書いた人数の多い順。
+// → その作品の買う前に知っておきたいこと（不満・注意のある体験だけ。カードの中に）。カードは日本語の対応の高い順（音声 → 字幕 → UI）、同じ段階の中は書いた人数の多い順。
 // 人数はこちら（services/insight）で数えたもの。1 人の体験はそう書く。原文は出さない。
 (() => {
   const A = window.ASS, { tr, esc, num, nm } = A, FI = ((A.P || {}).finds || {}).items || [];
@@ -21,13 +21,15 @@
   FI.forEach(w => {
     w.finds.forEach(f => { const ev = (f.examples || [])[0] || {}, x = { w, appeal: f.appeal, kind: f.appeal_kind, verdict: f.verdict, act: ev.act, result: ev.result, people: f.people,
       against: f.verdict === "fun" ? f.frustration || 0 : 0, caution: f.caution };
-      if (f.appeal && f.verdict !== "frustration") good.push(x); if (f.verdict === "frustration" || f.caution) warn.push(x); });
+      if (f.appeal && f.verdict !== "frustration") good.push(x); if (f.verdict === "frustration" || (f.caution && f.verdict === "mixed")) warn.push(x); });
     w.singles.forEach(e => { const x = { w, appeal: e.appeal, kind: e.appeal_kind, verdict: e.verdict, act: e.act, result: e.result, people: 1, against: 0, caution: e.caution };
-      if (e.appeal && e.verdict !== "frustration") good.push(x); if (e.verdict === "frustration" || e.caution) warn.push(x); });
+      if (e.appeal && e.verdict !== "frustration") good.push(x); if (e.verdict === "frustration" || (e.caution && e.verdict === "mixed")) warn.push(x); });
   });
   const order = (a, b) => JR[lv(a.w)] - JR[lv(b.w)] || b.people - a.people;
   good.sort(order); warn.sort(order);
   // 1 作品 1 カード（2026-11-09 オーナー）: 見出しはその作品でいちばん多くの人が書いた面白さ（種類で絞ったときはその種類のもの）。ほかの面白さは 2 つまで添える
+  const WB = new Map();   // 作品ごとの 買う前に知っておきたいこと（不満・注意）
+  warn.forEach(x => { if (!WB.has(x.w.id)) WB.set(x.w.id, []); WB.get(x.w.id).push(x); });
   const byWork = new Map();
   good.forEach(x => { if (!byWork.has(x.w.id)) byWork.set(x.w.id, []); byWork.get(x.w.id).push(x); });
   const cardsOf = [...byWork.values()].map(xs => { const hit = xs.filter(x => !K || x.kind === K); return hit.length ? { top: hit[0], rest: xs.filter(x => x !== hit[0]) } : null; })
@@ -42,12 +44,11 @@
       <div><span class="fc-t">${x.w.cover ? `<img src="${esc(x.w.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}${esc(nm(x.w.name))}</span><b>${esc(x.appeal)}</b>
         <span class="fc-e">${esc(x.act)} → ${esc(x.result)}</span>
         ${rest.length ? `<ul class="fc-r">${rest.slice(0, 2).map(r => `<li>${esc(r.appeal)}<small>${r.people > 1 ? tr(`${num(r.people)}人`, `${num(r.people)}`) : tr("1人", "1")}</small></li>`).join("")}</ul>` : ""}
+        ${(WB.get(x.w.id) || []).length ? `<div class="fc-n"><span>${tr("買う前に知っておきたいこと", "Good to know before buying")}</span><ul>${WB.get(x.w.id).slice(0, 2).map(r => `<li>${r.caution ? `<em>${esc(tr(...CJ[r.caution]))}</em>` : ""}${esc(r.act)} → ${esc(r.result)}<small>${r.people > 1 ? tr(`${num(r.people)}人`, `${num(r.people)}`) : tr("1人", "1")}</small></li>`).join("")}</ul></div>` : ""}
         <small><span>${ppl(x.people)}</span>${x.against ? `<span class="fc-w">${tr(`反対の声 ${num(x.against)}人`, `${num(x.against)} disagreed`)}</span>` : ""}${rest.length > 2 ? `<span>${tr(`ほかに${num(rest.length - 2)}件の面白さ`, `+${num(rest.length - 2)} more`)}</span>` : ""}${jp(lv(x.w))}</small></div></a>`;
   $("fd-list").innerHTML = !good.length
     ? `<div class="rv-empty"><div><b>${tr("まだプレイヤーの発言を読んだ作品がありません", "No titles have been read yet")}</b></div></div>`
     : `<div class="fcs" data-n="${cardsOf.length}" style="--n:${Math.min(3, cardsOf.length)}">${cardsOf.map(card).join("")}</div>
-      ${warn.length ? `<h2 class="fh">${tr("買う前に知っておきたいこと", "Good to know before buying")}</h2><p class="fp">${tr("プレイヤーが書いた不満と注意です。", "Complaints and cautions players wrote.")}</p>
-        <ul class="fw">${warn.slice(0, 12).map(x => `<li><a href="${A.workUrl(x.w.id)}"><b>${esc(nm(x.w.name))}</b></a>${x.caution ? ` <span class="fc-w">${esc(tr(...CJ[x.caution]))}</span>` : ""}　${esc(x.act)} → ${esc(x.result)}<small>${ppl(x.people)}</small></li>`).join("")}</ul>` : ""}
       <p class="fsrc">${tr("世界のプレイヤーが直近 7 日に書いた発言を、作品ごとに AI が読み、具体的な体験を取り出しました。人数はこちらで数えています（同じ人の複数の発言は 1 人）。原文は載せていません。",
         "AI read each title's posts from the last 7 days and extracted concrete experiences. Counts are done separately. Original posts are not shown.")}</p>`;
 })();

@@ -93,7 +93,7 @@
     coop: '<circle cx="8" cy="8" r="3.5"/><circle cx="16.5" cy="9" r="3"/><path d="M2 20c.8-3.5 3.3-5.5 6-5.5s5.2 2 6 5.5M14 15c3 0 5.3 1.6 6.2 5"/>',
     versus: '<path d="M4 4l7 7M20 4l-7 7M6 18l-2 2M18 18l2 2M9 13l-4 4M15 13l4 4"/>',
     pad: '<path d="M7 9h10a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L14.5 15h-5l-1.1 1.8A3 3 0 0 1 3 15v-2a4 4 0 0 1 4-4z"/><path d="M8 11.5v3M6.5 13h3"/>' };
-  const NAV = [["index", "ダッシュボード", "Dashboard"], ["finds", "見つけた面白さ", "The fun players found"], ["langspread", "言語圏の広がり", "Language spread"], ["solo", "一人（ソロ）で遊べる", "Single-player"], ["coop", "協力プレイで遊べる", "Co-op"],
+  const NAV = [["index", "ダッシュボード", "Dashboard"], ["finds", "注目の作品", "Titles worth a look"], ["langspread", "言語圏の広がり", "Language spread"], ["solo", "一人（ソロ）で遊べる", "Single-player"], ["coop", "協力プレイで遊べる", "Co-op"],
     ["versus", "対戦プレイで遊べる", "Versus"], ["pad", "コントローラで遊べる", "Controller"], ["search", "作品を探す", "Find titles"], ["about", "このサイトについて", "About"]];
   const page = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
   document.documentElement.dataset.page = page;   // ページごとのアクセントの色（palette.css）

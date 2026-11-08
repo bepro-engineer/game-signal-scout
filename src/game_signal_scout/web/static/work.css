@@ -124,3 +124,6 @@ main.wk .wk-grid > .wk-sec > .sec-h p { grid-column: 2; margin: 2px 0 0; font-si
 /* 選んだ棒の値（#59）: グラフの上の 1 行。選んだ棒に枠 */
 .wk-read { margin: 0 0 6px; min-height: 1.5em; font-size: 14px; font-weight: 700; color: var(--ink); }
 .wk-ch .c.sel .bar { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* ゲーム内容は枠の幅いっぱいの行に（右の列は日本語の対応・開発元・機種の欄が使うので、そこに入れると表紙の下の細い列に押し出されていた。2026-11-09） */
+.wk-story { grid-column: 1 / -1; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+.wk-story .wk-syn { max-width: 52em; }
