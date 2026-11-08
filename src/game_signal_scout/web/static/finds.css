@@ -23,3 +23,19 @@
 .fd-tabs a { padding: 4px 12px; border-radius: 999px; background: #fff; color: #444; text-decoration: none; font-size: 13px; font-weight: 700; box-shadow: 0 0 0 1px #e3e0ef; }
 .fd-tabs a.on { background: var(--pa, #5246c9); color: #fff; box-shadow: none; }
 .fd-c { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #fde9e2; color: #9a4a33; }
+/* 条件（観点は組み合わせて絞る。#2 6723386003） */
+.fd-bar { display: grid; gap: 6px; margin: 0 0 10px; }
+.fd-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.fd-k { font-size: 12px; font-weight: 700; color: #666; margin-right: 2px; }
+.fd-row a { padding: 4px 12px; border-radius: 999px; background: #fff; color: #444; text-decoration: none; font-size: 13px; font-weight: 700; box-shadow: 0 0 0 1px #e3e0ef; }
+.fd-row a small { margin-left: 4px; font-weight: 400; color: #777; }
+.fd-row a.on { background: var(--pa, #5246c9); color: #fff; box-shadow: none; }
+.fd-row a.zero { color: #999; font-weight: 400; }
+.fd-fc { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #ece9fb; color: #4a3fb0; }
+.fd-fit { margin: 2px 0 0; font-size: 13px; color: #3c3958; }
+.fd-few { color: #8a6d1d; } .fd-ag { color: #9a4a33; font-weight: 700; }
+.fd-one { margin-top: 8px; } .fd-one-h { margin: 0 0 4px; font-size: 12px; font-weight: 700; color: #666; }
+.fd-one ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.fd-s { padding: 6px 10px; border-radius: 8px; background: #fbfbfd; border-left: 3px solid #d9d6e6; font-size: 13px; overflow-wrap: anywhere; }
+.fd-src a { margin-left: 4px; font-weight: 700; color: #5246c9; text-decoration: none; }
+.fd-alt { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; } .fd-alt a { font-weight: 700; color: #5246c9; }

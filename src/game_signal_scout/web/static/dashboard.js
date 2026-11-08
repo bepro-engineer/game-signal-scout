@@ -14,10 +14,19 @@
   const widthOf = el => Math.floor(el.getBoundingClientRect().width);
 
   /* ---------- 紹介・表示している日 ---------- */
-  // 入口（#2: 次に遊びたいゲームを発見する）: 遊ぶ目的から探し始める。選ぶと、その目的に当てはまる体験を複数のプレイヤーが書いた作品へ
-  $("intro").innerHTML = `<div class="ask"><h2>${tr("今日は、どんなゲームを探す？", "What kind of game are you looking for today?")}</h2>
-    <p>${tr("世界のプレイヤーが実際に遊んで書いた体験から、次に遊びたいゲームを見つけます。", "Find your next game from what players around the world actually did and wrote.")}</p>
-    <div class="ask-i">${A.INTENTS.map(([k, ja, en, dja, den]) => `<a class="ask-b ask-${k}" href="finds.html?intent=${k}"><b>${tr(ja, en)}</b><small>${tr(dja, den)}</small></a>`).join("")}</div></div>`;
+  // 入口（#2: 次に遊びたいゲームを発見する）: 体験の観点から探し始める。観点は固定の分類ではなく、プレイヤーの体験に付いたもの（#2 6723386003）。
+  // 件数は実際に読めた体験の数。0 件の観点は「まだなし」と書く。その下に、いま読めたいちばん具体的な発見を作品つきで出す（入口だけにしない）
+  const FI = ((A.P && A.P.finds) || {}).items || [];
+  const nOf = k => FI.reduce((t, w) => t + w.finds.filter(f => A.facetHit(f, k)).length + w.singles.filter(e => A.facetHit(e, k)).length, 0);
+  const VJ = { fun: ["面白い", "Fun"], frustration: ["不満", "Frustrating"], mixed: ["賛否", "Mixed"] };
+  const tops = FI.flatMap(w => w.finds.map(f => ({ w, f }))).sort((a, b) => b.f.people - a.f.people).slice(0, 3);
+  $("intro").innerHTML = `<div class="ask"><h2>${tr("今日は、どんな体験をしたい？", "What do you want to experience today?")}</h2>
+    <p>${tr("世界のプレイヤーが実際に遊んで書いた「何をして、何が起きたか」から、次に遊びたいゲームを見つけます。", "Find your next game from what players around the world actually did and what happened.")}</p>
+    <div class="ask-i">${A.FACETS.map(([k, ja, en, dja, den]) => { const n = nOf(k);
+      return `<a class="ask-b ask-${k}${n ? "" : " zero"}" href="finds.html?f=${k}"><b>${tr(ja, en)}</b><small>${tr(dja, den)}</small><em>${n ? tr(`体験 ${num(n)}件`, `${num(n)} experiences`) : tr("まだなし", "None yet")}</em></a>`; }).join("")}</div>
+    ${tops.length ? `<ul class="ask-f">${tops.map(({ w, f }) => `<li><a href="${A.workUrl(w.id)}">${art(w)}</a><div><span class="ask-v ask-v-${esc(f.verdict)}">${esc(tr(...VJ[f.verdict]))}</span>
+      <b>${esc(f.title)}</b><small>${wn(w.name, 1, "span")}・${tr(`${num(f.people)}人が書いた`, `${num(f.people)} players`)}</small></div></li>`).join("")}</ul>
+      <p class="ask-more"><a href="finds.html">${tr("プレイヤーの発見をすべて見る →", "See all discoveries →")}</a></p>` : ""}</div>`;
   A.dayBar($("intro"), "afterend");   // 表示している日は紹介のブロックの下に右寄せ（2026-10-15 のユーザーの指示）
 
   /* ---------- 今日の兆し ---------- */
@@ -31,12 +40,19 @@
   const body = LD ? LD.body.join(L === "ja" ? "" : " ") : null;
   const lede = body ? `<span class="lede-t" id="lede-t">${esc(body).replace(/『([^』]+)』/g, (_, n) => `<b class="nb">『${n}』</b>`)}</span>`
     : `${esc(S.lede[L])}${S.basis === "movement" ? "" : tr("たとえば、こんな作品です。", " For example:")}`;
+  // 今日の兆しの作品で、プレイヤーが何をして何が起きたか（#2 6723365999: 人数・増減だけにしない）。読めた作品だけ
+  function leadFinds() { const ids = G.featured.map(w => w.id), w = ids.map(i => FI.find(x => x.id === i)).find(x => x && (x.finds.length || x.singles.length));
+    if (!w) return "";
+    const li = [...w.finds.slice(0, 3).map(f => `<li><span class="ask-v ask-v-${esc(f.verdict)}">${esc(tr(...VJ[f.verdict]))}</span>${esc(f.title)}<small>${tr(`${num(f.people)}人`, `${num(f.people)} players`)}${f.trend === "new" || f.trend === "up" ? tr("・今週増えた", " · up this week") : ""}</small></li>`),
+      ...w.singles.slice(0, Math.max(0, 3 - w.finds.length)).map(e => `<li><span class="ask-v ask-v-${esc(e.verdict)}">${esc(tr(...VJ[e.verdict]))}</span>${esc(e.did)} → ${esc(e.happened)}<small>${tr("1人の体験", "1 player")}</small></li>`)];
+    return `<div class="g-did"><p>${tr(`『${esc(A.nm(w.name))}』でプレイヤーがしたこと・起きたこと`, `What players did in ${esc(A.nm(w.name))}`)}</p><ul>${li.join("")}</ul></div>`; }
   $("lead").innerHTML = `
     <div class="g-kick"><b>${tr("今日の兆し", "Today's signal")}</b><span class="g-day">${esc(today[L])}</span>
       ${body ? `<button type="button" class="lede-more" aria-controls="lede-t" aria-expanded="false" hidden>${tr("続きを読む", "Read more")}</button>` : ""}</div>
     ${shortHead ? `<h1 class="g-short">${esc(shortHead)}</h1><p class="g-headline">${esc(head)}</p>` : `<h1>${esc(head)}</h1>`}
     <p class="lede"${ss ? ` data-sents="${esc(JSON.stringify(ss))}"` : ""}>${lede}</p>
     ${LD ? A.cites(LD.cites) : ""}
+    ${leadFinds()}
     <ul class="g-row">${G.featured.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}</li>`).join("")}</ul>
     <div class="g-foot"><span>${tr(`話題になった${G.works_today}作品から${G.featured.length}作品（人数の順ではありません）。`, `${G.featured.length} of the ${G.works_today} titles talked about (not in order of people). `)}${G.movement ? tr(`作品それぞれの普段と比べて目立って動いた作品は${G.movement.q1.changes}作品でした。`, `${G.movement.q1.changes} titles moved notably from their usual level.`) : ""}</span>
       <a href="#trend">${tr("「いつもより話題が増えた作品」で確かめる ↓", "See “Titles talked about more than usual” ↓")}</a></div>`;

@@ -29,11 +29,13 @@
     const one = d => `${esc(d.n)}${d.c ? `（${esc(d.c.join("・"))}）` : tr("（国・地域は未確認）", " (country unknown)")}`;
     return ds.slice(0, max).map(one).join(tr("、", ", ")) + (ds.length > max ? tr(`ほか${ds.length - max}社`, ` +${ds.length - max} more`) : ""); };
   const workUrl = id => `work.html?id=${encodeURIComponent(id)}`;
-  // 遊ぶ目的（#2 の入口。services/insight の intent と同じ鍵）
-  const INTENTS = [["deep", "じっくり没頭したい", "Get absorbed", "探索・物語・育成", "Exploration, story, progression"],
-    ["short", "短時間で楽しみたい", "Have fun in a short time", "1 回が短くても満足", "Satisfying in short sessions"],
-    ["novel", "新しい体験がしたい", "Try something new", "独創的な仕組み・意外な遊び方", "Original mechanics, surprising play"],
-    ["friends", "友達と遊びたい", "Play with friends", "協力・対戦・一緒に", "Co-op, versus, together"]];
+  // 体験の観点（#2 6723386003: 固定の分類ではなく、プレイヤーの体験に付く観点。services/insight の style・input と同じ鍵）
+  // [鍵, 名前, 英語, 醍醐味の説明, 英語, 体験の値を取る関数]。どの観点も、体験に書いてあったときだけ付く（作品の対応の有無ではない）
+  const FACETS = [["solo", "ひとりで遊んだ体験", "Played solo", "自力の攻略・探索・没入", "Clearing it yourself, exploring, getting absorbed", f => f.style === "solo"],
+    ["coop", "協力して遊んだ体験", "Played co-op", "役割分担・連携の成功と失敗", "Splitting roles, teamwork that works or fails", f => f.style === "coop"],
+    ["versus", "対戦した体験", "Played versus", "駆け引き・読み合い・上達", "Mind games, reading opponents, getting better", f => f.style === "versus"],
+    ["controller", "コントローラーで遊んだ体験", "With a controller", "操作感・遊びやすさ", "How it feels in your hands", f => f.input === "controller"]];
+  const facetHit = (f, k) => { const x = FACETS.find(y => y[0] === k); return !x || x[5](f); };
   // 変化の判定のページで、2 番目以降に登録した Source の系列で判定された作品の出典（人数はその Source の中の数。ADR 0050）
   const srcNote = w => w.src_label ? `<span class="rv-air">${esc(tr("出典：", "Source: ") + tr(...w.src_label))}</span>` : "";
   // 言語（色は言語にだけ使う）
@@ -296,7 +298,7 @@
       else { add(step); row.querySelector("button")?.focus(); } });
     add(first);
   };
-  window.ASS = Object.assign(window.ASS || {}, { moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, workUrl, INTENTS, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
+  window.ASS = Object.assign(window.ASS || {}, { moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, workUrl, FACETS, facetHit, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
     renderNav, store, sstore, dayBar, restoreScroll, fromPage, goBack, restoring });
   renderNav();
   // まもなく発売（メニューの下の枠。Anime の「まもなく放送」に当たる。signal/upcoming.py・接続口 api/soon）:

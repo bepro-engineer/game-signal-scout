@@ -40,7 +40,7 @@ class Page:
 
 
 PAGES: dict[str, Page] = {
-    "index": Page("ダッシュボード", "Dashboard", CSS_BASE, "day", "dashboard.js", ("world.js",)),
+    "index": Page("ダッシュボード", "Dashboard", CSS_BASE, "day pages", "dashboard.js", ("world.js",)),
     # Game: プレイヤーの発見（#2。「世界で広がる作品」の置き換え。古い spread.html は finds.html へ転送する）
     "finds": Page("プレイヤーの発見", "What players found", CSS_BASE + ["finds.css"], "pages", "finds.js"),
     "lang": Page("言語別の作品", "Titles by language", CSS_BASE, "day", "lang.js"),
