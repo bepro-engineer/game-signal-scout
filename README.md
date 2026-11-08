@@ -40,7 +40,7 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 |---|---|
 | 作品ごとのレビュー | Steam のユーザーレビュー（`GetAppReviews`。28 日分そろうまで遡る）・GOG のレビュー |
 | 作品の公式の掲示板 | Blizzard（Overwatch 2・Diablo IV。9 言語）・MSFS・EVE Online・War Thunder（英・露）・Funcom・Guild Wars 2・CD PROJEKT RED・Warframe・Stardew Valley・Kerbal Space Program・BeamNG.drive |
-| ゲームの総合の掲示板・コミュニティ | NeoGAF・Tildes・Lemmy・Mastodon・GTPlanet（英）、ComputerBase・PCGH・Mein-MMO（独）、Gamekult（仏）、ElOtroLado（西）、Outer Space・Adrenaline（葡）、PlayUA（宇）、True Gaming（亜）、PTT（繁中）、Keylol・Stage1st（簡中）、Pantip（泰）、ニコニコ大百科の掲示板・ゲームの記事へのはてなブックマークのコメント（日） |
+| ゲームの総合の掲示板・コミュニティ | NeoGAF・Tildes・Lemmy・Mastodon・GTPlanet・Famiboards（英）、ComputerBase・PCGH・Mein-MMO・PC Games（独）、Gamekult（仏）、ElOtroLado（西）、SpazioGames・Tom's Hardware Italia（伊）、CD-Action（波）、Outer Space・Adrenaline（葡）、PlayUA（宇）、True Gaming（亜）、PTT（繁中）、Keylol・Stage1st（簡中）、Pantip（泰）、ニコニコ大百科の掲示板・ゲームの記事へのはてなブックマークのコメント（日） |
 | SNS | Bluesky（Jetstream。常駐で受信） |
 | 作品の情報 | Steam のストア（`appdetails`。画像・ゲーム内容〔日・英〕・ジャンル・遊び方・機種・日本語・発売日・各言語の題名） |
 | 規模・これから | Steam の「最も遊ばれているゲーム」・Steam の人気の近日発売（メニューの下の「まもなく発売」） |
