@@ -180,7 +180,7 @@ def insight_doc(conn, appid: str) -> dict | None:
     """作品のページの AI の読み取り（結論 → 楽しめる点・不満・合う人・合わない人・短い時間・注意・更新 → 根拠の引用）。"""
     from game_signal_scout.repositories import insight as insight_repo
     b = insight_repo.all_insights(conn).get(appid)
-    if not b:
+    if not b or not b.get("headline"):   # 発見（services/insight の kind = finds）は画面の文書（signal/）が読む。この古い文書には出さない
         return None
     def items(k):
         return [{"point": x["point"], "n": len(x["ids"]), "quotes": [q for q in (_quote(b, i) for i in x["ids"][:2]) if q]} for x in b.get(k) or []]

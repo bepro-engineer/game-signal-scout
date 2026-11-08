@@ -78,7 +78,7 @@
   // 左の案内（全ページ共通）。表示中のページを示す。スマートフォンの幅では上の帯の「メニュー」で開く
   const ICO = {
     index: '<path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',
-    spread: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/>',
+    finds: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
     revival: '<path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4"/>',
     postair: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
     langspread: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18"/>',
@@ -88,7 +88,7 @@
     coop: '<circle cx="8" cy="8" r="3.5"/><circle cx="16.5" cy="9" r="3"/><path d="M2 20c.8-3.5 3.3-5.5 6-5.5s5.2 2 6 5.5M14 15c3 0 5.3 1.6 6.2 5"/>',
     versus: '<path d="M4 4l7 7M20 4l-7 7M6 18l-2 2M18 18l2 2M9 13l-4 4M15 13l4 4"/>',
     pad: '<path d="M7 9h10a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L14.5 15h-5l-1.1 1.8A3 3 0 0 1 3 15v-2a4 4 0 0 1 4-4z"/><path d="M8 11.5v3M6.5 13h3"/>' };
-  const NAV = [["index", "ダッシュボード", "Dashboard"], ["spread", "世界で広がる", "Worldwide"], ["revival", "再燃", "Heating up again"],
+  const NAV = [["index", "ダッシュボード", "Dashboard"], ["finds", "プレイヤーの発見", "What players found"], ["revival", "再燃", "Heating up again"],
     ["langspread", "言語圏の広がり", "Language spread"], ["solo", "一人（ソロ）で遊べる", "Single-player"], ["coop", "協力プレイで遊べる", "Co-op"],
     ["versus", "対戦プレイで遊べる", "Versus"], ["pad", "コントローラで遊べる", "Controller"], ["search", "作品を探す", "Find titles"], ["about", "このサイトについて", "About"]];
   const page = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "") || "index";

@@ -129,7 +129,7 @@ main.wk .wk-grid > .wk-sec, .sr-panel, .about-s, .lw { background: var(--card) !
 /* 一部の時間しか観測できなかった日の斜線: 灰の系統 */
 
 /* ============================== 世界で広がる（ブルー） ============================== */
-[data-page="spread"] { --pa: var(--c-lang); --pa-ink: var(--c-lang-ink); --pa-soft: var(--c-lang-soft); }
+[data-page="finds"] { --pa: var(--c-lang); --pa-ink: var(--c-lang-ink); --pa-soft: var(--c-lang-soft); }
 [data-page="spread"] .sp-digest .g-kick b { background: var(--brand-badge) !important; }      /* 今日の兆し（ダッシュボードと同じ意味）はローズ */
 [data-page="spread"] .sp-lead { box-shadow: inset 0 4px 0 var(--c-lang), 0 0 0 1px var(--line), 0 10px 28px rgba(32,40,61,.07) !important; border-top-color: transparent !important; }
 [data-page="spread"] .sp-lead .g-kick b { background: var(--c-lang-ink) !important; }

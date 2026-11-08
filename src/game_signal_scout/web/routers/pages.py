@@ -26,6 +26,13 @@ for _name in pages.PAGES:
 router.add_api_route("/index.html", _page("index"), methods=["GET"])
 
 
+@router.get("/spread.html")
+def moved_spread_page():
+    """「世界で広がる作品」は「プレイヤーの発見」に置き換えた（#2）。古いリンクは新しいページへ。"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse("finds.html", status_code=308)
+
+
 @router.get("/robots.txt")
 def show_robots():
     """クローラーへの決まり（利用規約・データ利用ポリシーと同じ。検索エンジンは許可、AI の学習用のクローラーは断る）。robots.txt はドメインの直下でしか読まれない（#65）。"""

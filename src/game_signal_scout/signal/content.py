@@ -755,7 +755,30 @@ def pages(ctx: Ctx) -> dict:
                           **_src_tag(ctx, src, prof)))
     ls.sort(key=lambda it: (PAGE_SORT["language_spread"](it["sort"]), it["id"]))
     out["language_spread"] = {"items": ls, "grid": {"days": int(th["grid_days"]), "before": int(th["grid_before"])}}   # 言語×日の表の窓（langspread.js）
+    out["finds"] = finds_page(ctx)
     return out
+
+
+def finds_page(ctx: Ctx) -> dict:
+    """プレイヤーの発見（#2。services/insight の結果）: 作品ごとに、同じ具体的な体験を書いた独立した投稿者の数と、前の窓との比較。
+    並びは作品のいちばん大きな発見の人数の順。原文は出さない（要約と数だけ）。作品の判断の属性（日本語・開発元・機種）を添える。"""
+    from game_signal_scout.repositories import insight as insight_repo
+    from game_signal_scout.ops import work_display
+    rows = {a: b for a, b in insight_repo.all_insights(ctx.conn).items() if b.get("kind") == "finds" and b.get("finds")}
+    ctx.conn.rollback()
+    if not rows:
+        return {"items": []}
+    meta = work_display.work_meta(ctx.conn, [int(a) for a in rows])
+    items = []
+    for a, b in rows.items():
+        m = meta.get(int(a))
+        if not m:
+            continue
+        items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner")}, **_judge(m), "finds": b["finds"], "read_people": b.get("read_people"),
+                      "experiences": b.get("experiences"), "window_days": b.get("window_days"), "since": (b.get("since") or "")[:10],
+                      "generated_at": b["generated_at"].isoformat() if hasattr(b.get("generated_at"), "isoformat") else str(b.get("generated_at") or "")})
+    items.sort(key=lambda x: (-max(f["people"] for f in x["finds"]), x["id"]))
+    return {"items": items}
 
 
 # ---------------------------------------------------------------- 作品を探す

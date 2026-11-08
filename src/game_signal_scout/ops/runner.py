@@ -135,28 +135,29 @@ def job_analyze(ctx: Context) -> JobResult:
 
 
 def job_insight(ctx: Context) -> JobResult:
-    """作品ごとに、最近のプレイヤーの発言を AI が読んで日本語でまとめる（services/insight。共有の LLM の枠を通す）。
-    材料（使う発言）が前回と同じ作品は作り直さない。1 回に max_per_run 作品まで（多い作品から。残りは次の回）。1 作品の失敗で止めない。"""
+    """プレイヤーの発見（services/insight。#2）: 作品ごとに、発言から具体的な体験を取り出し、同じ体験をまとめて人数を数える。共有の LLM の枠を通す。
+    対象は最近の発言の多い作品（多い順に max_games）。1 回に max_per_run 作品まで。材料（発言）が前の回と同じ作品は作り直さない。1 作品の失敗で止めない。"""
     from game_signal_scout.repositories import catalog, insight as repo
     from game_signal_scout.services import insight
     ic = ctx.cfg.get("insight") or {}
     if not ic.get("enabled"):
         return JobResult(output_count=0, detail={"skipped": "disabled"})
-    days, done, failed, skipped = int(ic.get("days", 30)), [], [], 0
-    todo = repo.candidates(ctx.conn, days, int(ic.get("min_statements", 30)), int(ic.get("max_games", 40)))
+    days = int(ic.get("window_days", 7))
+    todo = repo.candidates(ctx.conn, days, int(ic.get("min_statements", 30)), int(ic.get("max_games", 12)))
     titles = {a: p["title"] for a, p in catalog.profiles(ctx.conn, todo).items()}
+    done, failed, skipped = [], [], 0
     for appid in todo:
-        if len(done) >= int(ic.get("max_per_run", 12)):
+        if len(done) >= int(ic.get("max_per_run", 6)):
             break
-        inputs = insight.pick(repo.statements(ctx.conn, appid, days))
-        if repo.get_hash(ctx.conn, appid) == insight.input_hash(inputs):
-            skipped += 1
-            continue
+        prev = repo.get_body(ctx.conn, appid) or {}
         try:
-            x = insight.read_game(ctx.conn, appid, titles.get(appid) or appid, ic["model"], days)
+            x = insight.read_game(ctx.conn, appid, titles.get(appid) or appid, ic["model"], ic, prev if prev.get("kind") == insight.KIND else None)
         except Exception as e:  # noqa: BLE001 — 1 作品の失敗で止めない
             ctx.conn.rollback()
             failed.append({"appid": appid, "error": f"{type(e).__name__}: {str(e)[:160]}"})
+            continue
+        if x and prev.get("kind") == insight.KIND and repo.get_hash(ctx.conn, appid) == x["input_hash"]:
+            skipped += 1
             continue
         if x:
             repo.upsert(ctx.conn, x)

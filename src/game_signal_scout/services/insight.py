@@ -1,167 +1,139 @@
-"""作品ごとの「プレイヤーの声の読み取り」（AI。Anime の theme_engine と同じく、件数はこちらで数え、LLM は読むことと言葉にすることだけをする）。
+"""プレイヤーの発見（AI の読み取り。#2: 「世界で広がる作品」の置き換え）。
 
-1. 読む: 最近のプレイヤーの発言（取得元に依らない player_post。宣伝などの印のあるものは除く）を、肯定・否定をなるべく半々に最大 MAX_INPUTS 件選ぶ。
-   LLM が 1 件ずつ「何について（ASPECTS）・良いか悪いか・日本語の短い要点」を返す（BATCH 件ずつ）。
-2. 数える: 観点 × 良い／悪い の件数を、こちらで数える（LLM の書いた数は使わない）。
-3. 書く: 数えた表と要点を LLM に渡し、見出し・期待できる体験・合う人・合わない人を日本語で書かせる（数は表の数だけを使わせる）。
-結果は game_insight（作品ごとに 1 行。材料の hash が同じなら作り直さない）。共有の Ollama は共有の枠 scout-llm を通す。
+作品ごとに、世界のプレイヤーの発言から「何をした → 何が起きた → 面白い／不満 → ほかの人も同じか → 前と比べてどう変わったか」を根拠つきで取り出す。
+件数はこちらで数え、LLM は読むことと、同じ体験をまとめることだけをする（Anime の theme_engine と同じ分担）。データにない発見は作らない。
+
+1. 読む: 直近 window_days × 2 日の発言から、投稿者ごとに 1 件（宣伝などの印のあるもの・短いものは除く）。LLM が 1 件ずつ、具体的な体験
+   （did・happened・verdict・topic）か、体験でない（null）かを返す。読んだ結果は発言ごとに残し（body.reads）、次の回は新しい発言だけを読む。
+2. まとめる: 体験の一覧を LLM に渡し、同じ具体的な体験（同じことをして同じことが起きた）をまとめさせる。番号は読んだものだけを使う。
+3. 数える: まとめごとに、直近の窓（window_days）と前の窓の、独立した投稿者の数・言語・面白い／不満の内訳をこちらで数える。
+   直近の窓で min_people 人以上のものだけを発見とする。前の窓との比較: new（前は 0）・up・same・down。
+結果は game_insight（作品ごとに 1 行。材料の hash が同じなら作り直さない）。共有の LLM は llm.chat（共有の枠）だけを通す。
 """
 from __future__ import annotations
 
 import hashlib
 import json
-from collections import defaultdict
-from datetime import datetime, timezone
+from collections import Counter
+from datetime import datetime, timedelta, timezone
 
-MAX_INPUTS = 40
-BATCH = 10
-TEXT_CHARS = 260
-MIN_SUPPORT = 2
+KIND = "finds"
+READ_BATCH = 6
+TEXT_CHARS = 500
+VERDICTS = ("fun", "frustration", "mixed")
 
-ASPECTS = {"fun": "遊びの面白さ", "combat": "戦闘・操作の手触り", "story": "物語・世界観", "visual": "映像・音", "volume": "ボリューム・やり込み",
-           "difficulty": "難しさ", "perf": "動作の重さ・最適化", "bugs": "不具合・落ちる", "online": "オンライン・マッチング", "friends": "仲間と遊ぶ",
-           "solo": "一人で遊ぶ", "time": "遊ぶ時間", "price": "価格・課金", "update": "更新・運営", "other": "その他"}
-
-READ_PROMPT = """ゲーム「{title}」についてのプレイヤーの発言を 1 件ずつ読み、それぞれについて次を返してください。
-- aspect: 主に何について書いているか。次の鍵から 1 つ: {aspects}
-- stance: その点を良いと書いているなら good、悪いと書いているなら bad、どちらでもなければ neutral
-- note: 書いていることの要点を、日本語だけで 25 字以内（中国語・英語を混ぜない。発言にないことは書かない）
-
-次の JSON の配列だけを返してください（前置き不要）: [{{"id": 番号, "aspect": "鍵", "stance": "good", "note": "要点"}}, ...]
+READ_PROMPT = """ゲーム「{title}」のプレイヤーの発言を 1 件ずつ読んでください。発言が「自分が実際に遊んで、何をして、何が起きたか」を具体的に書いているときだけ、それを取り出します。
+感想だけ・ニュース・質問・宣伝・抽象的な評価だけのものは null にします。発言にないことは書かないでください。
+各発言について次の JSON を返します: {{"id": 番号, "exp": null または {{"did": "プレイヤーがしたこと（日本語 30 字以内）", "happened": "その結果起きたこと（日本語 40 字以内）", "verdict": "fun（面白い・良かった）/ frustration（不満・困った）/ mixed", "topic": "体験の話題を表す短い日本語（15 字以内）"}}}}
+JSON の配列だけを返してください（前置き不要）。
 
 発言:
-{lines}
-"""
+{lines}"""
 
-WRITE_PROMPT = """あなたはゲームの情報サイトの編集者です。読者は仕事で自由な時間が少なく、週末に遊ぶゲームを選んでいます。
-ゲーム「{title}」について、最近のプレイヤーの発言 {n} 件を AI が 1 件ずつ読み、何について・良いか悪いかを数えた表が下にあります。
-この表と要点だけを使い、日本語だけで（中国語・英語を混ぜない）、読者が数十秒で判断できる文を書いてください。数を書くときは表の数だけを使ってください。
+GROUP_PROMPT = """ゲーム「{title}」のプレイヤーの体験の一覧です。同じ具体的な体験（同じことをして、同じことが起きた）を書いているものをまとめてください。
+言い換えでも中身が同じならまとめ、中身が違えば分けます。まとまらないものは入れなくてよいです。番号は一覧にあるものだけを使います。
+JSON の配列だけを返してください（前置き不要）: [{{"title": "まとめた体験を 1 文で（「〜すると〜」の形。日本語 50 字以内。一覧にないことを足さない）", "ids": [番号, ...]}}]
 
-表（観点: 良いと書いた人数 / 悪いと書いた人数 / 要点の例）:
-{table}
-
-次の JSON だけを返してください（前置き不要）:
-{{"headline": "いまプレイヤーが最も多く書いていることを 1 文で。人数を入れる（例:『{title}』では、N 人のプレイヤーが〜と書いています。）",
- "experience": "このゲームで期待できる体験を 1〜2 文で",
- "fits": ["合う人（表から言えること。1〜3 個）"],
- "not_fits": ["合わないかもしれない人（表から言えること。1〜3 個）"]}}
-"""
+一覧:
+{items}"""
 
 
-def pick(rows: list[dict]) -> list[dict]:
-    """肯定・否定をなるべく半々に、長い発言を優先して選ぶ。"""
-    pos = sorted([r for r in rows if r["stance"] == "positive"], key=lambda r: -len(r["text"]))
-    neg = sorted([r for r in rows if r["stance"] == "negative"], key=lambda r: -len(r["text"]))
-    other = sorted([r for r in rows if r["stance"] is None], key=lambda r: -len(r["text"]))
-    out = neg[:MAX_INPUTS // 2]
-    out += pos[:MAX_INPUTS - len(out) - min(len(other), 6)]
-    out += other[:MAX_INPUTS - len(out)]
-    return out[:MAX_INPUTS]
+def _json_array(text: str) -> list:
+    try:
+        v = json.loads(text[text.find("["):text.rfind("]") + 1])
+        return v if isinstance(v, list) else []
+    except (ValueError, TypeError):
+        return []
 
 
-def ask_llm(text: str, model: str, owner: str, timeout: int = 600) -> str:
-    """1 回の推論。入口は llm.chat だけ（共有の枠 llm_gate を通る。直接 Ollama や枠のコマンドを呼ばない）。owner は枠の設定（providers.toml [llm_gate] owner）。"""
-    from game_signal_scout import llm
-    return llm.chat(model, "", text, options={"temperature": 0.1, "num_ctx": 8192}, timeout=timeout).content
+def _clean_exp(e) -> dict | None:
+    if not isinstance(e, dict):
+        return None
+    v = str(e.get("verdict") or "").strip()
+    out = {k: str(e.get(k) or "").strip()[:60] for k in ("did", "happened", "topic")}
+    if not out["did"] or not out["happened"] or v not in VERDICTS:
+        return None
+    return {**out, "verdict": v}
 
 
-def _json(content: str, opener: str, closer: str):
-    return json.loads(content[content.find(opener):content.rfind(closer) + 1])
-
-
-def read_batch(title: str, batch: list[tuple[int, dict]], model: str, owner: str) -> dict[int, dict]:
-    """発言を 1 件ずつ読む（観点・良い悪い・要点）。形の崩れた答えは捨てる（その発言は数えない）。"""
-    lines = "\n".join(f"{i}. {' '.join(r['text'].split())[:TEXT_CHARS]}" for i, r in batch)
-    got = _json(ask_llm(READ_PROMPT.format(title=title, aspects=", ".join(ASPECTS), lines=lines), model, owner), "[", "]")
-    ids = {i for i, _ in batch}
-    out = {}
-    for x in got if isinstance(got, list) else []:
-        if not isinstance(x, dict):
+def read_statements(ask, title: str, rows: list[dict]) -> dict[str, dict | None]:
+    """発言（item_id・lang・text）を READ_BATCH 件ずつ読む。item_id → 体験（なければ None）。読めなかった束は返さない（次の回に読み直す）。"""
+    out: dict[str, dict | None] = {}
+    for i in range(0, len(rows), READ_BATCH):
+        b = rows[i:i + READ_BATCH]
+        lines = "\n".join(f"[{j}] ({r.get('lang') or '?'}) {str(r['text'])[:TEXT_CHARS]}" for j, r in enumerate(b))
+        arr = _json_array(ask(READ_PROMPT.format(title=title, lines=lines)))
+        if not arr:
             continue
-        try:
-            i = int(x.get("id"))
-        except (TypeError, ValueError):
-            continue
-        if i in ids and x.get("aspect") in ASPECTS and x.get("stance") in ("good", "bad", "neutral"):
-            out[i] = {"aspect": x["aspect"], "stance": x["stance"], "note": str(x.get("note") or "").strip()[:40]}
+        got = {int(x["id"]): x.get("exp") for x in arr if isinstance(x, dict) and str(x.get("id", "")).isdigit()}
+        for j, r in enumerate(b):
+            out[r["item_id"]] = _clean_exp(got.get(j))
     return out
 
 
-def tally(reads: dict[int, dict]) -> dict[str, dict]:
-    """観点ごとの良い・悪いの件数と、根拠の番号（こちらで数える）。"""
-    t: dict[str, dict] = defaultdict(lambda: {"good": [], "bad": []})
-    for i, x in reads.items():
-        if x["stance"] in ("good", "bad") and x["aspect"] != "other":
-            t[x["aspect"]][x["stance"]].append(i)
-    return dict(t)
-
-
-def table_text(t: dict, reads: dict) -> str:
-    rows = sorted(t.items(), key=lambda kv: -(len(kv[1]["good"]) + len(kv[1]["bad"])))
+def group(ask, title: str, exps: list[tuple[str, dict]]) -> list[dict]:
+    """体験（item_id, exp）をまとめる。返り値: [{title, members: [item_id]}]（番号は一覧にあるものだけ）。"""
+    if len(exps) < 2:
+        return []
+    items = "\n".join(f"[{i}] {e['topic']} / {e['did']} → {e['happened']}" for i, (_, e) in enumerate(exps))
     out = []
-    for k, v in rows:
-        notes = [reads[i]["note"] for i in (v["good"][:2] + v["bad"][:2]) if reads[i]["note"]]
-        out.append(f"- {ASPECTS[k]}: {len(v['good'])} / {len(v['bad'])} / {'、'.join(notes)}")
-    return "\n".join(out)
+    for g in _json_array(ask(GROUP_PROMPT.format(title=title, items=items))):
+        if not isinstance(g, dict) or not str(g.get("title") or "").strip():
+            continue
+        ids = sorted({int(i) for i in g.get("ids") or [] if str(i).isdigit() and int(i) < len(exps)})
+        if ids:
+            out.append({"title": str(g["title"]).strip()[:80], "members": [exps[i][0] for i in ids]})
+    return out
 
 
-def points(t: dict, reads: dict, side: str) -> list[dict]:
-    """良い（side=good）・悪い（bad）の観点を、人数の多い順に（MIN_SUPPORT 人以上）。要点は根拠の発言の要点から。"""
-    xs = [(k, v[side]) for k, v in t.items() if len(v[side]) >= MIN_SUPPORT]
-    xs.sort(key=lambda kv: -len(kv[1]))
-    return [{"aspect": k, "label": ASPECTS[k], "ids": ids, "notes": list(dict.fromkeys(reads[i]["note"] for i in ids if reads[i]["note"]))[:3]}
-            for k, ids in xs[:5]]
+def tally(groups: list[dict], posts: dict[str, dict], exps: dict[str, dict], since, min_people: int) -> list[dict]:
+    """まとめごとに、直近の窓（at >= since）と前の窓の独立した投稿者を数える。数・内訳はこちらで数え、LLM の数は使わない。"""
+    finds = []
+    for g in groups:
+        cur = [m for m in g["members"] if posts[m]["at"] >= since]
+        prev = [m for m in g["members"] if posts[m]["at"] < since]
+        people, before = len({posts[m]["author"] for m in cur}), len({posts[m]["author"] for m in prev})
+        if people < min_people:
+            continue
+        v = Counter(exps[m]["verdict"] for m in cur)
+        verdict = "fun" if v["fun"] > (v["frustration"] + v["mixed"]) else "frustration" if v["frustration"] > (v["fun"] + v["mixed"]) else "mixed"
+        trend = "new" if before == 0 else "up" if people >= before * 1.5 else "down" if people * 1.5 <= before else "same"
+        finds.append({"title": g["title"], "verdict": verdict, "people": people, "prev": before, "trend": trend,
+                      "fun": v["fun"], "frustration": v["frustration"], "mixed": v["mixed"],
+                      "langs": [lg for lg, _ in Counter(posts[m]["lang"] for m in cur if posts[m]["lang"]).most_common()],
+                      "examples": [{"did": exps[m]["did"], "happened": exps[m]["happened"]} for m in cur[:3]]})
+    return sorted(finds, key=lambda f: (-f["people"], f["title"]))
 
 
-def input_hash(inputs: list[dict]) -> str:
-    return hashlib.sha256("|".join(f"{r['source']}:{r['item_id']}" for r in inputs).encode()).hexdigest()[:16]
+def input_hash(rows: list[dict]) -> str:
+    return hashlib.sha256("|".join(sorted(r["item_id"] for r in rows)).encode()).hexdigest()[:16]
 
 
-def read_game(conn, appid: str, title: str, model: str, days: int) -> dict | None:
-    """1 作品の読み取り（材料が少なすぎれば None）。"""
+def read_game(conn, appid: str, title: str, model: str, cfg: dict, prev_body: dict | None = None, ask=None) -> dict | None:
+    """作品 1 つの発見。prev_body（前の回の body）の reads を使い、新しい発言だけを読む。"""
     from game_signal_scout.repositories import insight as repo
-    rows = repo.statements(conn, appid, days)
-    inputs = pick(rows)
-    if len(inputs) < 10:
+    days = int(cfg.get("window_days", 7))
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=days)
+    rows = repo.statements_by_author(conn, appid, days * 2, int(cfg.get("max_per_window", 60)), since)
+    if not rows:
         return None
-    numbered = list(enumerate(inputs, 1))
-    reads: dict[int, dict] = {}
-    for k in range(0, len(numbered), BATCH):
-        reads.update(read_batch(title, numbered[k:k + BATCH], model, f"game:insight:{appid}"))
-    t = tally(reads)
-    w = _json(ask_llm(WRITE_PROMPT.format(title=title, n=len(reads), table=table_text(t, reads)), model, f"game:insight:{appid}"), "{", "}")
-    quotes = {i: {"text": " ".join(r["text"].split())[:TEXT_CHARS], "stance": r["stance"], "lang": r["lang"],
-                  "hours": round(r["playtime_minutes"] / 60) if r.get("playtime_minutes") else None, "source": r["source"]}
-              for i, r in numbered}
-    strs = lambda v: [str(s).strip() for s in v if str(s).strip()][:3] if isinstance(v, list) else []
-    body = {"headline": str(w.get("headline") or "").strip(), "experience": str(w.get("experience") or "").strip(),
-            "fits": strs(w.get("fits")), "not_fits": strs(w.get("not_fits")),
-            "praise": points(t, reads, "good"), "complaints": points(t, reads, "bad"),
-            "tally": {k: {"good": len(v["good"]), "bad": len(v["bad"])} for k, v in t.items()},
-            "reads": {str(i): x for i, x in reads.items()}, "quotes": quotes,
-            "stats": {"n": len(rows), "positive": sum(r["stance"] == "positive" for r in rows), "negative": sum(r["stance"] == "negative" for r in rows),
-                      "used": len(inputs), "read": len(reads), "days": days}}
-    return {"appid": appid, "generated_at": datetime.now(timezone.utc), "model": model, "input_hash": input_hash(inputs), "body": body}
+    if ask is None:
+        from game_signal_scout import llm
+        ask = lambda p: llm.chat(model, "", p, options={"temperature": 0.1, "num_ctx": 8192}, timeout=float(cfg.get("timeout_seconds", 1800))).content
+    reads = {k: v for k, v in ((prev_body or {}).get("reads") or {}).items() if k in {r["item_id"] for r in rows}}
+    todo = [r for r in rows if r["item_id"] not in reads][: int(cfg.get("max_reads_per_run", 60))]
+    reads.update(read_statements(ask, title, todo))
+    posts = {r["item_id"]: r for r in rows}
+    exps = {k: v for k, v in reads.items() if v and k in posts}
+    groups = group(ask, title, sorted(exps.items(), key=lambda kv: posts[kv[0]]["at"]))
+    finds = tally(groups, posts, exps, since, int(cfg.get("min_people", 3)))
+    n_cur = len({r["author"] for r in rows if r["at"] >= since and r["item_id"] in reads})
+    return {"appid": appid, "generated_at": now, "model": model, "input_hash": input_hash(rows),
+            "body": {"kind": KIND, "window_days": days, "since": since.isoformat(), "read_people": n_cur,
+                     "experiences": sum(1 for k in exps if posts[k]["at"] >= since), "finds": finds, "reads": reads}}
 
 
 def phenomena(body: dict, ranked: bool) -> list[str]:
-    """左の案内の現象の種類（こちらで数えた件数から決める。LLM に種類を選ばせない）。"""
-    t = body.get("tally") or {}
-    g = lambda k: (t.get(k) or {}).get("good", 0)
-    b = lambda k: (t.get(k) or {}).get("bad", 0)
-    st = body.get("stats") or {}
-    n = (st.get("positive") or 0) + (st.get("negative") or 0)
-    pos = (st.get("positive") or 0) / n if n else None
-    read = st.get("read") or 0
-    out = []
-    if g("update") >= 3 and g("update") > b("update"):
-        out.append("rising")
-    if g("time") >= 3 and g("time") > b("time"):
-        out.append("short")
-    if g("friends") >= 3:
-        out.append("friends")
-    if pos is not None and pos >= 0.85 and n >= 30 and not ranked:
-        out.append("gem")
-    if read and (b("bugs") + b("perf") + b("online") + b("price")) >= max(4, read * 0.3):
-        out.append("caution")
-    return out
+    """古い公開の文書（publication/content）の互換: 発見の見出し。"""
+    return [f["title"] for f in (body or {}).get("finds") or []][: 3 if ranked else 5]

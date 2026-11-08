@@ -8,14 +8,18 @@ max_running_hours = 6         # running のまま残った実行を abandoned �
 user_agent = "game-signal-scout/0.0.1 (+https://github.com/bepro-engineer/game-signal-scout; non-commercial)"
 
 [insight]
-# プレイヤーの声の読み取り（services/insight。共有の Ollama を共有の枠 scout-llm で使う）
-# 2026-11-08: 本人が試行を止めたので無効（再開は本人の判断の後）
-enabled = false
-model = "qwen2.5:7b"
-days = 30                     # 材料にする発言の期間
-min_statements = 30           # これ以上の発言がある作品だけ読む
-max_games = 40                # 対象の作品の数（発言の多い順）
-max_per_run = 12              # 1 回の日次で読む作品の数（1 作品に数分かかる）
+# プレイヤーの発見（services/insight。#2 の 6721630085: 「世界で広がる作品」の置き換え。オーナーの指示で再開 2026-11-08）。
+# 発言から具体的な体験（何をした → 何が起きた → 面白い／不満）を取り出し、同じ体験をまとめて人数を数える。共有の LLM の枠を通す
+enabled = false               # 実データで時間を測り、共有の LLM の枠を長くふさがないと確かめてから有効にする（2026-11-08）
+model = "gemma4:12b-it-q4_K_M"   # 今日の兆しと同じモデル
+window_days = 7               # 直近の窓（前の窓も同じ長さ。比べて new・up・same・down）
+max_per_window = 60           # 窓ごとに読む投稿者の数（1 人 1 件）
+max_reads_per_run = 60        # 1 作品で 1 回に新しく読む発言の数（読んだ結果は残し、次の回は新しい発言だけ）
+min_people = 3                # 直近の窓で、同じ体験を書いた独立した投稿者がこれ以上のときだけ発見にする
+min_statements = 30           # 直近の窓にこれ以上の発言がある作品だけ読む
+max_games = 12                # 対象の作品の数（発言の多い順）
+max_per_run = 6               # 1 回の日次で読む作品の数
+timeout_seconds = 1800        # 共有の枠の順番待ちを含む
 
 [analysis]
 # 「遊べなくなった・直った」の検出（Issue #1 の検証P で事前に固定した規則。変えたら version を上げる）

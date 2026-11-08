@@ -38,3 +38,20 @@ def all_insights(conn) -> dict[str, dict]:
 
 def newest_generated_at(conn):
     return conn.execute("SELECT max(generated_at) FROM game_insight").fetchone()[0]
+
+
+def statements_by_author(conn, appid: str, days: int, per_window: int, since) -> list[dict]:
+    """発見の材料: 作品の直近 days 日の発言を、投稿者ごとに 1 件（いちばん長いもの）。直近の窓（at >= since）と前の窓から、それぞれ多くて per_window 件。
+    宣伝などの印のあるもの・短いものは除く。"""
+    rows = conn.execute("SELECT DISTINCT ON (author, at >= %s) item_id, author, at, lang, text FROM player_post WHERE appid = %s "
+                        "AND at > now() - make_interval(days => %s) AND NOT flags ?| %s AND length(text) BETWEEN 60 AND 4000 "
+                        "ORDER BY author, at >= %s, length(text) DESC", (since, appid, days, EXCLUDE, since)).fetchall()
+    out = [dict(zip(("item_id", "author", "at", "lang", "text"), x)) for x in rows]
+    cur = sorted([x for x in out if x["at"] >= since], key=lambda x: x["item_id"])[:per_window]
+    prev = sorted([x for x in out if x["at"] < since], key=lambda x: x["item_id"])[:per_window]
+    return cur + prev
+
+
+def get_body(conn, appid: str) -> dict | None:
+    r = conn.execute("SELECT body FROM game_insight WHERE appid = %s", (appid,)).fetchone()
+    return r[0] if r else None
