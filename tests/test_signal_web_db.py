@@ -76,7 +76,7 @@ def test_menu_keeps_anime_names_and_adds_play_styles():
     """左の案内: Anime の名前を保ち、遊び方のページを足す。「世界で広がる」は「プレイヤーの発見」に置き換えた（#2）。"""
     from pathlib import Path
     js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/common.js").read_text()
-    for name in ('"index", "ダッシュボード"', '"finds", "プレイヤーの発見"', '"langspread", "言語圏の広がり"', '"search", "作品を探す"',
+    for name in ('"index", "ダッシュボード"', '"finds", "見つけた面白さ"', '"langspread", "言語圏の広がり"', '"search", "作品を探す"',
                  '"about", "このサイトについて"', '"solo", "一人（ソロ）で遊べる"', '"coop", "協力プレイで遊べる"', '"versus", "対戦プレイで遊べる"', '"pad", "コントローラで遊べる"'):
         assert name in js
     assert "放送後も熱い" not in js                                                  # Game にない放送のページは置かない

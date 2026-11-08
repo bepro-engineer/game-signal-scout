@@ -16,7 +16,7 @@ def work_meta(conn, work_ids: list[int]) -> dict[int, dict]:
     # 画像: 縦長の枠には縦長の表紙（なければストアのヘッダー）、作品詳細の帯には横長の帯（なければヘッダー）
     # 日本人が最初に判断する属性（#2）: 日本語の UI・字幕・音声（jp）、開発元と国・地域（dev）、遊べる機種（plat）。どの画面のカードにも同じ値
     return {int(a): {"id": f"w{a}", "name": {"ja": t, "en": en or t}, "cover": (art.get(a) or (None, None))[0] or img,
-                     "banner": (art.get(a) or (None, None))[1] or img, **work_attrs(attrs.get(a) or {}), "plat": plats.get(a) or []}
+                     "banner": (art.get(a) or (None, None))[1] or img, **work_attrs(attrs.get(a) or {}), "plat": plats.get(a) or [], "shots": next((x["value"] for x in (attrs.get(a) or {}).get("shots") or [] if x.get("value")), []), "header": img}
             for a, (t, en, img) in rows.items()}
 
 

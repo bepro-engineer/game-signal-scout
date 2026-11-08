@@ -34,7 +34,7 @@ def test_people_and_trend_are_counted_here_not_by_the_llm():
 def test_group_ignores_numbers_that_were_not_in_the_list():
     exps = [("p1", {"did": "a", "happened": "b", "topic": "t", "verdict": "fun"}), ("p2", {"did": "a", "happened": "b", "topic": "t", "verdict": "fun"})]
     g = insight.group(lambda p: json.dumps([{"title": "同じ体験", "ids": [0, 1, 7]}, {"title": "", "ids": [0]}]), "T", exps)
-    assert g == [{"title": "同じ体験", "members": ["p1", "p2"]}]
+    assert g == [{"title": "同じ体験", "fits": "", "appeal": "", "members": ["p1", "p2"]}]
 
 
 def test_titles_that_are_not_japanese_are_dropped():
@@ -65,14 +65,25 @@ def test_vague_actions_are_not_experiences():
     assert insight._clean_exp({"did": "大剣で溜め攻撃を連発した", "happened": "ボスを 1 回で倒せた", "verdict": "fun", "topic": "t"})["did"] == "大剣で溜め攻撃を連発した"
 
 
-def test_intent_and_caution_are_kept_only_when_most_of_the_group_agrees():
+def test_style_and_caution_are_kept_only_when_most_of_the_group_agrees():
     posts = {p["item_id"]: p for p in [post(1, "a", 1), post(2, "b", 1), post(3, "c", 1)]}
-    exps = {"p1": {"did": "d", "happened": "h", "verdict": "fun", "topic": "t", "intent": "friends", "caution": None},
-            "p2": {"did": "d", "happened": "h", "verdict": "fun", "topic": "t", "intent": "friends", "caution": "online"},
-            "p3": {"did": "d", "happened": "h", "verdict": "fun", "topic": "t", "intent": "deep", "caution": None}}
-    f = insight.tally([{"title": "2 人で拠点を守ると連携できる", "members": ["p1", "p2", "p3"]}], posts, exps, SINCE, 3)[0]
-    assert f["intent"] == "friends" and f["caution"] is None
-    assert insight._clean_exp({"did": "大剣で溜め攻撃", "happened": "ボスを倒せた", "verdict": "fun", "topic": "t", "intent": "solo"})["intent"] is None
+    exps = {"p1": {"did": "d", "happened": "h", "verdict": "fun", "topic": "t", "style": "coop", "caution": None},
+            "p2": {"did": "d", "happened": "h", "verdict": "fun", "topic": "t", "style": "coop", "caution": "online"},
+            "p3": {"did": "d", "happened": "h", "verdict": "frustration", "topic": "t", "style": "solo", "caution": None}}
+    f = insight.tally([{"title": "2 人で拠点を守ると連携できる", "fits": "決まった仲間と遊べる人", "members": ["p1", "p2", "p3"]}], posts, exps, SINCE, 2)[0]
+    assert f["style"] == "coop" and f["caution"] is None and f["input"] is None and f["fits"] == "決まった仲間と遊べる人"
+    assert f["frustration"] == 1      # 反対の声の人数も残す
+    assert insight._clean_exp({"did": "大剣で溜め攻撃", "happened": "ボスを倒せた", "verdict": "fun", "topic": "t", "style": "deep"})["style"] is None   # 決まりにない値は付けない
+
+
+def test_two_people_make_a_find_and_one_person_stays_a_labeled_single():
+    """人数は目安: 2 人で発見。重ならない 1 人の体験は「ひとりの体験」として残す（数で捨てない）。"""
+    posts = {p["item_id"]: p for p in [post(1, "a", 1), post(2, "b", 1), post(3, "c", 1)]}
+    exps = {k: {"did": f"d{k}", "happened": "h", "verdict": "fun", "topic": "t"} for k in posts}
+    f = insight.tally([{"title": "拠点を奪うと逆転できる", "members": ["p1", "p2"]}], posts, exps, SINCE, 2)
+    assert len(f) == 1 and f[0]["people"] == 2
+    one = insight.singles(posts, exps, {"p1", "p2"}, SINCE)
+    assert [e["did"] for e in one] == ["dp3"]
 
 
 def test_untranslated_or_abstract_text_is_not_used():
@@ -123,3 +134,12 @@ def test_posts_of_sources_not_in_use_are_marked_and_unmarked(conn):
     assert flags["off"] == ["not_in_use"] and flags["on"] == []
     post_repo.mark_not_in_use(conn, ["on", "off"])
     assert dict(conn.execute("SELECT source, flags FROM player_post").fetchall())["off"] == []
+
+
+def test_finds_document_uses_only_public_keys():
+    """見つけた面白さの公開文書は、公開しない項目名（did・generated_at など）を使わない（2026-11-09 これで公開が止まった）。"""
+    from game_signal_scout.signal import content
+    ev = content._pub_ev({"did": "スナイパーで頭を撃ち抜いた", "happened": "快感があった", "verdict": "fun", "appeal": "頭を撃ち抜いた瞬間がたまらない"})
+    doc = {"finds": {"items": [{"id": "w1", "finds": [{"title": "t", "examples": [ev]}], "singles": [ev], "since": "2026-11-01"}]}}
+    assert content.audit_public(doc, "pages") == []
+    assert ev["act"] and ev["result"] and "did" not in ev and "happened" not in ev

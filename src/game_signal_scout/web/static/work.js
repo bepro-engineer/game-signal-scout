@@ -52,7 +52,7 @@
   const links = [offi, strm].filter(x => x.length).map(x => x.map(link).join("")).join('<span class="wk-lsep" aria-hidden="true"></span>');
   const other = A.lang === "en" ? W.name.ja : W.name.en;
   // 前のページへ: このタブで作品詳細へ移る直前のページ（common.js の ass.from）。直接開いたときは作品を探すへの通常のリンク
-  const PN = { index: ["ダッシュボード", "Dashboard"], finds: ["プレイヤーの発見", "What players found"], revival: ["再燃", "Heating up again"], postair: ["放送後も熱い", "After the finale"],
+  const PN = { index: ["ダッシュボード", "Dashboard"], finds: ["見つけた面白さ", "The fun players found"], revival: ["再燃", "Heating up again"], postair: ["放送後も熱い", "After the finale"],
     langspread: ["言語圏の広がり", "Language spread"], search: ["作品を探す", "Find titles"], lang: ["言語別の作品", "Titles by language"] };
   const from = A.fromPage(W.id);
   const back = from ? `<a class="wk-back" id="wk-back" href="${esc(from.href)}">${tr(`← 前のページ（${(PN[from.page] || PN.search)[0]}）へ`, `← Back to ${(PN[from.page] || PN.search)[1]}`)}</a>`

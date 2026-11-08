@@ -58,3 +58,13 @@ def test_screen_values_keep_unknown_apart_and_never_show_ids_as_names():
     got = work_attrs(a)
     assert got["jp"] == {"ui": False, "sub": False, "voice": False} and got["jp_at"] == "2026-11-08"
     assert got["dev"] == [{"n": "Studio Z", "c": None}]                                  # 名前のない記載は使わず、国は未確認のまま（推定しない）
+
+
+def test_scene_images_keep_store_order_and_only_all_ages():
+    """場面の画像は、年齢の制限のない場面だけを配信元の順に、上限まで（画像は複製せず URL だけ）。"""
+    from game_signal_scout.sources import steam_assets
+    xs = {"all_ages_screenshots": [{"filename": f"steam/apps/1/s{i}.jpg", "ordinal": 10 - i} for i in range(12)],
+          "mature_content_screenshots": [{"filename": "steam/apps/1/m.jpg", "ordinal": 0}]}
+    got = steam_assets.shot_urls(xs)
+    assert len(got) == steam_assets.MAX_SHOTS and got[0].endswith("s11.jpg") and not any("m.jpg" in u for u in got)
+    assert steam_assets.shot_urls({}) == []

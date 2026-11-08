@@ -12,6 +12,8 @@
 """
 from __future__ import annotations
 
+import json
+
 import re
 
 from game_signal_scout.repositories import report as repo
@@ -144,12 +146,14 @@ def upcoming(conn, source: str, settings: dict | None = None, batch: int = 1000)
 
 
 def assets(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
-    """作品の画像の場所 → game_assets（版が変われば置き換える）。"""
+    """作品の画像の場所 → game_assets（版が変われば置き換える）。場面の画像は作品の属性 shots へ。"""
     from game_signal_scout.repositories import catalog
     total = 0
     while rows := catalog.asset_rows(conn, source, batch):
         with conn.transaction():
             total += catalog.upsert_assets(conn, [(p["appid"], source, item_id, p.get("capsule"), p.get("hero"), received_at) for item_id, received_at, p in rows])
+            # 場面の画像（スクリーンショット）は作品の属性 shots に（画面の大きな絵・面白さの札・発見のカード）
+            catalog.upsert_attributes(conn, [(p["appid"], "shots", source, item_id, p["shots"], received_at) for item_id, received_at, p in rows if p.get("shots")])
         conn.commit()
     return total
 

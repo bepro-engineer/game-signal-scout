@@ -1,43 +1,53 @@
-// プレイヤーの発見（#2。「世界で広がる作品」の置き換え）: 作品ごとに、世界のプレイヤーが実際に遊んで「何をして、何が起きたか」と、
-// 同じことを書いた独立した投稿者の数・前の週との比較。数は集計（services/insight）が数えたもの。原文は出さない（要約と数だけ）。
+// 見つけた面白さ（#2。2026-11-09 オーナーが見本で決めた形）: 世界のプレイヤーが実際に遊んで書いた「何をして → 何が起きて → 何が面白かったか」。
+// 並び: 面白さの種類の札（体験のある種類だけ・件数つき。押すと絞る）→ 日本語の凡例 → カード（場面の絵 → 作品の表紙と作品名 → 面白さの一文 → したこと → 起きたこと → 人数・反対の声・日本語）
+// → 買う前に知っておきたいこと（不満・注意のある体験だけ）。カードは日本語の対応の高い順（音声 → 字幕 → UI）、同じ段階の中は書いた人数の多い順。
+// 人数はこちら（services/insight）で数えたもの。1 人の体験はそう書く。原文は出さない。
 (() => {
-  const A = window.ASS, { tr, esc, nm, art, wn, num, ln, lcol } = A, P = A.P, ALL = (P.finds || {}).items || [];
-  // 遊ぶ目的で絞る（トップの入口から ?intent=）: その目的に当てはまる面白い・賛否の体験を書いた人の多い作品から。注意（不満）は一緒に出す
-  const INTENT = (() => { try { return new URLSearchParams(location.search).get("intent") || ""; } catch (e) { return ""; } })();
-  const IT = A.INTENTS.find(x => x[0] === INTENT);
-  const fits = w => w.finds.filter(f => f.intent === INTENT && f.verdict !== "frustration");
-  // いま変わったこと（#2: 「再燃」の置き換え）: 前の週になかった・増えた体験だけ。なぜ遊ぶ意味が変わったかを、体験と人数で示す
-  const VIEW = (() => { try { return new URLSearchParams(location.search).get("view") || ""; } catch (e) { return ""; } })();
-  const changed = w => w.finds.filter(f => f.trend === "new" || f.trend === "up");
-  const F = VIEW === "changed" ? ALL.filter(w => changed(w).length).map(w => ({ ...w, finds: changed(w) })).sort((a, b) => b.finds[0].people - a.finds[0].people)
-    : IT ? ALL.filter(w => fits(w).length).sort((a, b) => fits(b)[0].people - fits(a)[0].people)
-    .map(w => ({ ...w, finds: [...fits(w), ...w.finds.filter(f => !fits(w).includes(f) && (f.verdict === "frustration" || f.caution))] })) : ALL;
-  const CAUTION = { time: ["時間がかかる", "Time-consuming"], price: ["価格・課金", "Price / monetization"], performance: ["動作が重い", "Performance"],
-    bugs: ["不具合", "Bugs"], difficulty: ["難しさ", "Difficulty"], online: ["接続・対戦相手", "Online issues"] };
+  const A = window.ASS, { tr, esc, num, nm } = A, FI = ((A.P || {}).finds || {}).items || [];
   const $ = id => document.getElementById(id);
-  const VERDICT = { fun: ["面白い", "Fun"], frustration: ["不満", "Frustrating"], mixed: ["賛否", "Mixed"] };
-  const TREND = { new: ["今週はじめて", "New this week"], up: ["増えている", "Growing"], same: ["続いている", "Ongoing"], down: ["減っている", "Fading"] };
-  const ppl = n => tr(`${num(n)}人`, `${num(n)} ${n === 1 ? "player" : "players"}`);
-  const langs = f => f.langs.slice(0, 4).map(l => `<span class="fd-lg"><i style="background:${lcol(l)}"></i>${esc(ln(l))}</span>`).join("") +
-    (f.langs.length > 4 ? `<span class="fd-lg more">${tr(`ほか${f.langs.length - 4}`, `+${f.langs.length - 4}`)}</span>` : "");
-  const find = (f, w) => `<li class="fd-f fd-${esc(f.verdict)}">
-      <p class="fd-h"><span class="fd-v">${esc(tr(...VERDICT[f.verdict]))}</span>${f.caution ? `<span class="fd-c">${tr("注意: ", "Note: ")}${esc(tr(...CAUTION[f.caution]))}</span>` : ""}<b>${esc(f.title)}</b></p>
-      <p class="fd-n"><span class="fd-p">${tr(`${ppl(f.people)}が同じことを書いています`, `${ppl(f.people)} wrote the same`)}</span>
-        <span class="fd-t fd-t-${esc(f.trend)}">${esc(tr(...TREND[f.trend]))}${f.trend !== "new" ? tr(`（前の週 ${num(f.prev)}人）`, ` (prev. week ${num(f.prev)})`) : ""}</span>
-        ${f.verdict === "mixed" ? `<span class="fd-mix">${tr(`面白い ${num(f.fun)}・不満 ${num(f.frustration)}・どちらも ${num(f.mixed)}`, `fun ${num(f.fun)} · frustrating ${num(f.frustration)} · both ${num(f.mixed)}`)}</span>` : ""}</p>
-      <p class="fd-l">${langs(f)}</p>
-      ${f.examples && f.examples.length ? `<ul class="fd-ex">${f.examples.map(e => `<li>${esc(e.act)} <span aria-hidden="true">→</span> ${esc(e.result)}</li>`).join("")}</ul>` : ""}
-    </li>`;
-  const card = w => `<article class="fd-w"><a class="fd-a" href="${A.workUrl(w.id)}">${art(w)}</a>
-      <div class="fd-b"><h3><a href="${A.workUrl(w.id)}">${wn(w.name, 2, "span")}</a></h3>
-        <p class="fd-meta">${A.jpTag(w)} ${A.devLine(w)}</p>
-        <ol class="fd-fs">${w.finds.map(f => find(f, w)).join("")}</ol>
-        <p class="fd-src">${tr(`${esc(w.since)}からの 7 日に、この作品について書いた ${num(w.read_people || 0)}人の発言を AI が読み、具体的な体験を書いた ${num(w.experiences || 0)}件をまとめました。`,
-          `AI read posts by ${num(w.read_people || 0)} players over 7 days from ${esc(w.since)} and grouped ${num(w.experiences || 0)} concrete experiences.`)}</p></div></article>`;
-  const tabs = `<nav class="fd-tabs">${[["", "すべて", "All"], ...A.INTENTS].map(([k, ja, en]) => `<a href="finds.html${k ? `?intent=${k}` : ""}"${k === INTENT && VIEW !== "changed" ? ' class="on" aria-current="page"' : ""}>${tr(ja, en)}</a>`).join("")}
-    <a href="finds.html?view=changed"${VIEW === "changed" ? ' class="on" aria-current="page"' : ""}>${tr("いま変わったこと", "What changed")}</a></nav>`;
-  $("fd-note").innerHTML = tabs + `<p>${tr("人数は、同じ具体的な体験を書いた別々の人の数です（同じ人の複数の投稿は 1 人）。AI は発言を読んでまとめるだけで、数は数えていません。発言の原文は載せていません。",
-    "Counts are distinct players who wrote the same concrete experience (several posts by one player count once). AI only reads and groups; counting is done separately. Original posts are not shown.")}</p>`;
-  $("fd-list").innerHTML = F.length ? F.map(card).join("")
-    : `<div class="rv-empty"><div><b>${IT ? tr(`「${IT[1]}」に当てはまる発見はまだありません`, `No discoveries for “${IT[2]}” yet`) : tr("まだ発見はありません", "No discoveries yet")}</b><p>${tr("同じ体験を 3 人以上のプレイヤーが書いた作品だけを出します。根拠のない作品は並べません。", "We only list titles where 3 or more players wrote about the same experience.")}</p></div></div>`;
+  const K = (() => { try { return new URLSearchParams(location.search).get("k") || ""; } catch (e) { return ""; } })();
+  const KIND = { conquer: ["強敵を自力で乗り越える手応え", "Overcoming tough challenges"], explore: ["探して、見つける喜び", "The joy of exploring"],
+    story: ["物語と世界に浸る", "Getting lost in the story"], grow: ["育てて、作り上げる楽しさ", "Building and growing"], team: ["仲間と作戦が決まる快感", "Teamwork that clicks"],
+    versus: ["相手との読み合い・駆け引き", "Outplaying opponents"], feel: ["思いどおりに動かす気持ちよさ", "How good it feels to play"], surprise: ["予想外が起きる面白さ", "Surprises"] };
+  const CJ = { time: ["時間がかかる", "Takes time"], price: ["価格・課金", "Price"], performance: ["動作が重い", "Performance"], bugs: ["不具合", "Bugs"], difficulty: ["難しい", "Difficult"], online: ["接続・対戦相手", "Online"] };
+  const lv = w => !w.jp ? "unknown" : w.jp.voice ? "voice" : w.jp.sub ? "sub" : w.jp.ui ? "ui" : "none";
+  const JR = { voice: 0, sub: 1, ui: 2, none: 3, unknown: 4 };
+  const JPL = { voice: ["日本語音声", "Japanese audio"], sub: ["日本語字幕", "Japanese subtitles"], ui: ["日本語UI", "Japanese UI"], none: ["日本語非対応", "No Japanese"], unknown: ["日本語未確認", "Japanese unknown"] };
+  const jp = k => `<span class="fj fj-${k}">${esc(tr(...JPL[k]))}</span>`;
+  // カードの絵: 作品の場面の画像を、同じ作品のカードごとに別の 1 枚に（なければ横長の帯 → ヘッダー → 表紙）
+  const nth = {};
+  const img = w => { const xs = w.shots || []; const i = nth[w.id] = (nth[w.id] || 0) + 1; return xs.length ? xs[(i - 1) % xs.length] : (w.banner || w.header || w.cover || ""); };
+  const good = [], warn = [];
+  FI.forEach(w => {
+    w.finds.forEach(f => { const ev = (f.examples || [])[0] || {}, x = { w, appeal: f.appeal, kind: f.appeal_kind, verdict: f.verdict, act: ev.act, result: ev.result, people: f.people,
+      against: f.verdict === "fun" ? f.frustration || 0 : 0, caution: f.caution };
+      if (f.appeal && f.verdict !== "frustration") good.push(x); if (f.verdict === "frustration" || f.caution) warn.push(x); });
+    w.singles.forEach(e => { const x = { w, appeal: e.appeal, kind: e.appeal_kind, verdict: e.verdict, act: e.act, result: e.result, people: 1, against: 0, caution: e.caution };
+      if (e.appeal && e.verdict !== "frustration") good.push(x); if (e.verdict === "frustration" || e.caution) warn.push(x); });
+  });
+  const order = (a, b) => JR[lv(a.w)] - JR[lv(b.w)] || b.people - a.people;
+  good.sort(order); warn.sort(order);
+  // 1 作品 1 カード（2026-11-09 オーナー）: 見出しはその作品でいちばん多くの人が書いた面白さ（種類で絞ったときはその種類のもの）。ほかの面白さは 2 つまで添える
+  const byWork = new Map();
+  good.forEach(x => { if (!byWork.has(x.w.id)) byWork.set(x.w.id, []); byWork.get(x.w.id).push(x); });
+  const cardsOf = [...byWork.values()].map(xs => { const hit = xs.filter(x => !K || x.kind === K); return hit.length ? { top: hit[0], rest: xs.filter(x => x !== hit[0]) } : null; })
+    .filter(Boolean).sort((a, b) => order(a.top, b.top));
+  const kinds = Object.keys(KIND).map(k => [k, [...byWork.values()].filter(xs => xs.some(x => x.kind === k)).length]).filter(([, n]) => n);
+  const ppl = n => n > 1 ? tr(`${num(n)}人が同じことを書いた`, `${num(n)} players wrote the same`) : tr("1人の体験", "1 player");
+  $("fd-note").innerHTML = good.length ? `<div class="fk"><a href="finds.html"${!K ? ' class="on" aria-current="true"' : ""}>${tr("すべての面白さ", "All")}<small>${tr(`${num(byWork.size)}作品`, `${num(byWork.size)}`)}</small></a>
+      ${kinds.map(([k, n]) => `<a href="finds.html?k=${k}"${K === k ? ' class="on" aria-current="true"' : ""}>${esc(tr(...KIND[k]))}<small>${tr(`${num(n)}作品`, `${num(n)}`)}</small></a>`).join("")}</div>
+    <div class="flg"><b>${tr("凡例", "Legend")}</b><span>${jp("voice")} ${tr("声・字幕・UI が日本語", "audio, subtitles and UI")}</span><span>${jp("sub")} ${tr("字幕・UI が日本語（声は外国語）", "subtitles and UI")}</span>
+      <span>${jp("ui")} ${tr("メニュー等のみ日本語", "menus only")}</span><span>${jp("none")}</span><small>${tr("出典: 販売元のストアの対応言語", "Source: publisher's store listing")}</small></div>` : "";
+  const card = ({ top: x, rest }) => `<a class="fc" href="${A.workUrl(x.w.id)}"><img class="fc-i" src="${esc(img(x.w))}" alt="" referrerpolicy="no-referrer" loading="lazy">
+      <div><span class="fc-t">${x.w.cover ? `<img src="${esc(x.w.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}${esc(nm(x.w.name))}</span><b>${esc(x.appeal)}</b>
+        <span class="fc-e">${esc(x.act)} → ${esc(x.result)}</span>
+        ${rest.length ? `<ul class="fc-r">${rest.slice(0, 2).map(r => `<li>${esc(r.appeal)}<small>${r.people > 1 ? tr(`${num(r.people)}人`, `${num(r.people)}`) : tr("1人", "1")}</small></li>`).join("")}</ul>` : ""}
+        <small><span>${ppl(x.people)}</span>${x.against ? `<span class="fc-w">${tr(`反対の声 ${num(x.against)}人`, `${num(x.against)} disagreed`)}</span>` : ""}${rest.length > 2 ? `<span>${tr(`ほかに${num(rest.length - 2)}件の面白さ`, `+${num(rest.length - 2)} more`)}</span>` : ""}${jp(lv(x.w))}</small></div></a>`;
+  $("fd-list").innerHTML = !good.length
+    ? `<div class="rv-empty"><div><b>${tr("まだプレイヤーの発言を読んだ作品がありません", "No titles have been read yet")}</b></div></div>`
+    : `<div class="fcs" data-n="${cardsOf.length}" style="--n:${Math.min(3, cardsOf.length)}">${cardsOf.map(card).join("")}</div>
+      ${warn.length ? `<h2 class="fh">${tr("買う前に知っておきたいこと", "Good to know before buying")}</h2><p class="fp">${tr("プレイヤーが書いた不満と注意です。", "Complaints and cautions players wrote.")}</p>
+        <ul class="fw">${warn.slice(0, 12).map(x => `<li><a href="${A.workUrl(x.w.id)}"><b>${esc(nm(x.w.name))}</b></a>${x.caution ? ` <span class="fc-w">${esc(tr(...CJ[x.caution]))}</span>` : ""}　${esc(x.act)} → ${esc(x.result)}<small>${ppl(x.people)}</small></li>`).join("")}</ul>` : ""}
+      <p class="fsrc">${tr("世界のプレイヤーが直近 7 日に書いた発言を、作品ごとに AI が読み、具体的な体験を取り出しました。人数はこちらで数えています（同じ人の複数の発言は 1 人）。原文は載せていません。",
+        "AI read each title's posts from the last 7 days and extracted concrete experiences. Counts are done separately. Original posts are not shown.")}</p>`;
 })();

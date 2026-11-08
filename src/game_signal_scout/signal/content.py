@@ -759,12 +759,18 @@ def pages(ctx: Ctx) -> dict:
     return out
 
 
+def _pub_ev(e: dict) -> dict:
+    """体験の公開の形: したこと（act）・起きたこと（result）。did は公開しない項目名（FORBIDDEN_KEYS。内部の識別子の名前）なので名前を変える。"""
+    return {**{k: v for k, v in e.items() if k not in ("did", "happened")}, "act": e.get("did"), "result": e.get("happened")}
+
+
 def finds_page(ctx: Ctx) -> dict:
-    """プレイヤーの発見（#2。services/insight の結果）: 作品ごとに、同じ具体的な体験を書いた独立した投稿者の数と、前の窓との比較。
-    並びは作品のいちばん大きな発見の人数の順。原文は出さない（要約と数だけ）。作品の判断の属性（日本語・開発元・機種）を添える。"""
+    """見つけた面白さ（#2。services/insight の結果）: 作品ごとに、同じ具体的な体験を書いた独立した投稿者の数と、ひとりの体験（そう明記）。
+    体験は 面白さの一文（appeal）・その種類（appeal_kind）・したこと（act）・起きたこと（result）で公開する。原文は出さない。
+    作品の判断の属性（日本語・開発元・機種）と、カードの絵（場面の画像・横長の帯・表紙）を添える。"""
     from game_signal_scout.repositories import insight as insight_repo
     from game_signal_scout.ops import work_display
-    rows = {a: b for a, b in insight_repo.all_insights(ctx.conn).items() if b.get("kind") == "finds" and b.get("finds")}
+    rows = {a: b for a, b in insight_repo.all_insights(ctx.conn).items() if b.get("kind") == "finds" and (b.get("finds") or b.get("singles"))}
     ctx.conn.rollback()
     if not rows:
         return {"items": []}
@@ -774,11 +780,12 @@ def finds_page(ctx: Ctx) -> dict:
         m = meta.get(int(a))
         if not m:
             continue
-        items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner")}, **_judge(m), "read_people": b.get("read_people"),
-                      # 体験の例は したこと（act）・起きたこと（result）で公開する。did・generated_at は公開しない項目名（FORBIDDEN_KEYS）
-                      "finds": [{**f, "examples": [{"act": e.get("did"), "result": e.get("happened")} for e in f.get("examples") or []]} for f in b["finds"]],
-                      "experiences": b.get("experiences"), "window_days": b.get("window_days"), "since": (b.get("since") or "")[:10]})
-    items.sort(key=lambda x: (-max(f["people"] for f in x["finds"]), x["id"]))
+        items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner", "header", "shots")}, **_judge(m),
+                      "finds": [{**f, "examples": [_pub_ev(x) for x in f.get("examples") or []]} for f in b.get("finds") or []],
+                      "singles": [_pub_ev(e) for e in b.get("singles") or []],
+                      "read_people": b.get("read_people"), "experiences": b.get("experiences"), "window_days": b.get("window_days"),
+                      "since": (b.get("since") or "")[:10]})   # 作った時刻（generated_at）は公開しない項目
+    items.sort(key=lambda x: (-max([f["people"] for f in x["finds"]] or [1]), x["id"]))
     return {"items": items}
 
 
