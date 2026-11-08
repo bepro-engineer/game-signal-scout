@@ -131,6 +131,11 @@ sites = [
   { base = "https://us.forums.blizzard.com/pt/overwatch", appid = 2357570, lang = "pt" },
   { base = "https://eu.forums.blizzard.com/de/d4", appid = 2344520, lang = "de" },
   { base = "https://eu.forums.blizzard.com/fr/d4", appid = 2344520, lang = "fr" },
+  { base = "https://kr.forums.blizzard.com/ko/d4", appid = 2344520, lang = "ko" },
+  { base = "https://tw.forums.blizzard.com/zh/d4", appid = 2344520, lang = "zh-Hant" },
+  { base = "https://eu.forums.blizzard.com/it/overwatch", appid = 2357570, lang = "it" },
+  { base = "https://tw.forums.blizzard.com/zh/overwatch", appid = 2357570, lang = "zh-Hant" },
+  { base = "https://us.forums.blizzard.com/es/overwatch", appid = 2357570, lang = "es" },
 ]
 
 [game_official_forums]
@@ -146,6 +151,8 @@ sites = [
   { base = "https://forum.warthunder.com", appid = 236390 },
   { base = "https://forum.warthunder.ru", appid = 236390, lang = "ru" },
   { base = "https://forums.funcom.com" },
+  { base = "https://forum.lastepoch.com", appid = 899770 },
+  { base = "https://forum.enlisted.net" },
 ]
 
 [gamekult]
@@ -194,6 +201,9 @@ feeds = [
   { url = "https://www.ptt.cc/atom/NSwitch.xml", lang = "zh-Hant" },
   { url = "https://www.ptt.cc/atom/XBOX.xml", lang = "zh-Hant" },
   { url = "https://www.ptt.cc/atom/MH.xml", lang = "zh-Hant" },
+  { url = "https://www.ptt.cc/atom/Diablo.xml", lang = "zh-Hant" },
+  { url = "https://www.ptt.cc/atom/GTA.xml", lang = "zh-Hant" },
+  { url = "https://www.ptt.cc/atom/FFXIV.xml", lang = "zh-Hant" },
 ]
 
 [keylol]
@@ -354,6 +364,12 @@ communities = [
   { base = "https://lemmy.world", name = "patientgamers" },
   { base = "https://lemmy.world", name = "nintendo" },
   { base = "https://lemmy.ml", name = "gaming" },
+  { base = "https://lemmy.ml", name = "linux_gaming" },
+  { base = "https://beehaw.org", name = "gaming" },
+  { base = "https://sh.itjust.works", name = "games" },
+  { base = "https://lemmy.world", name = "gaming" },
+  { base = "https://lemmy.world", name = "indiegaming" },
+  { base = "https://lemmy.world", name = "cyberpunk2077", appid = 1091500 },
 ]
 
 [mastodon_games]
