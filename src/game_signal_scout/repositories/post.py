@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 
-COLS = ("source", "item_id", "at", "author", "lang", "appid", "title", "matched_by", "flags", "text", "stance", "playtime_minutes")
+COLS = ("source", "item_id", "at", "author", "lang", "appid", "title", "matched_by", "flags", "text", "stance", "playtime_minutes", "url")
 
 
 def unnormalized(conn, source: str, limit: int):
@@ -29,7 +29,7 @@ def known_titles(conn) -> list[tuple[str, str]]:
         "WHERE names IS NOT NULL").fetchall()
 
 
-EXCLUDE = ["affiliate", "promo", "stream", "autopost", "adult", "link_only", "many_hashtags", "piracy"]
+EXCLUDE = ["affiliate", "promo", "stream", "autopost", "adult", "link_only", "many_hashtags", "piracy", "news"]   # news: ニュース・告知はプレイヤーの声として数えない（Anime と同じ。2026-11-08 Issue #3）
 
 
 def top_apps(conn, since, limit: int) -> list[dict]:
@@ -66,3 +66,12 @@ def day_rows(conn, source: str, start, end, same_text_min: int):
     """観測の集計の材料: 取得元の 1 日の発言 (ID, 投稿者, 言語, 見出し, 時刻, app ID, 同じ文の印, 宣伝などの印があるか)。"""
     return conn.execute("SELECT item_id, author, lang, left(text, 30), at, appid, CASE WHEN length(text) >= %s THEN md5(text) END, flags ?| %s "
                         "FROM player_post WHERE source = %s AND at >= %s AND at < %s", (same_text_min, EXCLUDE, source, start, end)).fetchall()
+
+
+def urls_of(conn, keys: list[tuple[str, str]]) -> dict[tuple[str, str], str]:
+    """(取得元, 発言の ID) → 公開の URL（https のものだけ）。"""
+    if not keys:
+        return {}
+    rows = conn.execute("SELECT source, item_id, url FROM player_post WHERE (source, item_id) IN (SELECT * FROM unnest(%s::text[], %s::text[])) "
+                        "AND url LIKE 'https://%%'", ([k[0] for k in keys], [k[1] for k in keys])).fetchall()
+    return {(s, i): u for s, i, u in rows}

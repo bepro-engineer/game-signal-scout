@@ -1,7 +1,9 @@
 # 観測の集計に入れる取得元（Anime の config/map_sources.toml と同じ形。game_signal_scout/observations.py）。人数は取得元の中で数え、足さない。
+# history = true: 過去を遡って取る取得元（観測の範囲は保存したいちばん古い項目の日から）。ほかは最初に受信した日から（それより前の日は not_covered）
 [sources.steam_reviews]
 reader = "foundation"
 production = true
+history = true            # 過去を遡って取る（28 日分）。観測の範囲は保存したいちばん古いレビューの日から
 label = ["Steam のレビュー", "Steam reviews"]
 
 [sources.bluesky]
@@ -107,6 +109,7 @@ label = ["Mastodon のゲームの投稿", "Mastodon gaming posts"]
 [sources.gog_reviews]
 reader = "foundation"
 production = true
+history = true
 label = ["GOG のレビュー", "GOG reviews"]
 
 [sources.nicopedia]

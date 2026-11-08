@@ -71,3 +71,12 @@ def conn(test_db):
     c.commit()
     yield c
     c.close()
+
+
+
+@pytest.fixture
+def stub_screen_docs(monkeypatch):
+    """画面の文書（day/・days など）を最小の形に差し替える。取得・正規化・ProtonDB の文書の試験で使う
+    （画面の文書が作れない公開は止める規則〔Anime の §16.1〕なので、観測のない試験では差し替える）。"""
+    from game_signal_scout.signal import publishing as sp
+    monkeypatch.setattr(sp, "build_documents", lambda conn, cfg: ({"day/2026-10-31": {}, "days": {"days": []}}, {"audit": []}))

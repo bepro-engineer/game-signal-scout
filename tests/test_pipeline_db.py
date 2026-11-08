@@ -65,7 +65,7 @@ def test_migration_down_and_up(test_db, conn):
         assert [r[0] for r in c.execute("SELECT scout FROM scout_identity")] == ["game"]
 
 
-def test_daily_run_one_cycle_and_idempotent_rerun(conn, tmp_path):
+def test_daily_run_one_cycle_and_idempotent_rerun(conn, tmp_path, stub_screen_docs):
     path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", dump_records())
     code, out = runner.daily_run(TARGET, reader_factory=lambda name: reader_for(path))
     assert code == runner.EXIT_OK, out
@@ -82,7 +82,7 @@ def test_daily_run_one_cycle_and_idempotent_rerun(conn, tmp_path):
     assert [r[1] for r in conn.execute("SELECT job, status FROM job_run ORDER BY id")] == ["ok"] * 14
 
 
-def test_failure_midway_is_retryable_and_resumes_without_duplicates(conn, tmp_path):
+def test_failure_midway_is_retryable_and_resumes_without_duplicates(conn, tmp_path, stub_screen_docs):
     path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", dump_records())
     code, out = runner.daily_run(TARGET, reader_factory=lambda name: reader_for(path, fail_after=3))
     assert code == runner.EXIT_RETRY and out["failed_job"] == "collect" and out["error_type"] == "network"
@@ -178,7 +178,7 @@ def test_edited_items_are_replaced_and_renormalized(conn, tmp_path):
     assert [r[0] for r in conn.execute("SELECT item_id FROM player_report")] == ["2"]          # 編集された項目は正規化をやり直す
 
 
-def test_status_separates_collection_analysis_and_publication(conn, tmp_path):
+def test_status_separates_collection_analysis_and_publication(conn, tmp_path, stub_screen_docs):
     from game_signal_scout.ops.status import status
     path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", dump_records())
     runner.daily_run(TARGET, reader_factory=lambda name: reader_for(path))

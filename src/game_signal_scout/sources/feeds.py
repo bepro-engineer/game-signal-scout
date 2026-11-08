@@ -226,6 +226,7 @@ class HatenaComments(SourceReader):
                 if c and at:
                     uid = hashlib.sha256(f"hatena:{b.get('user')}".encode()).hexdigest()[:16]
                     items.append(SourceItem(self.name, hashlib.sha256(f"{url}#{b.get('user')}".encode()).hexdigest()[:24], at,
-                                            {"text": c[:2000], "link_title": a["title"], "author": uid, "lang": "ja", "url": url}, None))
+                                            {"text": c[:2000], "link_title": a["title"], "author": uid, "lang": "ja",
+                                             "url": "https://b.hatena.ne.jp/entry/" + ("s/" if url.startswith("https://") else "") + url.split("://", 1)[-1]}, None))
         keep = {u: a for u, a in arts.items() if now - a["at"] < 10 * 86400}     # 10 日より古い記事は忘れる
         yield Batch(items, {"articles": keep})

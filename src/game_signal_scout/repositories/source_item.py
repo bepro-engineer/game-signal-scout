@@ -117,3 +117,9 @@ def apps_with_items_before(conn, source: str, appids: list[str], days: int) -> s
 
 def count_known(conn, source: str, item_ids: list[str]) -> int:
     return conn.execute("SELECT count(*) FROM source_item WHERE source = %s AND item_id = ANY(%s)", (source, list(item_ids))).fetchone()[0]
+
+
+def first_seen(conn, source: str, by_occurred: bool = False):
+    """取得元の観測を始めた時刻: by_occurred なら保存したいちばん古い項目の時刻（過去を遡って取る取得元）、ほかは最初に受信した時刻。"""
+    col = "occurred_at" if by_occurred else "received_at"
+    return conn.execute(f"SELECT min({col}) FROM source_item WHERE source = %s", (source,)).fetchone()[0]

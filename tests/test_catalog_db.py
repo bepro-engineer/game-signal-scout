@@ -62,12 +62,12 @@ def run(conn, tmp_path, monkeypatch):
 
     def go():
         code, out = runner.daily_run(date(2026, 10, 31), reader_factory=lambda name: factory.create(name, http, cfg))
-        assert code == runner.EXIT_OK, out
+        assert code == runner.EXIT_OK, json.dumps(out, default=str)[:1500]
         return out
     return go, http
 
 
-def test_profiles_and_activity_flow_to_cards_and_game_documents(run, conn):
+def test_profiles_and_activity_flow_to_cards_and_game_documents(run, conn, stub_screen_docs):
     go, http = run
     go()                                       # 1 回目: 順位が入る（作品の情報の対象はまだ ProtonDB の作品だけ）
     go()                                       # 2 回目: 順位の上位の作品も作品の情報の対象になる

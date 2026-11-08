@@ -51,12 +51,15 @@ def build_documents(conn, cfg: dict) -> tuple[dict[str, object], dict]:
     docs = content.build(conn, cfg["analysis"]["version"])
     conn.rollback()
     from game_signal_scout.signal import publishing as signal_publishing   # Anime の画面の流用が読む文書（day/・pages・search・soon・work/・days）
-    try:
-        sdocs, sstats = signal_publishing.build_documents(conn, cfg)
-        docs.update(sdocs)
-    except Exception as e:  # noqa: BLE001 — 流用の文書が作れなくても、いまの画面の文書は公開する
-        log_signal_error = f"{type(e).__name__}: {str(e)[:200]}"
+    # 画面の文書（day/・pages・search・soon・work/・days）が作れない・検査に通らないときは、公開を止めて前の回のままにする
+    # （Anime の §16.1・REQ-OPS-006。2026-11-08 Issue #3: 例外を握りつぶして続け、画面の文書が消えうる形だった）
+    sdocs, sstats = signal_publishing.build_documents(conn, cfg)
+    docs.update(sdocs)
     conn.rollback()
+    if sstats.get("audit"):
+        raise PublishRejectedError("画面の文書の検査に通らなかった: " + "; ".join(str(x) for x in sstats["audit"][:10]))
+    if not any(k.startswith("day/") for k in sdocs) or "days" not in sdocs:
+        raise PublishRejectedError("画面の文書（日・日の一覧）が空")
     problems = content.audit(docs)
     if problems:
         raise PublishRejectedError("公開用の文書の検査に通らなかった: " + "; ".join(problems[:10]))

@@ -76,6 +76,8 @@ def bluesky(conn, source: str, settings: dict | None = None, batch: int = 2000) 
     """発言を player_post にする。作品の辞書は ProtonDB の報告の題名から 1 回だけ作る。payload に appid があれば、作品は取得元で決まる（matched_by = source）。"""
     from game_signal_scout.repositories import post as post_repo
     from game_signal_scout.services.identify import TitleIndex, identify
+    from game_signal_scout.discovery.flags import flags_for
+    from game_signal_scout.discovery.text import PostText
     settings = settings or {}
     index = None
     total = 0
@@ -88,8 +90,11 @@ def bluesky(conn, source: str, settings: dict | None = None, batch: int = 2000) 
         for item_id, occurred_at, p in rows:
             # 作品が取得元で決まる発言（作品ごとの掲示板・作品のページのコメント）は、その作品。ほかは本文から同定する
             appid, title, how = (str(p["appid"]), None, "source") if p.get("appid") else identify(p, index)
+            if "flags" not in p:     # 宣伝・告知・ニュースなどの印（Bluesky と同じ規則。Anime の §4。取得元が印を付けないとき）
+                p["flags"] = flags_for(PostText(text=p.get("text") or "", link_title=p.get("link_title") or "", tags=p.get("tags") or []))
             out.append({"source": source, "item_id": item_id, "at": occurred_at, "author": p.get("author") or "", "lang": p.get("lang"),
-                        "appid": appid, "title": title, "matched_by": how, "flags": p.get("flags") or [], "text": p.get("text") or ""})
+                        "appid": appid, "title": title, "matched_by": how, "flags": p.get("flags") or [], "text": p.get("text") or "",
+                        "url": p.get("url") if str(p.get("url") or "").startswith("https://") else None})
         with conn.transaction():
             total += post_repo.insert(conn, out)
         conn.commit()

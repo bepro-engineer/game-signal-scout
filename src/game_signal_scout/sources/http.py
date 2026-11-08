@@ -64,7 +64,11 @@ class Fetcher:
             status, err = e.code, f"http {e.code}"
             if e.code == 429 or e.code >= 500:
                 prev = self._backoff.get(host, 0) - time.monotonic()
-                self._backoff[host] = time.monotonic() + min(600, max(30, prev * 2 if prev > 0 else 30))
+                wait = min(600, max(30, prev * 2 if prev > 0 else 30))
+                ra = (e.headers or {}).get("Retry-After") if hasattr(e, "headers") else None
+                if ra and str(ra).strip().isdigit():          # サイトが示す待ち時間に従う（Anime の REQ-SRC-003。上限 1 時間）
+                    wait = max(wait, min(3600, int(str(ra).strip())))
+                self._backoff[host] = time.monotonic() + wait
         except Exception as e:  # noqa: BLE001 — 通信の失敗は記録して続ける
             err = f"{type(e).__name__}: {str(e)[:120]}"
         finally:

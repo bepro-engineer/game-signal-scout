@@ -54,7 +54,7 @@ def posts(conn):
     return conn.execute("SELECT item_id, appid, matched_by FROM player_post ORDER BY item_id").fetchall()
 
 
-def test_two_sources_flow_to_normalized_posts_and_viewer_documents(run, conn):
+def test_two_sources_flow_to_normalized_posts_and_viewer_documents(run, conn, stub_screen_docs):
     authors = [f"did:plc:u{i}" for i in range(6)]
     f = [frame(i + 1, did=d, rkey="a", text="Monster Hunter Wilds crashes after the patch, game is broken") for i, d in enumerate(authors)]
     f += [frame(10, rkey="b", text="Rust Console Edition on steam is fun"),
@@ -73,7 +73,7 @@ def test_two_sources_flow_to_normalized_posts_and_viewer_documents(run, conn):
     assert "did:plc" not in json.dumps(ov) + json.dumps(g)
 
 
-def test_deleted_posts_and_gone_accounts_are_removed_with_their_normalized_rows(run, conn):
+def test_deleted_posts_and_gone_accounts_are_removed_with_their_normalized_rows(run, conn, stub_screen_docs):
     run(frame(1, rkey="a", text="Monster Hunter Wilds game"), frame(2, did="did:plc:bob", rkey="b", text="Monster Hunter Wilds game"),
         frame(3, rkey="c", text="play"))
     assert len(posts(conn)) == 3

@@ -823,12 +823,16 @@ def work_quotes(ctx: Ctx, w: int, window: list[date]) -> dict[date, list[dict]]:
         ok |= {(src, i) for i in (ad.quotable(ctx.conn, [r[2] for r in rows if r[1] == src]) if ad else {r[2] for r in rows if r[1] == src})}   # Game: 公開の発言はすべて引用してよい
     out: dict[date, list[dict]] = {}
     seen: set[tuple[date, str]] = set()
+    from game_signal_scout.repositories import post as post_repo
+    urls = post_repo.urls_of(ctx.conn, [(r[1], r[2]) for r in rows])   # 引用から原投稿へ（Anime の §8）
     for d, src, uid, kind, lang, quote in rows:
         key = (d, _re.sub(r"\s+", " ", quote).strip().casefold())
-        if len(out.get(d, [])) >= int(ctx.pages["work"]["quotes_per_point"]) or (src, uid) not in ok or key in seen:   # 同じ日の同じ文（同じ投稿の別の分類・同じ文の拡散）は 1 つ
+        link = factory.permalink(src, uid, urls.get((src, uid)))
+        # 引用は原投稿へ辿れるものだけ（Anime の §8・audit_public の QUOTE_URL。Steam のレビューは投稿者の ID を持たないので個別の URL を作れず、引用しない）
+        if len(out.get(d, [])) >= int(ctx.pages["work"]["quotes_per_point"]) or (src, uid) not in ok or key in seen or not link:   # 同じ日の同じ文（同じ投稿の別の分類・同じ文の拡散）は 1 つ
             continue
         seen.add(key)
-        out.setdefault(d, []).append({"kind": kind, "lang": lang, "quote": quote, "url": factory.permalink(src, uid, uid)})
+        out.setdefault(d, []).append({"kind": kind, "lang": lang, "quote": quote, "url": link})
     ctx.conn.rollback()
     return out
 

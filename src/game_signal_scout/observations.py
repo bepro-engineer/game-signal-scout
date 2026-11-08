@@ -63,13 +63,24 @@ def window_start(t: datetime, hours: int) -> datetime:
     return epoch + timedelta(seconds=int((t - epoch).total_seconds()) // step * step)
 
 
+def day_of(t: datetime) -> date:
+    """時刻の日（日本時間 3:00 区切り。days.day_range と同じ区切り）。"""
+    return (t.astimezone(timezone(timedelta(hours=9))) - timedelta(hours=3)).date()
+
+
 def read_foundation(conn, source: str, day: date, prof: dict) -> DayResult:
     """Game の共通の発言（player_post）を読む（Anime の read_foundation の Game 版。取得元の名前で分けない）。
     数える: 作品（app ID）に結び付き、宣伝などの印がない発言。投稿者は取得元の中の参照（author）。
     そろったか: その日が終わって落ち着いている（日次の既定の対象日以前）なら complete（取得元は日次で取りに行く）。"""
     from game_signal_scout.days import day_range, default_day
-    from game_signal_scout.repositories import post
+    from game_signal_scout.repositories import post, source_item
     start, end = day_range(day)
+    # 観測の範囲（Anime の coverage と同じ考え方）: 取得元が観測を始める前の日は not_covered（0 人を観測した日として数えない）。
+    # 観測を始めた日 = 過去を遡って取る取得元（記述の history = true）は保存したいちばん古い項目の日、ほかは最初に受信した日。
+    first = source_item.first_seen(conn, source, by_occurred=bool(prof.get("history")))
+    if first is None or day < day_of(first):
+        conn.rollback()
+        return DayResult([], False, NOT_COVERED, f"{AGG_VERSION}|player_post", {"coverage": "not_covered"})
     rows = post.day_rows(conn, source, start, end, SAME_TEXT_MIN_CHARS)
     conn.rollback()
     obs = []

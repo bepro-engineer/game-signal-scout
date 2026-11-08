@@ -50,9 +50,9 @@ def reader_for(source):
     return None
 
 
-def permalink(source, item_id: str, url: str | None = None) -> str:
-    """発言の公開の URL。Steam のレビュー・Bluesky の投稿は item_id から作れるが、いまは保存した url か ID のまま。"""
-    return url or item_id
+def permalink(source, item_id: str, url: str | None = None) -> str | None:
+    """発言の公開の URL（https のものだけ。取得元が渡した url。作れない取得元は None = 引用に link を付けない）。ID を URL の代わりに返さない。"""
+    return url if url and str(url).startswith("https://") else None
 
 
 def internal_id_markers() -> tuple:

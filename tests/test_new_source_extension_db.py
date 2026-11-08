@@ -38,7 +38,7 @@ def test_a_new_source_flows_to_documents_without_changing_common_code(conn, monk
     src_cfg = {"fake_forum": {"adapter": "test_new_source_extension_db:FakeForum", "normalizer": "game_signal_scout.services.normalize:voices", "game_only": True}}
     monkeypatch.setattr(factory, "load_sources_config", lambda: src_cfg)
     real_toml = config.load_toml
-    monkeypatch.setattr(config, "load_toml", lambda name: {"sources": {"fake_forum": {"reader": "foundation", "production": True, "label": ["架空の掲示板", "Fake forum"]}}}
+    monkeypatch.setattr(config, "load_toml", lambda name: {"sources": {"fake_forum": {"reader": "foundation", "production": True, "history": True, "label": ["架空の掲示板", "Fake forum"]}}}
                         if name == "map_sources.toml" else real_toml(name))
     real_daily = config.load_daily_config
     monkeypatch.setattr(config, "load_daily_config", lambda: {**real_daily(), "publish": {**real_daily().get("publish", {}), "start_day": DAY.isoformat()}})
@@ -76,3 +76,46 @@ def test_sql_only_in_repositories():
     root = Path(__file__).parents[1] / "src/game_signal_scout"
     found = [str(p.relative_to(root)) for p in root.rglob("*.py") if ".execute(" in p.read_text() and p.parts[-2] != "repositories" and p.name != "db.py"]
     assert found == []
+
+
+def test_days_before_a_source_started_are_not_covered(conn, monkeypatch):
+    """観測の範囲（Anime の §14）: 取得元が観測を始める前の日は not_covered（0 人を観測した日として数えない）。過去を遡る取得元（history）は最も古い項目の日から。"""
+    from datetime import datetime, timezone
+    from game_signal_scout import observations
+    t = day_range(DAY)[0] + timedelta(hours=1)
+    conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('forum_x', 'a', %s, %s, '{}'), ('reviews_x', 'b', %s, %s, '{}')",
+                 (t, t, t - timedelta(days=5), t))
+    conn.commit()
+    assert observations.read_foundation(conn, "forum_x", DAY - timedelta(days=1), {}).reason == observations.NOT_COVERED
+    assert observations.read_foundation(conn, "forum_x", DAY, {}).reason != observations.NOT_COVERED
+    assert observations.read_foundation(conn, "reviews_x", DAY - timedelta(days=3), {"history": True}).reason != observations.NOT_COVERED
+    assert observations.read_foundation(conn, "never_seen", DAY, {}).reason == observations.NOT_COVERED
+
+
+def test_publish_is_rejected_when_screen_documents_fail(conn, monkeypatch):
+    """公開（Anime の §16.1・REQ-OPS-006）: 画面の文書が作れない・検査に通らないときは、公開を止めて前の回のままにする（例外を握りつぶさない）。"""
+    import pytest
+    from game_signal_scout import config
+    from game_signal_scout.publication import publishing
+    from game_signal_scout.signal import publishing as sp
+    monkeypatch.setattr(sp, "build_documents", lambda c, cfg: ({"day/2026-11-07": {}, "days": {}}, {"audit": ["work/w1: bad field"]}))
+    with pytest.raises(publishing.PublishRejectedError):
+        publishing.build_documents(conn, config.load_daily_config())
+    def boom(c, cfg):
+        raise RuntimeError("壊れた")
+    monkeypatch.setattr(sp, "build_documents", boom)
+    with pytest.raises(RuntimeError):
+        publishing.build_documents(conn, config.load_daily_config())
+
+
+def test_quote_links_are_only_public_https_urls():
+    """引用から原投稿へ（Anime の §8）: 取得元が渡した https の URL だけ。ID を URL の代わりにしない。"""
+    from game_signal_scout.sources import factory
+    assert factory.permalink("x", "12345", "12345") is None and factory.permalink("x", "1", "https://f/t/1") == "https://f/t/1"
+
+
+def test_language_is_uncertain_when_the_detector_is_not_sure():
+    """言語（Anime の §7）: 確信度 0.8 未満は uncertain（数えない）。文字で決まる言語はそのまま。"""
+    from game_signal_scout.languages_detect import detect
+    assert detect("これは重い") == "ja" and detect("이 게임 재밌다") == "ko" and detect("這個遊戲很好玩") == "zh-Hant"
+    assert detect("ok lol") in ("uncertain", "en")

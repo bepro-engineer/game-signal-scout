@@ -183,7 +183,10 @@ def job_digest(ctx: Context) -> JobResult:
     if not (ctx.cfg.get("dashboard_digest") or {}).get("enabled", False):
         return JobResult(detail={"status": "disabled"})
     day = default_day()
-    vc = content.day_ctx(ctx.cfg, day)
+    try:
+        vc = content.day_ctx(ctx.cfg, day)
+    except content.NoObservedDayError as e:      # 観測した日がまだない（取得元が観測を始める前）: 書く材料がない。失敗にしない
+        return JobResult(detail={"status": "no_observed_day", "reason": str(e)})
     try:
         changes = content.work_changes(vc, day)
     finally:
