@@ -70,12 +70,15 @@ def voices(conn, source: str, settings: dict | None = None, batch: int = 2000) -
             int(settings.get("min_title_chars", 8)), bool(settings.get("game_only")))
     ver = id_version(titles, *args)
     # 同定の規則・作品の辞書が変わったら、本文の題名で同定する発言を今の版で作り直す（Anime の §5.3・§21）
+    from game_signal_scout import source_terms
     with conn.transaction():
         post_repo.forget_stale_identification(conn, source, ver)
+        post_repo.mark_terms_excluded(conn, source, source_terms.excluded_hosts(source))   # 利用条件で禁止のサイトの発言を外す（#3 G2）
     conn.commit()
     index = None
     total = 0
     shape = _reader(source, settings).voice
+    banned = [f"//{h}" for h in source_terms.excluded_hosts(source)]
     while rows := post_repo.unnormalized(conn, source, batch):
         if index is None:
             index = TitleIndex(titles, args[0], args[1], args[2], game_only=args[3])
@@ -87,6 +90,8 @@ def voices(conn, source: str, settings: dict | None = None, batch: int = 2000) -
             text, link = p.get("text") or "", p.get("link") or p.get("url") or ""
             p = {**p, "steam_appids": sorted({m for s in (text, link) for m in STEAM_APP.findall(s)})}
             flags = list(dict.fromkeys([*(p.get("flags") or []), *flags_for(PostText(text=text, link_title=p.get("link_title") or "", tags=p.get("tags") or [], has_link=bool(p.get("link"))))]))
+            if any(b in str(item_id) or b in str(p.get("url") or "") for b in banned):
+                flags.append("terms_excluded")
             lang = p.get("lang") or detect_lang(text)
             # 作品が取得元で決まる発言（作品ごとの掲示板・作品のページのコメント）は、その作品。ほかは本文から同定する
             appid, title, how = (str(p["appid"]), None, "source") if p.get("appid") else identify(p, index)

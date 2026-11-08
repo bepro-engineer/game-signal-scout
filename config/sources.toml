@@ -111,14 +111,11 @@ adapter = "game_signal_scout.sources.feeds:Discourse"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（ゲームの公式掲示板。Discourse の公開 JSON。キー不要。台帳 config/source_candidates.toml）
 game_only = true
+# 利用条件で禁止が明記されたサイトは外した（config/source_terms.toml の excluded_hosts。2026-11-08）
 sites = [
   { base = "https://forums.flightsimulator.com", appid = 2537590 },
   { base = "https://forums.eveonline.com", appid = 8500 },
-  { base = "https://forum.warthunder.com", appid = 236390 },
-  { base = "https://forum.warthunder.ru", appid = 236390, lang = "ru" },
   { base = "https://forums.funcom.com" },
-  { base = "https://forum.lastepoch.com", appid = 899770 },
-  { base = "https://forum.enlisted.net" },
 ]
 resident = true
 poll_seconds = 600
@@ -310,9 +307,9 @@ adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
 # 役割: プレイヤーの声（作品の公式の掲示板の RSS。Warframe・Stardew Valley・Kerbal Space Program・BeamNG.drive。キー不要）。作品は掲示板で決まる
 game_only = true
+# 利用条件で禁止が明記されたサイトは外した（config/source_terms.toml の excluded_hosts。2026-11-08）
 feeds = [
   { url = "https://forums.warframe.com/discover/all.xml/", appid = 230410, lang = "en" },
-  { url = "https://forums.stardewvalley.net/forums/-/index.rss", appid = 413150, lang = "en" },
   { url = "https://forum.kerbalspaceprogram.com/discover/all.xml/", appid = 220200, lang = "en" },
   { url = "https://www.beamng.com/forums/-/index.rss", appid = 284160, lang = "en" },
 ]

@@ -1,4 +1,5 @@
-"""節度のある取得（Anime の sources/http から移植）: ホストごとの最小間隔・429/5xx の backoff・取得の記録。通信は urllib だけ。"""
+"""節度のある取得（Anime の sources/http から移植）: ホストごとの最小間隔・429/5xx の backoff・取得の記録。通信は urllib だけ。
+ホストごとの間隔は、そのホストの robots.txt の Crawl-delay（User-agent: * の節）があれば、それより短くしない（どの取得元にも同じ。#3 G2）。"""
 from __future__ import annotations
 
 import json
@@ -16,12 +17,28 @@ class Fetcher:
         self.ua, self.min_interval, self.timeout = user_agent, min_interval, timeout
         self._last: dict[str, float] = {}
         self._backoff: dict[str, float] = {}
+        self._delay: dict[str, float] = {}     # ホストごとの robots.txt の Crawl-delay（初めての取得の前に 1 回読む）
         self._open = opener or urllib.request.urlopen
         self.log: list[dict] = []
         self.should_stop = lambda: False
 
+    def crawl_delay(self, scheme: str, host: str) -> float:
+        """robots.txt の User-agent: * の Crawl-delay（秒）。読めなければ 0。ホストごとに 1 回だけ読む。"""
+        if host not in self._delay:
+            delay = 0.0
+            try:
+                req = urllib.request.Request(f"{scheme}://{host}/robots.txt", headers={"User-Agent": self.ua, "Accept": "text/plain"})
+                with self._open(req, timeout=min(self.timeout, 20)) as r:
+                    delay = parse_crawl_delay(r.read(200_000).decode("utf-8", "replace"))
+            except Exception:  # noqa: BLE001 — robots.txt がない・読めない: 宣言なし
+                delay = 0.0
+            self._delay[host] = min(delay, 600.0)
+            self._last[host] = time.monotonic()
+        return self._delay[host]
+
     def _wait(self, host: str) -> None:
-        until = max(self._last.get(host, 0) + self.min_interval, self._backoff.get(host, 0))
+        gap = max(self.min_interval, self._delay.get(host, 0.0))
+        until = max(self._last.get(host, 0) + gap, self._backoff.get(host, 0))
         while (left := until - time.monotonic()) > 0 and not self.should_stop():
             time.sleep(min(1.0, left))
 
@@ -39,7 +56,9 @@ class Fetcher:
         return self._get(source, url, "application/octet-stream", Path(dest)) is not None
 
     def _get(self, source: str, url: str, accept: str, dest: Path | None, headers: dict | None = None):
-        host = urllib.parse.urlsplit(url).netloc
+        parts = urllib.parse.urlsplit(url)
+        host = parts.netloc
+        self.crawl_delay(parts.scheme or "https", host)
         self._wait(host)
         req = urllib.request.Request(url, headers={**(headers or {}), "User-Agent": self.ua, "Accept": accept})
         t0, status, ok, err, out, size = time.monotonic(), None, False, None, None, None
@@ -76,3 +95,22 @@ class Fetcher:
         self.log.append({"ts": datetime.now(timezone.utc), "source": source, "host": host, "endpoint": urllib.parse.urlsplit(url).path,
                          "status": status, "ok": ok, "ms": int((time.monotonic() - t0) * 1000), "bytes": size, "error": err})
         return out if ok else None
+
+
+def parse_crawl_delay(text: str) -> float:
+    """robots.txt の User-agent: * の節の Crawl-delay（なければ 0）。"""
+    star, delay = False, 0.0
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if ":" not in line:
+            continue
+        k, v = (x.strip() for x in line.split(":", 1))
+        k = k.lower()
+        if k == "user-agent":
+            star = v == "*"
+        elif k == "crawl-delay" and star:
+            try:
+                delay = max(delay, float(v))
+            except ValueError:
+                pass
+    return delay

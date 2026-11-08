@@ -137,3 +137,22 @@ def test_fetcher_backs_off_on_429_and_records(tmp_path):
     assert f.log[-1]["status"] == 429 and not f.log[-1]["ok"]
     assert f._backoff["example.invalid"] > 0
     assert not (tmp_path / "f").exists()
+
+
+def test_fetcher_keeps_the_robots_crawl_delay_of_each_host():
+    """取得の共通の部品は、ホストの robots.txt の Crawl-delay（User-agent: *）より短い間隔で読まない（どの取得元にも同じ。#3 G2）。"""
+    import io
+    from game_signal_scout.sources.http import parse_crawl_delay
+
+    class R(io.BytesIO):
+        status = 200
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    def opener(req, timeout):
+        if req.full_url.endswith("/robots.txt"):
+            return R(b"User-agent: Slurp\nDisallow: /\n\nUser-agent: *\nDisallow: /login\nCrawl-delay: 60\n")
+        return R(b"{}")
+    f = Fetcher("t", min_interval=0, opener=opener)
+    assert f.crawl_delay("https", "x.invalid") == 60
+    assert parse_crawl_delay("User-agent: Googlebot\nCrawl-delay: 9\n") == 0

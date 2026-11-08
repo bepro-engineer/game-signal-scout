@@ -26,7 +26,7 @@ def known_titles(conn) -> list[tuple[str, str]]:
                         "WHERE names IS NOT NULL").fetchall()
 
 
-EXCLUDE = ["affiliate", "promo", "stream", "autopost", "adult", "link_only", "many_hashtags", "piracy", "news"]   # news: ニュース・告知はプレイヤーの声として数えない（Anime と同じ。2026-11-08 Issue #3）
+EXCLUDE = ["affiliate", "promo", "stream", "autopost", "adult", "link_only", "many_hashtags", "piracy", "news", "terms_excluded"]   # news: ニュース・告知はプレイヤーの声として数えない（Anime と同じ。2026-11-08 Issue #3）。terms_excluded: 利用条件で禁止が明記されたサイトの発言（#3 G2）
 
 
 def top_apps(conn, since, limit: int) -> list[dict]:
@@ -77,3 +77,19 @@ def urls_of(conn, keys: list[tuple[str, str]]) -> dict[tuple[str, str], str]:
 def forget_stale_identification(conn, source: str, version: str) -> int:
     """正規化の版が違う発言の行を消す（次の正規化で今の版で作り直す。印・言語・同定のどれが変わっても）。"""
     return conn.execute("DELETE FROM player_post WHERE source = %s AND id_version IS DISTINCT FROM %s", (source, version)).rowcount
+
+
+def mark_terms_excluded(conn, source: str, hosts: list[str]) -> int:
+    """利用条件で禁止が明記されたサイトの発言に印 terms_excluded を付け、それ以外からは外す（何度流しても同じ。消さない）。"""
+    pats = [f"%//{h}%" for h in hosts]
+    hit = "(item_id LIKE ANY(%s) OR coalesce(url, '') LIKE ANY(%s))"
+    n = 0
+    with conn.cursor() as cur:
+        if pats:
+            cur.execute(f"UPDATE player_post SET flags = flags || '[\"terms_excluded\"]'::jsonb WHERE source=%s AND {hit} AND NOT flags ? 'terms_excluded'",
+                        (source, pats, pats))
+            n = cur.rowcount
+            cur.execute(f"UPDATE player_post SET flags = flags - 'terms_excluded' WHERE source=%s AND flags ? 'terms_excluded' AND NOT {hit}", (source, pats, pats))
+        else:
+            cur.execute("UPDATE player_post SET flags = flags - 'terms_excluded' WHERE source=%s AND flags ? 'terms_excluded'", (source,))
+    return n

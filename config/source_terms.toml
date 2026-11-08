@@ -4,3 +4,690 @@
 #   取得を止めるのは explicitly_prohibited（または uses.collect が prohibited）だけ。未確認を禁止として扱わない。
 # uses: collect・store・analyze_aggregate・public_quote・commercial（allowed / prohibited / conditional / unknown と理由）
 #   公開の画面の原文の引用は、public_quote が allowed と記録された取得元だけ（既定は出さない）。
+
+# 2026-11-08: 稼働している 38 の取得元を、一次資料（公開のページだけ。ログイン・遮断の回避なし）で確かめた記録。
+
+[sources.adrenaline]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "/forums/-/index.rss は不可に含まれない"
+notes = "人の手の確認が要る"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://forum.adrenaline.com.br/help/terms/", clause = "取得できず（遮断の画面）", checked = "2026-11-08" },
+  { url = "https://forum.adrenaline.com.br/robots.txt", clause = "/whats-new/・/posts/ などを不可。ほかは許可", checked = "2026-11-08" },
+]
+[sources.adrenaline.uses]
+collect = "unknown: 規約を読めず"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.blizzard_forums]
+category = "explicitly_prohibited"
+permission_required = "unknown"
+conditions = "EULA の禁止。掲示板の ToS 自体は取得に触れない（雛形のまま）"
+robots = "版ごとに admin・auth・search・*.rss などを不可。latest.json・/t/{id}.json は不可に含まれない"
+notes = "EULA は掲示板を名指ししていない（「Blizzard のウェブサイト」という一般の語）。禁止として扱う"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://www.blizzard.com/en-us/legal/a2989b50-5f16-43b1-abec-2ae17cc09dd6/blizzard-end-user-license-agreement", clause = "データマイニング・スクレイピング・クローリング・自動の問い合わせを禁止。公式 API の認可された利用だけ例外", checked = "2026-11-08" },
+  { url = "https://us.forums.blizzard.com/en/wow/tos", clause = "掲示板の ToS に取得の禁止の明文はない。投稿は CC BY-NC-SA 3.0。本文は雛形のまま", checked = "2026-11-08" },
+]
+[sources.blizzard_forums.uses]
+collect = "prohibited: Blizzard の EULA が、Blizzard のゲーム・サービス・ウェブサイトへのデータマイニング・スクレイピング・クローリング・自動の問い合わせを禁じる（公式 API の認可された利用だけ例外）"
+store = "prohibited: 取得そのものが禁止の条項の対象"
+analyze_aggregate = "unknown: 取得が許されない限り前提がない"
+public_quote = "unknown: 掲示板の投稿は CC BY-NC-SA 3.0 と記載。ただし取得の禁止が先"
+commercial = "prohibited: 投稿の CC BY-NC-SA 3.0 により商用は不可"
+
+[sources.bluesky]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = "規約に具体的な条件の記載はない。受信の仕組みの公式の文書は本文を取得できず未確認"
+robots = "対象外（WebSocket）"
+notes = "開発者向けの文書の本文は空で読めなかった"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://bsky.social/about/support/tos", clause = "§3.3 他者によるコンテンツの利用は Bluesky の管理外、§3.5 同意なく投稿を販売しない", checked = "2026-11-08" },
+  { url = "https://github.com/bluesky-social/jetstream", clause = "受信の仕組みのコードは MIT／Apache-2.0。利用条件・認証・上限の記載はない", checked = "2026-11-08" },
+]
+[sources.bluesky.uses]
+collect = "unknown: 規約に自動の取得の禁止も許可も明記がない"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown: 他者による利用は Bluesky の管理外（§3.3）"
+commercial = "unknown: 規約に明記がない"
+
+[sources.cdaction]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "* は Allow: /"
+notes = "規約のページは 403 で読めず。人の手の確認が要る"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://forum.cdaction.pl/robots.txt", clause = "Allow: /、Content-Signal: search=yes, ai-train=no, use=reference。AI の学習のボットは全面不可", checked = "2026-11-08" },
+]
+[sources.cdaction.uses]
+collect = "unknown: 規約を読めず"
+store = "unknown"
+analyze_aggregate = "unknown: robots.txt の Content-Signal は ai-train=no。ai-input は指定なし"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.cdpr_forum]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "GPTBot だけ不可。ほかは制限なし"
+notes = "会社の利用者の契約・コミュニティの規則は未読"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://forums.cdprojektred.com/index.php?help/terms/", clause = "掲示板の利用者の契約。第三者の閲覧・複製・自動のアクセスの制限の条項はない", checked = "2026-11-08" },
+]
+[sources.cdpr_forum.uses]
+collect = "unknown: 自動の取得に触れる条項はない"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown: 投稿の著作権は投稿者、運営に非独占の許諾"
+commercial = "unknown"
+
+[sources.computerbase]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "/forum/forums/…/index.rss は不可に含まれない"
+notes = "会社全体の著作権の条項は未読"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://www.computerbase.de/forum/help/terms/", clause = "利用規約に取得・自動のアクセス・再利用の条項はない", checked = "2026-11-08" },
+  { url = "https://www.computerbase.de/robots.txt", clause = "/forum/ の members・search・posts などを不可。forums/ は許可", checked = "2026-11-08" },
+]
+[sources.computerbase.uses]
+collect = "unknown: 取得・自動のアクセスの明文はない（robots は /forum/forums/ を許可）"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown: 投稿者は運営会社に非独占の使用権を与えるだけ"
+commercial = "unknown"
+
+[sources.elotrolado]
+category = "explicitly_allowed"
+permission_required = false
+conditions = "出典の表示。派生物は同じライセンス。他の出典の引用・画像は別のライセンスの可能性"
+robots = "/feed.php は不可に含まれない"
+notes = "使っている /feed.php は掲示板の投稿ではなくニュースの記事の RSS だった（取得元の目的と合わない。読み方の見直しが要る）"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://www.elotrolado.net/wiki/ElOtroLado:Licencia_de_contenidos", clause = "別の表示がなければ、掲示板を含む文はすべて CC BY-SA 2.5 ES", checked = "2026-11-08" },
+  { url = "https://www.elotrolado.net/ucp.php?mode=fullterms", clause = "投稿は、別の指定がなければサイトの CC のライセンスの下", checked = "2026-11-08" },
+]
+[sources.elotrolado.uses]
+collect = "allowed: 本文は CC BY-SA 2.5 ES で公開と明記"
+store = "allowed: 同じライセンスの範囲"
+analyze_aggregate = "allowed: 同じライセンスの範囲"
+public_quote = "conditional: 出典の表示と継承が要る（このサイトは引用しない）"
+commercial = "allowed: CC BY-SA は商用も許す"
+
+[sources.famiboards]
+category = "explicitly_prohibited"
+permission_required = true
+conditions = "書面の許可があれば例外。通常の検索エンジン・ブラウザの利用は除く"
+robots = "* は Allow: /（規約が別に禁止）"
+notes = "取得を止め、集計・公開から外した"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://famiboards.com/help/terms/", clause = "禁止の行為: データマイニング、ロボットなどデータの収集・抽出のツールによる自動の利用", checked = "2026-11-08" },
+  { url = "https://famiboards.com/help/terms/", clause = "禁止の行為: 検索エンジン・ブラウザを除く、スパイダー・ボット・スクレイパーなどの自動のシステムの使用", checked = "2026-11-08" },
+]
+[sources.famiboards.uses]
+collect = "prohibited: データマイニング・ロボット・データの収集・抽出のツールによる自動の利用と、スパイダー・スクレイパーによるアクセスを禁止"
+store = "prohibited: 許可のない複製を禁止"
+analyze_aggregate = "prohibited: 取得が禁止"
+public_quote = "prohibited: 許可のない複製・公開の表示を禁止"
+commercial = "prohibited: 運営の承認がない限り商用は不可"
+
+[sources.game_official_forums]
+category = "unconfirmed"
+excluded_hosts = ["forum.enlisted.net", "forum.warthunder.com", "forum.warthunder.ru", "forum.lastepoch.com"]
+permission_required = "unknown"
+conditions = "Gaijin（enlisted・warthunder.com・warthunder.ru）4.3.5: AI・機械学習のための scrape・collect・analyze を書面の許可なく禁止。Last Epoch: bot などの自動のソフトと、データの収集・抽出のツールによる情報の抽出を禁止"
+robots = "7 サイトとも Discourse の標準。latest.json・/t/{id}.json は不可に含まれない"
+notes = "禁止のサイトは excluded_hosts。記述（config/sources.toml）からも外した。残り 3 サイトは規約を読めていない"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://forum.enlisted.net/tos", clause = "Gaijin の規約 4.3.5: AI・機械学習の訓練・運用のための scrape・collect・analyze を書面の許可なく禁止", checked = "2026-11-08" },
+  { url = "https://forum.warthunder.com/tos", clause = "同じ本文", checked = "2026-11-08" },
+  { url = "https://forum.warthunder.ru/tos", clause = "同じ本文", checked = "2026-11-08" },
+  { url = "https://forum.lastepoch.com/tos", clause = "bot などの自動のソフトの使用、データの収集・抽出のツールによる情報の抽出を禁止", checked = "2026-11-08" },
+  { url = "https://forums.eveonline.com/tos", clause = "取得できず（403）", checked = "2026-11-08" },
+  { url = "https://forums.flightsimulator.com/tos", clause = "取得できず（Microsoft のサービス契約へ転送。掲示板への適用の範囲は未確認）", checked = "2026-11-08" },
+  { url = "https://forums.funcom.com/tos", clause = "取得できず（転送先の名前を引けない）", checked = "2026-11-08" },
+]
+[sources.game_official_forums.uses]
+collect = "サイトごと: Gaijin の 3 サイトと Last Epoch は禁止が明記（取得を止め、保存済みの発言を集計・公開から外す）。EVE・MSFS・Funcom は規約を読めず未確認"
+store = "禁止のサイトは取得そのものが禁止の対象。ほかは unknown"
+analyze_aggregate = "Gaijin は AI・LLM による処理を書面の許可なく禁止。ほかは unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.gamekult]
+category = "conditional"
+permission_required = "unknown"
+conditions = "Mentions légales: 内容の全部・一部の複製・配布・改変・第三者への提供は、発行者（CUP Interactive）の事前の書面の許可が要る"
+robots = "/forum/ の auth・search・*.rss などを不可。/forum/t/{id}.json・/forum/latest.json は不可に含まれない"
+notes = "掲示板の専用の規約の本文は取得できず。取得・分析が複製の条項に当たるかは解釈が要る（公開の画面には原文を出さない）"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://www.gamekult.com/forum/tos", clause = "法的表示: 内容の複製・配布・改変は発行者の書面の許可が要る", checked = "2026-11-08" },
+]
+[sources.gamekult.uses]
+collect = "conditional: 取得の禁止の明文はない。内容の複製・配布・改変は発行者の事前の書面の許可が要る"
+store = "conditional: 複製に当たりうる。フランス著作権法のテキスト・データマイニングの例外（L122-5-3。権利者が留保しない限り）の範囲かは未確認"
+analyze_aggregate = "unknown"
+public_quote = "prohibited: 複製・配布は書面の許可が要る（このサイトは引用しない）"
+commercial = "prohibited: 商用の複製は書面の許可が要る"
+
+[sources.gog_reviews]
+category = "explicitly_prohibited"
+permission_required = "unknown"
+conditions = "禁止の条項だけ"
+robots = "gog.com/robots.txt は /upload/・/www/・/profile などを不可。レビューの API の robots.txt は未確認"
+notes = "公式の規約のページは 404（gog.com）・403（support.gog.com）で本文を直接読めなかった。二次情報 2 つ（規約のアーカイブ・公式フォーラムでの引用）が同じ禁止を示すため、禁止として扱う"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://tostracker.app/document/gog", clause = "§11.1(e) ロボット・スパイダーなど自動化ツールと情報を集めるプログラムの禁止（規約のアーカイブ。2026-04-04 版とされる）", checked = "2026-11-08" },
+  { url = "https://www.gog.com/forum/general/does_the_user_agreement_intentionally_disallow_modding", clause = "公式フォーラムで引用された利用規約の条文: automation software・robots・spiders・extraction tools の作成・使用の禁止", checked = "2026-11-08" },
+]
+[sources.gog_reviews.uses]
+collect = "prohibited: 利用規約 §11.1(e) がロボット・スパイダーなどの自動化ツールと、サービスの情報を集める第三者のプログラムを禁じる"
+store = "prohibited: 取得そのものが禁止の条項に当たりうる"
+analyze_aggregate = "unknown: 取得が禁止のため前提を欠く"
+public_quote = "unknown: レビューは GOG への利用許諾（§12.2）。第三者への許諾の明記はない"
+commercial = "prohibited: §11.1(a) 個人の楽しみに限り、収益に使えない"
+
+[sources.gtplanet]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "RSS は不可に含まれない"
+notes = "規約のページは 403 で読めず。人の手の確認が要る"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://www.gtplanet.net/robots.txt", clause = "/forum/posts/・/forum/search/ などを不可。/forum/forums/ と RSS は不可に含まれない", checked = "2026-11-08" },
+]
+[sources.gtplanet.uses]
+collect = "unknown: 規約を読めず"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.guildwars2_forum]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "* は Allow: /"
+notes = "検索で見えた約 11 年前の旧版の 3.1 は、データを集めるソフトを禁じていた。今の文言と掲示板への適用は未確認。人の手の確認が要る"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://en-forum.guildwars2.com/robots.txt", clause = "Content-Signal: search=yes, ai-train=no, use=reference。学習のボットは全面不可", checked = "2026-11-08" },
+  { url = "https://www.arena.net/en/legal/user-agreement", clause = "JavaScript で描くページで本文を取得できず", checked = "2026-11-08" },
+]
+[sources.guildwars2_forum.uses]
+collect = "unknown: 今の利用許諾契約の本文を読めず"
+store = "unknown"
+analyze_aggregate = "unknown: robots.txt の Content-Signal は ai-train=no。ai-input は指定なし"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.hatena_games]
+category = "conditional"
+permission_required = false
+conditions = "過度のアクセスをしない（RSS・API は 30 分ごと程度まで）。robots.txt の Crawl-delay: 5 を守る"
+robots = "/entry/jsonlite などを不可。/entry/json/ は含まれない。Crawl-delay: 5"
+notes = "記事の URL を得る RSS の元の 3 サイトの規約は、automaton-media だけ読めた（大量の接続の禁止、記事の無断の転載の禁止。このサイトは記事の URL だけを使う）"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://b.hatena.ne.jp/help/entry/notice_access", clause = "HTML の自動の巡回は控え、RSS・API を使う。30 分ごと程度まで、過度のアクセスは遮断", checked = "2026-11-08" },
+  { url = "https://policies.hatena.ne.jp/rule", clause = "過剰な負荷をかける利用は遮断の対象。自動の取得を名指しで禁じる条項はない", checked = "2026-11-08" },
+  { url = "https://developer.hatena.ne.jp/license", clause = "API で得た情報は目的の範囲で無償・非独占的に使える。第三者への譲渡・使用許諾は不可", checked = "2026-11-08" },
+  { url = "https://b.hatena.ne.jp/robots.txt", clause = "/entry/jsonlite などを不可、Crawl-delay: 5。使っている /entry/json/ は不可に含まれない（2026-11-08 に直接確認）", checked = "2026-11-08" },
+]
+[sources.hatena_games.uses]
+collect = "conditional: はてなの案内が、データは RSS か API で取り、HTML の自動の巡回は控えるよう求める。このサイトは公開 API（/entry/json/）を使う。robots.txt の不可は /entry/jsonlite で、使っている経路は含まれない"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown: コメントの著作権は投稿者。API で得た情報を第三者へ使用許諾できない（API の規約）"
+commercial = "unknown"
+
+[sources.keylol]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "/api/・search.php などを不可。forum.php?mod=rss は不可に含まれない"
+notes = "サイトの規則のページを特定できず。人の手の確認が要る"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://keylol.com/robots.txt", clause = "Discuz の標準。RSS の経路は不可に含まれない", checked = "2026-11-08" },
+]
+[sources.keylol.uses]
+collect = "unknown: 規約を見つけられず（robots は RSS を許可）"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.lemmy_games]
+category = "unconfirmed"
+permission_required = false
+conditions = "lemmy.ml・lemmy.world の robots.txt は Crawl-delay: 60（取得の共通の部品が守る）"
+robots = "lemmy.ml・lemmy.world: /api/ は不可に含まれないが Crawl-delay: 60"
+notes = "2026-11-08 まで Crawl-delay を守れていなかった（1 周期に同じホストへ続けて読んでいた）。取得の共通の部品が robots.txt の Crawl-delay を守るように直した"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://legal.lemmy.world/tos", clause = "ToS はサイト・API に適用。スクレイピング・クロールの禁止の条項はない。bot の条項は投稿する bot の規則", checked = "2026-11-08" },
+  { url = "https://beehaw.org/legal", clause = "公開の内容は連合の他のサーバーにダウンロードされうると明記。取得の制限はない", checked = "2026-11-08" },
+  { url = "https://sh.itjust.works/legal", clause = "投稿は公開と見なす。取得の制限の条項はない", checked = "2026-11-08" },
+  { url = "https://lemmy.ml/legal", clause = "自動の取得・スクレイピングの条項はない", checked = "2026-11-08" },
+]
+[sources.lemmy_games.uses]
+collect = "unknown: 4 インスタンスとも自動の取得を禁じる条項はない（公開 API）"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.mastodon_games]
+category = "unconfirmed"
+permission_required = false
+conditions = "robots.txt の注記: LLM の学習への利用は不可"
+robots = "* は /media_proxy/ などだけ不可。/api/v1/timelines/tag/ は許可"
+notes = "プライバシーポリシーの本文は未読"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://mastodon.social/api/v1/instance/terms_of_service", clause = "利用規約（2026-08-31 施行）は登録した利用者向け。スクレイピング・bot の禁止の条項はない", checked = "2026-11-08" },
+  { url = "https://mastodon.social/robots.txt", clause = "AI の学習のボットは全面不可。LLM の学習への利用を許さない旨のコメント", checked = "2026-11-08" },
+]
+[sources.mastodon_games.uses]
+collect = "unknown: 規約に自動の取得・API の禁止の条項はない（規約は登録した利用者向け）"
+store = "unknown: 投稿は誰でも RSS・索引・データベースに保存しうると利用者向けに記載"
+analyze_aggregate = "unknown: robots.txt のコメントは LLM の学習への利用を許さない（このサイトは学習ではなく要約）"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.mein_mmo]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "* は /magazin/wp-admin/* だけ不可。/comments/feed/ は許可。Python-urllib・MagpieRSS などの名前のボットは全面不可"
+notes = "このサイトの取得は独自の名前（User-Agent）を名乗る"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://mein-mmo.de/nutzungsbestimmungen/", clause = "利用規約（2025-04-02 版）に自動のアクセス・スクレイピング・RSS の条項はない", checked = "2026-11-08" },
+  { url = "https://mein-mmo.de/comments/feed/", clause = "コメントの RSS は公開されている。利用条件の記載はない", checked = "2026-11-08" },
+]
+[sources.mein_mmo.uses]
+collect = "unknown: 規約に自動の取得・RSS の条項はない"
+store = "unknown: サイトは全権利留保と表示"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.neogaf]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "/misc/・/members/・/search/・/help/ などを不可。/forums/ の RSS は不可に含まれない"
+notes = "人の手で規約を読む必要がある"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://www.neogaf.com/help/terms/", clause = "取得できず（403）", checked = "2026-11-08" },
+]
+[sources.neogaf.uses]
+collect = "unknown: 規約を読めず"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.nicopedia]
+category = "conditional"
+permission_required = "unknown"
+conditions = "サーバーに過度の負荷をかけない（robots.txt の Crawl-delay 5 秒を守る）。記事を集めたデータベース化・検索の機能の付与の禁止（第 6 条）"
+robots = "dic.nicovideo.jp/robots.txt: Crawl-delay 5 秒。掲示板の経路は不可に含まれない（要約による）"
+notes = "第 6 条のデータベース化の禁止が掲示板の書き込みに及ぶかは解釈が要る。ニコニコ全体の規約は読めなかった"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://dic.nicovideo.jp/t/html/tos/", clause = "第 4 条 サーバーへの過度の負荷を禁止", checked = "2026-11-08" },
+  { url = "https://dic.nicovideo.jp/t/html/tos/", clause = "第 6 条 記事を複数集めたデータベース化・検索の機能の付与を禁止", checked = "2026-11-08" },
+  { url = "https://dic.nicovideo.jp/t/html/tos/", clause = "第 7 条 掲示板の書き込みの著作権は運営会社に譲渡", checked = "2026-11-08" },
+]
+[sources.nicopedia.uses]
+collect = "conditional: 大百科の規約に自動の取得の明記はない。第 4 条でサーバーへの過度の負荷を禁じる"
+store = "conditional: 第 6 条は記事を集めたデータベース化を禁じる。掲示板の書き込みの保存を直接扱う条項は見つからない"
+analyze_aggregate = "unknown: 規約に明記がない"
+public_quote = "conditional: 掲示板の書き込みの著作権は運営会社に譲渡（第 7 条）"
+commercial = "unknown"
+
+[sources.outerspace]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "取得できず（確認の画面）"
+notes = "確認の画面を越える試みはしていない。人の手の確認が要る"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://forum.outerspace.com.br/index.php?help/terms/", clause = "取得できず（403）", checked = "2026-11-08" },
+]
+[sources.outerspace.uses]
+collect = "unknown: 規約を読めず"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.pantip_games]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = "なし（条項が見つからない）"
+robots = "pantip.com/robots.txt: 特定のボットだけ全面不可。ほかは /ads.php だけ不可"
+notes = "利用規約の本体が別のページにある可能性。タイ語の細則は要約を通しているため精度に限界"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://pantip.com/about/tos", clause = "規則・マナーのページ。転載・クロール・著作権・商用の条項は見つからない", checked = "2026-11-08" },
+  { url = "https://pantip.com/about/privacy", clause = "個人データの方針。投稿の著作権・クロールの記載はない", checked = "2026-11-08" },
+]
+[sources.pantip_games.uses]
+collect = "unknown: 規約に自動の取得の禁止も許可も見つからない"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.pcgames_de]
+category = "explicitly_prohibited"
+permission_required = "unknown"
+conditions = "なし（許諾の条件は規約にない）"
+robots = "RSS は不可に含まれない（規約が別に禁止）"
+notes = "取得を止め、集計・公開から外した"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://forum.pcgames.de/help/terms/", clause = "8.2: テキスト・データマイニングを禁じ、AI の学習を含めて包括的に留保", checked = "2026-11-08" },
+  { url = "https://forum.pcgames.de/help/terms/", clause = "8.1: 私的・非商用のダウンロード・印刷だけ許諾。複製・頒布・公開は不可", checked = "2026-11-08" },
+]
+[sources.pcgames_de.uses]
+collect = "prohibited: 利用規約 8.2 がテキスト・データマイニングを禁じ、明示で留保する"
+store = "prohibited: 8.1 は私的・非商用の保存だけ"
+analyze_aggregate = "prohibited: 8.2 の TDM の禁止に当たる"
+public_quote = "prohibited: 8.1 が複製・公開を認めない"
+commercial = "prohibited: 8.1 は私的・非商用だけ"
+
+[sources.pcgh_extreme]
+category = "conditional"
+permission_required = "unknown"
+conditions = "3.1: 事前の同意なく複製・公衆送信・配布・加工を禁止、過度の負荷も禁止。10.1: 私的・非営利の機器へのダウンロード・印刷だけ"
+robots = "/find-new/・/posts/ などを不可。RSS は不可に含まれない"
+notes = "投稿者の投稿に 10.1 が及ぶかは未確認。同じ会社の別の掲示板（pcgames_de）は TDM を明示で留保している"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://extreme.pcgameshardware.de/help/terms/", clause = "3.1: 事前の同意なく複製・公衆送信・配布・加工、想定外の利用を禁止、過度の負荷も禁止", checked = "2026-11-08" },
+  { url = "https://extreme.pcgameshardware.de/help/terms/", clause = "10.1: 私的・非営利の機器へのダウンロード・印刷だけ許可", checked = "2026-11-08" },
+]
+[sources.pcgh_extreme.uses]
+collect = "conditional: 取得の禁止の明文はない。内容の複製・公衆送信・配布・加工は事前の同意が要る（3.1）"
+store = "conditional: 複製に当たりうる。ドイツ著作権法 §44b（テキスト・データマイニング。権利者が留保しない限り許される）の範囲かは未確認。この規約に TDM の留保は見つかっていない"
+analyze_aggregate = "unknown"
+public_quote = "prohibited: 複製・公開は事前の同意が要る（このサイトは引用しない）"
+commercial = "prohibited: 私的・非営利のダウンロード・印刷だけ（10.1）"
+
+[sources.playua]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "/wp-admin/ などを不可。/comments/feed/ は許可"
+notes = "トップのページが 500 を返し、規約のページへ辿れなかった"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://playua.net/robots.txt", clause = "WordPress の標準。コメントの RSS は不可に含まれない", checked = "2026-11-08" },
+]
+[sources.playua.uses]
+collect = "unknown: 規約のページを読めず"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.protondb]
+category = "explicitly_allowed"
+permission_required = false
+conditions = "ODbL の帰属表示（出典の明記）。派生データベースを公開するときは同じライセンス。生データを再配布しないので影響は限られるが、集計の結果が派生データベースに当たるかは未確認"
+robots = "対象外（GitHub の配布物）"
+notes = "ODbL の記載はリポジトリの README による。protondb.com 自身の規約・ライセンスの表記は取得できず未確認"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://github.com/bdefore/protondb-data", clause = "ProtonDB の報告データの出力は ODbL、個別の内容は Database Contents License", checked = "2026-11-08" },
+]
+[sources.protondb.uses]
+collect = "allowed: ODbL で公開されたデータ出力（GitHub の配布）を取得できる"
+store = "allowed: ODbL の範囲で保存・再利用できる（派生データベースを公開するなら同じライセンス・帰属）"
+analyze_aggregate = "allowed: ODbL の範囲で集計・分析できる"
+public_quote = "conditional: ODbL の帰属表示と Share-Alike が前提（個別の内容は Database Contents License）"
+commercial = "allowed: ODbL は商用を禁じない（ProtonDB 自身の規約は未確認）"
+
+[sources.ptt_games]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "* は Allow: /。/atom/ は許可。AI の学習のボットは全面不可"
+notes = "このサイトの AI の利用は学習ではなく、ローカルの LLM による要約"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://www.ptt.cc/man/SYSOP/M.1067678408.A.7FA.html", clause = "使用者條款（登録した利用者向け）に取得・自動のアクセス・再利用の条項はない", checked = "2026-11-08" },
+  { url = "https://www.ptt.cc/robots.txt", clause = "Content-Signal: search=yes, ai-train=no, use=reference。ai-input は記載なし", checked = "2026-11-08" },
+]
+[sources.ptt_games.uses]
+collect = "unknown: 規約に取得の条項はない（robots は許可）"
+store = "unknown"
+analyze_aggregate = "unknown: robots.txt の Content-Signal は ai-train=no（学習の禁止）。推論の入力（ai-input）は指定なし"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.spaziogames]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "RSS は不可に含まれない"
+notes = "規約のページは 403 で読めず。人の手の確認が要る"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://forum.spaziogames.it/robots.txt", clause = "Allow: /。/posts/・/search/ などだけ不可。RSS は不可に含まれない", checked = "2026-11-08" },
+]
+[sources.spaziogames.uses]
+collect = "unknown: 規約を読めず"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.stage1st_games]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "/2b/api/・search.php などを不可。RSS は不可に含まれない"
+notes = "規約・著作権の表示のページは見つからず。人の手の確認が要る"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://stage1st.com/robots.txt", clause = "Discuz の標準。/2b/forum.php?mod=rss は不可に含まれない", checked = "2026-11-08" },
+]
+[sources.stage1st_games.uses]
+collect = "unknown: 規約を見つけられず（robots は RSS を許可）"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.steam_assets]
+category = "conditional"
+permission_required = "unknown"
+conditions = "Web API の規約: Valve の公認を装わない。画像の著作権は各権利者"
+robots = "store.steampowered.com/robots.txt の不可に当たらない。画像の配信の robots.txt は未確認"
+notes = "画像の再配布・直接参照の可否は規約から断定できない"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://steamcommunity.com/dev/apiterms", clause = "Valve の名称・ロゴ・リンクの使い方と、公認を装わない条件", checked = "2026-11-08" },
+  { url = "https://store.steampowered.com/subscriber_agreement/", clause = "§2.A 個人の非商用の利用に限る", checked = "2026-11-08" },
+]
+[sources.steam_assets.uses]
+collect = "conditional: 公式の API として存在するが、キー不要の経路の許諾は未確認"
+store = "unknown: 画像の URL だけを持つ（画像そのものは保存しない）"
+analyze_aggregate = "対象外"
+public_quote = "unknown: 画像は各権利者の著作物。転載の許諾は未確認（画面は Steam の配信の URL を参照するだけ）"
+commercial = "prohibited: SSA §2.A は非商用に限る（このサイトは非営利）"
+
+[sources.steam_charts]
+category = "conditional"
+permission_required = "unknown"
+conditions = "Web API の規約: 1 日 10 万回まで、公認を装わない、データはそのまま表示"
+robots = "store.steampowered.com/robots.txt の不可に当たらない。api.steampowered.com の robots.txt は未確認"
+notes = "この API の個別の公式の文書は確認できず"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://steamcommunity.com/dev/apiterms", clause = "API の利用の一般の条件（上限・公認を装わない・保存するデータの告知）", checked = "2026-11-08" },
+  { url = "https://store.steampowered.com/subscriber_agreement/", clause = "§4.C 人間以外が操作するシステムでの操作の禁止、§2.A 非商用に限る", checked = "2026-11-08" },
+]
+[sources.steam_charts.uses]
+collect = "conditional: 公式の文書への掲載は確認できず。Web API の規約・SSA §4.C の一般の条件が及ぶ可能性"
+store = "conditional: 保存するデータの告知とプライバシーポリシー（Web API の規約）"
+analyze_aggregate = "unknown: 禁止の条項も明示の許諾もない"
+public_quote = "対象外（数・順位だけを公開）"
+commercial = "prohibited: SSA §2.A は非商用に限る（このサイトは非営利）"
+
+[sources.steam_reviews]
+category = "conditional"
+permission_required = "unknown"
+conditions = "Web API の規約: 1 日 10 万回まで、Valve の公認・提携を示唆しない、データはそのまま表示、保存するデータの種類を利用者に知らせプライバシーポリシーを用意する"
+robots = "store.steampowered.com/robots.txt の不可に、使っている経路は含まれない（要約による）"
+notes = "Web API の規約はキーを前提にした書き方で、キー不要の経路への当てはまりは本文から断定できない"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://steamcommunity.com/dev/apiterms", clause = "API の呼び出しは 1 日 10 万回まで。Valve の公認を装わない。保存するデータの告知とプライバシーポリシーが必要", checked = "2026-11-08" },
+  { url = "https://store.steampowered.com/subscriber_agreement/", clause = "§4.C 人間以外が操作するシステムでの操作の禁止、§2.A 個人の非商用の利用に限る、§6.A 投稿の Valve への利用許諾", checked = "2026-11-08" },
+  { url = "https://partner.steamgames.com/doc/store/getreviews", clause = "レビューの取得は公式の文書に載っている（利用条件の記載はない）", checked = "2026-11-08" },
+]
+[sources.steam_reviews.uses]
+collect = "conditional: Web API の規約は API の利用を認める。キー不要の経路の明記はない。SSA §4.C は人間以外のシステムによる操作を禁じるが、公開 API の取得に当たるかは不明"
+store = "conditional: Web API の規約は、保存するデータのプライバシーポリシーと保存する国の明示を求める"
+analyze_aggregate = "unknown: 禁止の条項も明示の許諾もない"
+public_quote = "unknown: 投稿者は Valve に利用を許諾する（SSA §6.A）が、第三者への許諾の明記はない"
+commercial = "prohibited: SSA §2.A・§2.G(iii) は個人・非商用に限る（このサイトは非営利・広告なし）"
+
+[sources.steam_store]
+category = "conditional"
+permission_required = "unknown"
+conditions = "Web API の規約に準じるなら 1 日 10 万回まで"
+robots = "store.steampowered.com/robots.txt の不可に /api/ は含まれない（要約による）"
+notes = "この経路の公式の文書・規約上の位置づけは確認できず"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://store.steampowered.com/subscriber_agreement/", clause = "§4.C 人間以外が操作するシステムでの操作の禁止、§2.A 非商用に限る", checked = "2026-11-08" },
+  { url = "https://steamcommunity.com/dev/apiterms", clause = "API の利用の一般の条件", checked = "2026-11-08" },
+]
+[sources.steam_store.uses]
+collect = "conditional: この経路の公式の文書の根拠は確認できず。SSA §4.C の一般の条件"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown: 説明文は各権利者の著作物"
+commercial = "prohibited: SSA §2.A は非商用に限る（このサイトは非営利）"
+
+[sources.steam_upcoming]
+category = "conditional"
+permission_required = "unknown"
+conditions = "Web API の規約に準じるなら 1 日 10 万回まで・公認を装わない。ストアの経路に API の規約が直接及ぶかは不明"
+robots = "store.steampowered.com/robots.txt の不可は /share/・/widget/・/email/ など。/search/ は含まれない（要約による）"
+notes = "明示の許諾も明示の禁止も見つからない"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://store.steampowered.com/subscriber_agreement/", clause = "§4.C 人間以外が操作するシステムでの操作の禁止、§2.G(iii) 商用の利用の禁止", checked = "2026-11-08" },
+]
+[sources.steam_upcoming.uses]
+collect = "conditional: ストアの一覧の取得。SSA §4.C が閲覧のための取得に及ぶかは不明"
+store = "unknown: 保存の明記はない"
+analyze_aggregate = "unknown"
+public_quote = "対象外（作品の情報だけ）"
+commercial = "prohibited: SSA §2.A・§2.G(iii) は非商用に限る（このサイトは非営利）"
+
+[sources.studio_forums]
+category = "unconfirmed"
+excluded_hosts = ["forums.stardewvalley.net"]
+permission_required = "unknown"
+conditions = "Stardew: ロボット・スパイダーなどの自動の手段によるアクセスを目的を問わず禁止"
+robots = "KSP・Warframe: Content-Signal ai-train=no、Allow: /。Stardew: robots.txt なし。BeamNG: /library だけ不可"
+notes = "禁止のサイトは excluded_hosts。記述からも外した。KSP の掲示板の規約は 403 で読めず、Take-Two の 6.4(3) が及ぶかは人の確認が要る"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://forums.stardewvalley.net/help/terms/", clause = "禁止の利用: 自動の装置・手段で Websites にアクセスすることを目的を問わず禁止", checked = "2026-11-08" },
+  { url = "https://www.beamng.com/help/terms/", clause = "2.1・6.1: 私的・非業務に限る。スクレイピング・自動の取得の条項はない", checked = "2026-11-08" },
+  { url = "https://www.warframe.com/terms", clause = "第 4 条: 個人の娯楽・非商用に限る。自動の取得の条項はない", checked = "2026-11-08" },
+  { url = "https://www.take2games.com/legal/", clause = "6.4(3): 利用者のデータを集める bot・スクリプトを禁止（KSP の掲示板への適用の範囲は未確認）", checked = "2026-11-08" },
+]
+[sources.studio_forums.uses]
+collect = "サイトごと: Stardew Valley の掲示板は禁止が明記（取得を止め、保存済みの発言を集計・公開から外す）。BeamNG・Warframe は自動の取得の条項なし、KSP は規約を読めず未確認"
+store = "unknown（Stardew は禁止の側）"
+analyze_aggregate = "unknown"
+public_quote = "Stardew は複製を制限。ほかは unknown"
+commercial = "Stardew・BeamNG・Warframe は個人・非商用に限る"
+
+[sources.tildes]
+category = "conditional"
+permission_required = false
+conditions = "情報のための取得は歓迎、頻度は常識的に。SEO・マーケティングの取得は遮断、データを掘って売ることは不可"
+robots = "* は /login だけ不可。~games/topics.atom は許可"
+notes = "許可は運営者の注記で、規約上のライセンスではない。非営利・情報のための取得という条件に合う"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://tildes.net/robots.txt", clause = "情報のための取得は歓迎、頻度は常識的に。SEO の取得は遮断。データは掘って売るものではない", checked = "2026-11-08" },
+  { url = "https://docs.tildes.net/policies/terms-of-use", clause = "取得・API の規定はない。投稿は自動のシステムが複製しうる。著作権は投稿者", checked = "2026-11-08" },
+]
+[sources.tildes.uses]
+collect = "allowed: robots.txt の運営者の注記が、情報のための取得を歓迎する（常識的な頻度で）"
+store = "unknown: 規約に明記はない。投稿は自動のシステムが複製しうると規約が前提にしている"
+analyze_aggregate = "allowed: 情報のためなら歓迎と読める（robots の注記）"
+public_quote = "unknown: 投稿の著作権は投稿者"
+commercial = "prohibited: SEO・マーケティング・データの販売は不可（robots の注記）"
+
+[sources.tomshw_it]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "RSS は不可に含まれない"
+notes = "規約のページは 403 で読めず。人の手の確認が要る"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://forum.tomshw.it/robots.txt", clause = "Allow: /。/posts/・/search/ などだけ不可。RSS は不可に含まれない", checked = "2026-11-08" },
+]
+[sources.tomshw_it.uses]
+collect = "unknown: 規約を読めず"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"
+
+[sources.true_gaming]
+category = "unconfirmed"
+permission_required = "unknown"
+conditions = ""
+robots = "/boards/ の search・posts などを不可。RSS は不可に含まれない"
+notes = "規約のスレッドは未読。アクセスの頻度は控えめにする"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://www.true-gaming.net/boards/help/terms/", clause = "掲示板の規則（行為の規範）。スクレイピング・自動の取得・bot の条項はない", checked = "2026-11-08" },
+]
+[sources.true_gaming.uses]
+collect = "unknown: 自動の取得の条項はない"
+store = "unknown"
+analyze_aggregate = "unknown"
+public_quote = "unknown"
+commercial = "unknown"

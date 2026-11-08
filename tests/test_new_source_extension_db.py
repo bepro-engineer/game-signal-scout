@@ -182,7 +182,8 @@ def test_no_source_has_special_structure():
     voice = set(m)
     assert all(s[k].get("resident") for k in voice if k in s)                              # 声の取得元はどれも同じ形で常駐（特定の取得元だけの常駐はない）
     from game_signal_scout.ops import launchd
-    assert set(launchd.services(root)) == {"daily-run", "web"} | {f"collect-{k}" for k in voice if k in s and s[k].get("enabled", True)}
+    from game_signal_scout import source_terms
+    assert set(launchd.services(root)) == {"daily-run", "web"} | {f"collect-{k}" for k in voice if k in s and s[k].get("enabled", True) and source_terms.allowed(k)}
     names = [k for k in s if isinstance(s[k], dict) and s[k].get("adapter")]
     texts = [p for p in list((root / "migrations").rglob("*.py")) + [root / "pyproject.toml", root / "config/daily.toml"]]
     found = [f"{p.name}:{n}" for p in texts for n in names if n in p.read_text().lower() and len(n) > 6]
@@ -259,3 +260,30 @@ def test_non_fetch_contract_matches_anime_defaults():
     assert factory.reader_for("never_described") is None
     assert factory.permalink("never_described", "1", "http://x") is None and factory.permalink("never_described", "1", "https://x") == "https://x"
     assert factory.permalink("never_described", "123") is None          # ID を URL の代わりに返さない
+
+
+def test_every_enabled_source_has_a_terms_record_and_prohibited_ones_are_not_read():
+    """利用条件（#3 G2）: 有効な取得元はすべて、一次資料の URL・確認日のある記録を持つ。禁止が明記された取得元は収集・集計に入らない。
+    禁止のサイトだけを外した取得元は、そのサイトを記述で読まない。"""
+    import tomllib
+    from pathlib import Path
+    from game_signal_scout import observations, source_terms
+    from game_signal_scout.ops import collector
+    from game_signal_scout.sources import factory
+    top = Path(__file__).parents[1]
+    cfg = tomllib.loads((top / "config/sources.toml").read_text())
+    terms = tomllib.loads((top / "config/source_terms.toml").read_text())["sources"]
+    enabled = [n for n, s in cfg.items() if isinstance(s, dict) and s.get("enabled", True)]
+    for n in enabled:
+        t = terms.get(n)
+        assert t and t["category"] in ("explicitly_prohibited", "conditional", "explicitly_allowed", "unconfirmed"), n
+        assert t["evidence"] and all(e["url"].startswith("https://") and e["checked"] for e in t["evidence"]), n
+    banned = [n for n in enabled if not source_terms.allowed(n)]
+    assert banned
+    assert not set(banned) & set(factory.sources(cfg)) and not set(banned) & set(collector.residents(cfg))
+    assert not set(banned) & set(observations.sources())
+    text = (top / "config/sources.toml").read_text()
+    for n in enabled:
+        for h in source_terms.excluded_hosts(n):
+            assert f"//{h}" not in text, (n, h)
+    assert not any(source_terms.quote_allowed(n) for n in enabled)      # 公開の画面に原文を引用する取得元は今は 0

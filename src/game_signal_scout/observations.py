@@ -161,8 +161,10 @@ def finalize(conn, source: str, day: date, r: DayResult, now: datetime | None = 
 
 def sources(production_only: bool = True) -> dict[str, dict]:
     """登録された Source（config/map_sources.toml）。本番で数えるのは production = true のものだけ。"""
+    from game_signal_scout import source_terms
     srcs = config.load_toml("map_sources.toml").get("sources") or {}
-    return {k: v for k, v in srcs.items() if v.get("reader") in READERS and (v.get("production") or not production_only)}
+    # 利用条件で禁止が明記された取得元は、集計・今日の兆し・公開に入れない（取得も止まる。#3 G2）
+    return {k: v for k, v in srcs.items() if v.get("reader") in READERS and (v.get("production") or not production_only) and source_terms.allowed(k)}
 
 
 def days_to_refresh(conn, day: date, recent: int = 28, keep: int = 28) -> list[date]:
