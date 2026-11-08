@@ -138,3 +138,16 @@ def test_posts_are_reidentified_when_the_title_dictionary_changes(conn):
     conn.commit()
     normalize.voices(conn, "forum_y", cfg)                       # 辞書が変わった: 今の版で作り直す（取得元で決まる発言は同じ結果）
     assert dict(conn.execute("SELECT item_id, appid FROM player_post WHERE source='forum_y'").fetchall()) == {"a": "1030300", "b": "10"}
+
+
+def test_every_observed_source_is_optional(monkeypatch):
+    """どの取得元も、なくても困らない（CLAUDE.md）: 観測の集計に入れる取得元のどれを外しても、残りで今日の兆しの声・集計の取得元が決まる（特定の取得元に依存しない）。"""
+    from game_signal_scout import config, observations
+    from game_signal_scout.ops import dashboard_digest as dd
+    srcs = observations.sources()
+    assert len(srcs) >= 2
+    real = config.load_toml
+    for drop in srcs:
+        rest = {k: v for k, v in srcs.items() if k != drop}
+        monkeypatch.setattr(config, "load_toml", lambda name, rest=rest: {"sources": rest} if name == "map_sources.toml" else real(name))
+        assert set(observations.sources()) == set(rest) and set(dd.voice_sources({"dashboard_digest": {"voice_sources": "all"}})) == set(rest)
