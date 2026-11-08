@@ -774,9 +774,10 @@ def finds_page(ctx: Ctx) -> dict:
         m = meta.get(int(a))
         if not m:
             continue
-        items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner")}, **_judge(m), "finds": b["finds"], "read_people": b.get("read_people"),
-                      "experiences": b.get("experiences"), "window_days": b.get("window_days"), "since": (b.get("since") or "")[:10],
-                      "generated_at": b["generated_at"].isoformat() if hasattr(b.get("generated_at"), "isoformat") else str(b.get("generated_at") or "")})
+        items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner")}, **_judge(m), "read_people": b.get("read_people"),
+                      # 体験の例は したこと（act）・起きたこと（result）で公開する。did・generated_at は公開しない項目名（FORBIDDEN_KEYS）
+                      "finds": [{**f, "examples": [{"act": e.get("did"), "result": e.get("happened")} for e in f.get("examples") or []]} for f in b["finds"]],
+                      "experiences": b.get("experiences"), "window_days": b.get("window_days"), "since": (b.get("since") or "")[:10]})
     items.sort(key=lambda x: (-max(f["people"] for f in x["finds"]), x["id"]))
     return {"items": items}
 

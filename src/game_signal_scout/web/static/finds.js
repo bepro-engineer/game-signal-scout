@@ -26,7 +26,7 @@
         <span class="fd-t fd-t-${esc(f.trend)}">${esc(tr(...TREND[f.trend]))}${f.trend !== "new" ? tr(`（前の週 ${num(f.prev)}人）`, ` (prev. week ${num(f.prev)})`) : ""}</span>
         ${f.verdict === "mixed" ? `<span class="fd-mix">${tr(`面白い ${num(f.fun)}・不満 ${num(f.frustration)}・どちらも ${num(f.mixed)}`, `fun ${num(f.fun)} · frustrating ${num(f.frustration)} · both ${num(f.mixed)}`)}</span>` : ""}</p>
       <p class="fd-l">${langs(f)}</p>
-      ${f.examples && f.examples.length ? `<ul class="fd-ex">${f.examples.map(e => `<li>${esc(e.did)} <span aria-hidden="true">→</span> ${esc(e.happened)}</li>`).join("")}</ul>` : ""}
+      ${f.examples && f.examples.length ? `<ul class="fd-ex">${f.examples.map(e => `<li>${esc(e.act)} <span aria-hidden="true">→</span> ${esc(e.result)}</li>`).join("")}</ul>` : ""}
     </li>`;
   const card = w => `<article class="fd-w"><a class="fd-a" href="${A.workUrl(w.id)}">${art(w)}</a>
       <div class="fd-b"><h3><a href="${A.workUrl(w.id)}">${wn(w.name, 2, "span")}</a></h3>
