@@ -14,6 +14,20 @@
 html, body { max-width: 100%; overflow-x: hidden; }
 img { max-width: 100%; }
 
+/* 左のメニュー（#2 の 6722881075）: 1100px 以下では上のメニューに畳み、メインの読む幅を優先する（メニューを残すとメインが 674〜814px に狭まっていた） */
+@media (max-width: 1100px) {
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "side" "main"; column-gap: 0; }
+  main { min-width: 0; }
+  .top { position: relative; }
+  .navbtn { display: inline-flex; position: absolute; right: 10px; bottom: 10px; align-items: center; gap: 6px; font: inherit; font-size: 15px; font-weight: 700;
+    color: var(--accent); background: rgba(255,255,255,.95); border: 0; border-radius: 999px; padding: 6px 16px; box-shadow: 0 2px 8px rgba(40,30,80,.18); cursor: pointer; }
+  .side { position: static; display: none; }
+  body.navopen .side { display: flex; }
+  .sidecol { position: static; gap: 10px; }
+  .soon { display: none; }
+  body.navopen .soon:not([hidden]) { display: block; }
+}
+
 @media (max-width: 900px) {
   .app { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "side" "main"; padding: 10px 12px 40px; column-gap: 0; }
   .top { position: relative; }
@@ -41,7 +55,6 @@ img { max-width: 100%; }
   .nwt-r { grid-template-columns: 48px minmax(0, 1fr) !important; }
   .nwt-r > .nwt-was, .nwt-r > .nwt-now { grid-column: 2; } .nwt-r > .ar { display: none; }
   .ct-h { display: none !important; }
-  .g-row { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
   .sp-digest, .sp-bar, .pa-sec, .sr-panel { padding-left: 14px !important; padding-right: 14px !important; }
   .sec-h h2, .sp-title h2 { font-size: 22px !important; }
   .lsg { grid-template-columns: 70px repeat(var(--n), minmax(0, 1fr)) !important; gap: 2px !important; }

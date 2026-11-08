@@ -26,13 +26,15 @@
   const LD = G.lead && G.lead[L] ? G.lead[L] : null;
   const ss = LD && G.lead.kind === "finding" && LD.body.length ? LD.body : null;
   const head = LD ? LD.head : S.head[L];
+  // 大見出しは作品名の短い句（#2: AI の長い文を大見出しにしない。文は見出しの下の詳細に）
+  const shortHead = LD && G.lead.kind === "finding" && (LD.names || []).length ? LD.names.map(n => `『${n}』`).join(tr("・", ", ")) : "";
   const body = LD ? LD.body.join(L === "ja" ? "" : " ") : null;
   const lede = body ? `<span class="lede-t" id="lede-t">${esc(body).replace(/『([^』]+)』/g, (_, n) => `<b class="nb">『${n}』</b>`)}</span>`
     : `${esc(S.lede[L])}${S.basis === "movement" ? "" : tr("たとえば、こんな作品です。", " For example:")}`;
   $("lead").innerHTML = `
     <div class="g-kick"><b>${tr("今日の兆し", "Today's signal")}</b><span class="g-day">${esc(today[L])}</span>
       ${body ? `<button type="button" class="lede-more" aria-controls="lede-t" aria-expanded="false" hidden>${tr("続きを読む", "Read more")}</button>` : ""}</div>
-    <h1>${esc(head)}</h1>
+    ${shortHead ? `<h1 class="g-short">${esc(shortHead)}</h1><p class="g-headline">${esc(head)}</p>` : `<h1>${esc(head)}</h1>`}
     <p class="lede"${ss ? ` data-sents="${esc(JSON.stringify(ss))}"` : ""}>${lede}</p>
     ${LD ? A.cites(LD.cites) : ""}
     <ul class="g-row">${G.featured.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}</li>`).join("")}</ul>

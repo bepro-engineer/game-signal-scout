@@ -263,8 +263,18 @@ details.how[open] summary { border-bottom: 1px solid var(--line); }
 .sr-dev { display: block; font-size: 12px; color: #666; line-height: 1.4; overflow-wrap: anywhere; }
 /* トップの入口（#2）: 遊ぶ目的から探す */
 .ask h2 { margin: 0 0 4px; } .ask p { margin: 0 0 10px; color: #555; }
+.intro { container-type: inline-size; }
 .ask-i { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@container (max-width: 860px) { .ask-i { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (max-width: 420px) { .ask-i { grid-template-columns: minmax(0, 1fr); } }
 .ask-b { display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: #fff; color: inherit; text-decoration: none; box-shadow: 0 1px 6px rgba(40,30,80,.10); border-top: 4px solid #8f86d9; }
 .ask-b b { font-size: 16px; } .ask-b small { color: #666; font-size: 12px; }
 .ask-b:hover { box-shadow: 0 2px 12px rgba(40,30,80,.18); }
-@media (max-width: 900px) { .ask-i { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* 今日の兆し（#2）: 大見出しは作品名の短い句、AI の文は見出しの下の詳細 */
+.g-lead h1.g-short { font-size: 32px; line-height: 1.3; }
+.g-lead .g-headline { margin: 0 0 8px; font-size: 19px; font-weight: 700; line-height: 1.6; color: #2c2944; }
+@media (max-width: 600px) { .g-lead h1.g-short { font-size: 26px; } .g-lead .g-headline { font-size: 16px; } }
+/* 言語圏の地図（Game の中心ではない。トップの最後）: メインの幅が狭いときは地図と一覧を縦に */
+.world { container-type: inline-size; }
+@container (max-width: 900px) { .world .grid { grid-template-columns: minmax(0, 1fr) !important; } }
+.intro > .ask { flex: 1 1 100%; min-width: 0; }   /* 入口はメインの幅いっぱいに（4 つのカードが左に寄らない） */

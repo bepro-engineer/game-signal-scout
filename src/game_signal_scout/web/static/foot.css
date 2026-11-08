@@ -1,6 +1,6 @@
 /* 全ページ共通のフッター（foot.js） */
 .app > .site-foot { grid-column: 2; grid-row: 3; }
-@media (max-width: 900px) { .app > .site-foot { grid-column: 1; grid-row: 4; } }
+@media (max-width: 1100px) { .app > .site-foot { grid-column: 1; grid-row: 4; } }   /* 左のメニューを畳む幅と同じ（#2） */
 .site-foot { margin-top: -2px; padding: 20px 4px 8px; border-top: 1px solid var(--line, #e4e1ef); display: flex; flex-direction: column; gap: 10px; }
 .site-foot nav { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; }
 .site-foot nav a { font-size: 14px; font-weight: 700; color: var(--ink-2, #3c3958); text-decoration: none; }

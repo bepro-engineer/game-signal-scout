@@ -8,7 +8,7 @@ main.g { gap: 14px; }
 .g-kick b { background: var(--brand); color: #fff; border-radius: 8px; padding: 2px 12px; font-family: var(--round); font-weight: 800; }
 .g-lead h1 { margin: 12px 0 8px; font-family: var(--round); font-weight: 800; font-size: 40px; line-height: 1.35; letter-spacing: .01em; }
 .g-lead .lede { margin: 0 0 18px; font-size: 18px; line-height: 1.8; color: var(--ink-2); }
-.g-row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 18px; }
+.g-row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 18px; }   /* 1 枚が読める幅（120px）を下回らない列の数（#2）*/
 .g-row .art { aspect-ratio: 3 / 4; border-radius: 12px; box-shadow: 0 2px 10px rgba(40,30,80,.14); }
 .g-row .wn { margin-top: 10px; font-size: 16px; line-height: 1.45; }
 .g-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
