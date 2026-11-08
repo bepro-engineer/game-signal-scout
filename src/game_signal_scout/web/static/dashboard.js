@@ -28,6 +28,13 @@
       <p class="dmore"><a href="finds.html">${tr("プレイヤーが見つけた面白さをすべて見る →", "See all →")}</a></p></div>`;
   A.dayBar($("intro"), "afterend");   // 表示している日は紹介のブロックの下に右寄せ（2026-10-15 のユーザーの指示）
 
+  /* ---------- 作品は 1 度だけ出す（2026-11-09 オーナー）: 段の大事さの順に割り当てる ----------
+     ① 今日の兆しの見出しの作品 ② 今日の注目・動き始めた作品 ③ 今日の兆しの作品の列 ④ いつもより話題が増えた作品 ⑤ 話題が多かった作品。先の段に出た作品は後の段に出さない */
+  const SEEN = new Set(G.featured.length ? [G.featured[0].id] : []);
+  const fresh = xs => { const out = xs.filter(x => !SEEN.has(x.id)); out.forEach(x => SEEN.add(x.id)); return out; };
+  const CKF = fresh(G.checks);
+  const FEAT = [...G.featured.slice(0, 1), ...fresh(G.featured.slice(1))];
+
   /* ---------- 今日の兆し ---------- */
   // 先頭の組（G.lead。ADR 0052）: 見出し・本文・引用と作品の列の先頭は、サーバーが 1 つの発見から作った組だけを使う（言語ごとに別の文を選ばない）。
   // kind = finding（今日の兆しの発見の文章）/ aggregate（集計の見出し: 作品自身の普段と比べた変化）。組のない日は集計の要約の文
@@ -52,8 +59,8 @@
     <p class="lede"${ss ? ` data-sents="${esc(JSON.stringify(ss))}"` : ""}>${lede}</p>
     ${LD ? A.cites(LD.cites) : ""}
     ${leadFinds()}
-    <ul class="g-row">${G.featured.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}</li>`).join("")}</ul>
-    <div class="g-foot"><span>${tr(`話題になった${G.works_today}作品から${G.featured.length}作品（人数の順ではありません）。`, `${G.featured.length} of the ${G.works_today} titles talked about (not in order of people). `)}${G.movement ? tr(`作品それぞれの普段と比べて目立って動いた作品は${G.movement.q1.changes}作品でした。`, `${G.movement.q1.changes} titles moved notably from their usual level.`) : ""}</span>
+    <ul class="g-row">${FEAT.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}</li>`).join("")}</ul>
+    <div class="g-foot"><span>${tr(`話題になった${G.works_today}作品から${FEAT.length}作品（人数の順ではありません。下の段に出る作品は除いています）。`, `${FEAT.length} of the ${G.works_today} titles talked about (not in order of people). `)}${G.movement ? tr(`作品それぞれの普段と比べて目立って動いた作品は${G.movement.q1.changes}作品でした。`, `${G.movement.q1.changes} titles moved notably from their usual level.`) : ""}</span>
       <a href="#trend">${tr("「いつもより話題が増えた作品」で確かめる ↓", "See “Titles talked about more than usual” ↓")}</a></div>`;
 
   { const t = $("lede-t"), b = document.querySelector(".lede-more");
@@ -202,10 +209,7 @@
   }
 
   /* ---------- 今チェックしておきたい作品（本番のその日のカード。並びも本番のまま。順位ではない） ---------- */
-  // 作品は 1 度だけ出す（2026-11-09 オーナー: 同じ作品が段ごとに重複していた）。上の段（今日の兆しの作品の列）に出した作品は、下の段では出さない
-  const SEEN = new Set(G.featured.map(w => w.id));
-  const fresh = xs => { const out = xs.filter(x => !SEEN.has(x.id)); out.forEach(x => SEEN.add(x.id)); return out; };
-  { const CK = fresh(G.checks);
+  { const CK = CKF;
     const first = c => String((c.first || {})[L] || "").replace(/\s*\d+〜\d+時/, "").replace(/,\s*\d+–\d+h/, "");
     const grow = c => c.grow && c.grow[0] != null && c.grow[1] != null ? tr(`${c.grow[0]}人→${c.grow[1]}人`, `${c.grow[0]}→${c.grow[1]} people`) : "";
     const nl = c => (c.new_langs || []).map(x => x[L]).join(tr("・", ", "));
