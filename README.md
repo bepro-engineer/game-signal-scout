@@ -1,6 +1,6 @@
 # Game Signal Scout（非公開の試作）
 
-PC・家庭用ゲームのプレイヤーの具体的な発言・報告から、ほかでは見えにくい変化（例: ある更新から遊べなくなった）を見つける試作です。価値の検証と経緯は [Issue #1](https://github.com/bepro-engineer/game-signal-scout/issues/1) が正本です。
+PC・家庭用ゲームのプレイヤーの声（レビュー・掲示板・SNS など多くの取得元）から、ほかでは見えにくい変化（アップデートの影響・不満・評価の変化・言語圏を越えた広がり）を見つけ、限られた休日に遊ぶゲームを選ぶ材料にする試作です。価値の検証と経緯は [Issue #1](https://github.com/bepro-engineer/game-signal-scout/issues/1) が正本です。
 
 **外への公開はしていません。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（127.0.0.1:8720、自分の機械だけ）と Bluesky の受信、毎日 6:15 の daily-run（`launchd --apply`）。10 分ごとの poll は定義だけ作り、登録はオーナーの判断待ちです。
 
@@ -10,13 +10,15 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 
 | 層 | 場所 | 内容 |
 |---|---|---|
-| 入口（Controller） | `cli.py`、`web/app.py` | コマンドと 1 行の JSON の出力。Viewer のルート（`/` 今週末なにを遊ぶ？、`/games` ゲームを探す、`/games/<appid>` 作品、`/cautions` 買う前の注意、`/about` このサイトについて、`/api/…` 文書の JSON、`/healthz`） |
-| 画面（View） | `web/templates`、`web/static` | サーバー側で HTML にする（JavaScript なし）。根拠の記述は escape する。見た目は Anime の明るい UI（白いカード・意味の色・段の見出しの線）を踏襲し、外の文字や画像は読み込まない（Issue #2） |
-| 運用 | `ops/runner.py` | 段（collect → normalize → analyze → publish）の実行、段ごとの排他、実行の記録（`job_run`）、再試行の可否と終了コード |
-| 業務（Service） | `services/`、`publication/`、`web/public_content.py` | 収集（束ごとの保存と続きの位置）、正規化、変化の検出。公開用の文書を作って検査し、表 `public_document` に置き換える（Anime の publishing を移植）。Viewer はその文書を鍵で読むだけ |
-| データ（Repository） | `repositories/` | SQL はここだけ |
-| 取得元 | `sources/`、`discovery/` | 取得元の契約（`SourceReader`）、記述から作る Factory、節度のある取得（`Fetcher`）、共通の読み方（`feeds.py`）と取得元ごとの読み方（Steam・GOG・Pantip・ニコニコ大百科・Bluesky・ProtonDB など）。正規化は記述の `normalizer` で選ぶ（取得元に依らない表: `player_report`・`player_post`・`game_profile`・`game_activity`） |
-| LLM 枠 | `llm_gate.py` | 共有の部品（scout-infra の `scout_llm_gate`）への接続口。Game は専用の LLM・ロック・常駐を持たない |
+| 入口（Controller） | `cli.py`、`web/app.py`・`web/routers/` | コマンド（1 行の JSON）と Viewer のルート（`/`・`/spread.html` などのページ、`/api/days`・`/api/days/<日>`・`/api/pages`・`/api/search`・`/api/soon`・`/api/works/<id>`、`/healthz`） |
+| 画面（View） | `web/pages.py`・`web/templates`・`web/static` | Anime の web をそのまま流用（ページの枠は HTML、中身は JS が `/api/…` の文書から組む。日英） |
+| 運用 | `ops/` | 段（collect → normalize → observe → analyze → insight → digest → publish）の実行と記録（`job_run`）・排他・再試行、常駐（`collector`）・短い間隔の収集（`poll`）・launchd の定義 |
+| 業務（Service） | `services/`・`observations.py`・`foundation/`・`signal/`・`publication/`・`ops/dashboard_digest.py`・`web/services/` | 収集・正規化・作品の同定、観測の集計（`obs_*`）と系列、画面の文書（Anime の content を流用）、今日の兆し（共有の LLM）、公開（検査して `public_document` を置き換え） |
+| データ（Repository） | `repositories/` | SQL はここだけ（試験 `test_sql_only_in_repositories`） |
+| 取得元 | `sources/` | 取得元の契約（`SourceReader`）、記述から作る Factory、節度のある取得（`Fetcher`）、共通の読み方（`feeds.py`）と取得元ごとの読み方 |
+| LLM 枠 | `llm_gate.py`・`llm.py` | 共有の部品（scout-infra の `scout_llm_gate`）への接続口。Game は専用の LLM・ロック・常駐を持たない |
+
+設計の詳細は [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)（構造・取得元の足し方・Anime との境界）、[docs/DESIGN.md](docs/DESIGN.md)（目的・データ・判定と公開の基準）、[docs/OPERATIONS.md](docs/OPERATIONS.md)（動かし方・確かめ方・障害と切り戻し）、[docs/database.md](docs/database.md)（DB を作った手順）です。
 
 - 取得元を足すときに書くのは、`SourceReader` の子クラス、`config/sources.toml` の記述、試験だけです。
 - どの段も、何度流しても同じ結果になります。収集は同じ報告を 1 件にし、途中で落ちても続きの位置から読み直します。
@@ -27,7 +29,7 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 - 環境変数は `GSS_` だけを読みます。Anime の `ASS_DB_DSN` が残っていても使いません。
 - 接続できるのは、名前が `game_signal_scout` で始まり、表 `scout_identity` が `game` の DB だけです。
 - advisory lock の名前には `game_signal_scout:` を付けます（DB ごとの排他で、他の Scout とは衝突しません）。機械全体で 1 つにする LLM の排他は、共有の LLM 枠を使います。
-- PostgreSQL のサーバーは共有し、論理 DB とロールを分ける前提です（本番の DB はまだ作っていません）。
+- PostgreSQL のサーバーは共有し、論理 DB（`game_signal_scout`）とロール（`gss`）を分けています（2026-11-08 に作成。[docs/database.md](docs/database.md)）。
 
 ## 取得元
 

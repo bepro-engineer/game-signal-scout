@@ -1,7 +1,7 @@
 # Game の論理 DB と権限を、共有の PostgreSQL に作る手順（2026-11-08 に実行済み）
 
 **2026-11-08 に本人の承認を受けて実行しました**（Issue #1）。`deploy/create-db.sh` が下の「事前の確認」「実行」を 1 つにした台本です（VAIO の sudo のパスワードは本人が入れる）。
-実行の結果: 接続数 23 / 100、ディスクの空き 200G、PostgreSQL 18.6。移行は 0006 まで。`gss` で `anime_signal_scout`・`postgres` に接続すると pg_hba で拒否される
+実行の結果: 接続数 23 / 100、ディスクの空き 200G、PostgreSQL 18.6。移行は 0006 まで（その後 2026-11-08 に 0015 まで）。`gss` で `anime_signal_scout`・`postgres` に接続すると pg_hba で拒否される
 （`has_database_privilege` は、Anime 側の DB に `PUBLIC` の CONNECT が残っているので真になるが、pg_hba.d/game.conf が `game_signal_scout` だけを許す）。
 
 以下はもとの手順です。共有の PostgreSQL のサーバー（インスタンス）は 1 つのまま、Game の論理 DB と専用のロールを足す前提です（Game 専用のサーバーやコンテナは作りません）。秘密（パスワード）はこの文書にも commit にも書きません。
