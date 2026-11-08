@@ -90,7 +90,7 @@ def validate(out: dict, f: dict, loc: str, all_work_names: set[str], parts: dict
     meanings = {str(m.get("quote")): str(m.get("meaning") or "") for m in (p.get("meanings") or []) if isinstance(m, dict)}
     e: list[str] = []
     spread = f.get("page") == "spread"
-    work = f["works"][0][loc]
+    work = short_title(f["works"][0][loc])
     full = (" " if loc == "en" else "").join(sents)
     a = f.get("assessment") or {}
     claim = a.get("claim")
@@ -185,6 +185,15 @@ def validate(out: dict, f: dict, loc: str, all_work_names: set[str], parts: dict
             e.append(f"point_repeats_frame:{k}")   # 見出しの枠の言葉を point に入れた（10/24: "wrote about players who wrote about fanart"）
     return {"passed": not e, "errors": list(dict.fromkeys(e)), "sentences": [{"text": s} for s in sents], "cites": cites}
 
+
+
+def short_title(t: str, limit: int = 24) -> str:
+    """見出しに使う作品名（Game: 題名が長い作品は副題〔「 - 」「：」「: 」の後ろ〕を省く。例: Probably Stolen - Cyberpunk Shopkeeper Sim → Probably Stolen）。"""
+    import re
+    if len(t) <= limit:
+        return t
+    head = re.split(r"\s+[-–—|]\s+|：|: ", t, maxsplit=1)[0].strip()
+    return head if 2 <= len(head) < len(t) else t
 
 CHECK_CLASS = {   # 検査の区分。合格 = 4 区分すべてに誤りがない
     "structure": ("sentence_count", "fragment", "work_name_brackets", "lead_too_long", "parts_point_missing",

@@ -21,7 +21,7 @@ from datetime import date
 from typing import Protocol
 
 from game_signal_scout.languages import NAMES, is_language
-from game_signal_scout.ops.digest_checks import LEAD_MAX, classify, cite_pool, count_numbers, feedback_for, validate
+from game_signal_scout.ops.digest_checks import LEAD_MAX, short_title, classify, cite_pool, count_numbers, feedback_for, validate
 from game_signal_scout.ops.digest_verbatim import (EXCERPT_MIN_CONTENT, content_length, max_excerpt_length,
                                                     strip_brackets, verbatim_span)
 from game_signal_scout.repositories import foundation as foundation_repo, source_item, work as work_repo
@@ -31,7 +31,7 @@ def _name(c: dict, loc: str) -> str:
     return (c.get("display_name") or {}).get(loc) or c.get("name") or c["key"]
 
 
-VERSION = "dd-game-2026-11-08"   # 生成の規則の版（Game: ゲームの話題の種類・見出しの上限 70 字。2026-11-08）（保存した記録の鍵。名前は記録の出どころなので変えない。規則を次に変えるときは、決めた日付の名前にする。CONTRIBUTING.md）。決まりは docs/TODAYS-SIGNAL-PAGES.md と ADR 0044〜0046・0052・0054
+VERSION = "dd-game-2026-11-08b"   # 生成の規則の版（Game: ゲームの話題の種類・見出しの上限 70 字・長い題名は副題を省く。2026-11-08）（保存した記録の鍵。名前は記録の出どころなので変えない。規則を次に変えるときは、決めた日付の名前にする。CONTRIBUTING.md）。決まりは docs/TODAYS-SIGNAL-PAGES.md と ADR 0044〜0046・0052・0054
 JOB = "dashboard_digest"
 KINDS_NEWS = ("none", "share")      # 宣伝・ニュースの共有（プレイヤー本人の声ではない）
 URL = re.compile(r"https?://|www\.|\.(com|be|jp|tv|app|moe|me|net|io|tw)/|youtu", re.I)
@@ -703,7 +703,7 @@ def _anchor_for(f: dict, loc: str, model: str, llm=None) -> dict:
 
 def _lead_text(f: dict, point: str, loc: str) -> str:
     from game_signal_scout.ops.finding_assess import fans_label
-    work = f["works"][0][loc]
+    work = short_title(f["works"][0][loc])
     who = fans_label(f["people_on_topic"], loc)
     if f.get("sides"):
         return f"「{work}」の{point}をめぐって、{who}の評価が分かれています。" if loc == "ja" else f"{who} were divided over {point} in {work}."

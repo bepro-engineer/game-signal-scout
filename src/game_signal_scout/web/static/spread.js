@@ -63,7 +63,7 @@
       <div class="h-im">${art(hero)}</div>
       <div class="h-t">
         <h1>${tr(`${esc(nm(hero.name))}が、<span style="color:${lcol(a)}">${esc(ln(a))}</span>でも話題に`, `${esc(nm(hero.name))} is now talked about in <span style="color:${lcol(a)}">${esc(ln(a))}</span> too`)}</h1>
-        <div class="h-chg"><span class="h-was">${(hero.prev || []).map(l => chip(l)).join("")}<small>${tr("前日まで", "Until yesterday")}</small></span>
+        <div class="h-chg"><span class="h-was">${(hero.prev || []).slice(0, 6).map(l => chip(l)).join("")}${(hero.prev || []).length > 6 ? `<span class="lc-more">${tr(`ほか${hero.prev.length - 6}言語`, `+${hero.prev.length - 6} more`)}</span>` : ""}<small>${tr("前日まで", "Until yesterday")}</small></span>
           <span class="h-now"><span class="ar">→</span>${chip(a, { add: true, n: hero.n[a], src: SL(hero, a) })}<small>${firstEver ? tr(`${esc(ln(a))}では初めて`, `first time in ${esc(ln(a))}`) : tr(`${md(hero.first[a])}以来`, `first since ${md(hero.first[a])}`)}</small></span></div>
         ${hero.air && hero.air.start === day ? `<p class="h-note">${tr("この日は、放送が始まった日でした。", "This was the day it premiered.")}</p>` : ""}
         <a class="more" href="lang.html?l=${encodeURIComponent(a)}">${tr(`${esc(ln(a))}で話題になったほかの作品を見る →`, `More titles talked about in ${esc(ln(a))} →`)}</a>

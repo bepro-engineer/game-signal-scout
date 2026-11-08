@@ -33,7 +33,9 @@
     tr: ["トルコ語", "Turkish"], el: ["ギリシャ語", "Greek"], pcm: ["ナイジェリア・ピジン語", "Nigerian Pidgin"], zh: ["中国語", "Chinese"], nl: ["オランダ語", "Dutch"],
     pl: ["ポーランド語", "Polish"], sv: ["スウェーデン語", "Swedish"], hu: ["ハンガリー語", "Hungarian"], vi: ["ベトナム語", "Vietnamese"], tl: ["タガログ語", "Tagalog"],
     hi: ["ヒンディー語", "Hindi"], sw: ["スワヒリ語", "Swahili"], fa: ["ペルシア語", "Persian"], ur: ["ウルドゥー語", "Urdu"], ro: ["ルーマニア語", "Romanian"],
-    he: ["ヘブライ語", "Hebrew"], bn: ["ベンガル語", "Bengali"], ms: ["マレー語", "Malay"], am: ["アムハラ語", "Amharic"], ha: ["ハウサ語", "Hausa"], yo: ["ヨルバ語", "Yoruba"] };
+    he: ["ヘブライ語", "Hebrew"], bn: ["ベンガル語", "Bengali"], ms: ["マレー語", "Malay"], am: ["アムハラ語", "Amharic"], ha: ["ハウサ語", "Hausa"], yo: ["ヨルバ語", "Yoruba"],
+    da: ["デンマーク語", "Danish"], no: ["ノルウェー語", "Norwegian"], bg: ["ブルガリア語", "Bulgarian"], sk: ["スロバキア語", "Slovak"], sr: ["セルビア語", "Serbian"],
+    hr: ["クロアチア語", "Croatian"], lt: ["リトアニア語", "Lithuanian"], lv: ["ラトビア語", "Latvian"], et: ["エストニア語", "Estonian"], sl: ["スロベニア語", "Slovenian"] };
   // 文字の区別つきのコード（zh-Hant など）は、元の言語の名前に文字を添える（ない文字は元の言語の名前だけ）
   const ln = c => {
     if (LN[c]) return LN[c][lang === "en" ? 1 : 0];

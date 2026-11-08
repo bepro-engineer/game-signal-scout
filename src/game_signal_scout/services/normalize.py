@@ -146,7 +146,7 @@ def steam_store(conn, source: str, settings: dict | None = None, batch: int = 50
 STEAM_LANG = {"japanese": "ja", "english": "en", "schinese": "zh", "tchinese": "zh", "koreana": "ko", "russian": "ru", "german": "de", "french": "fr",
               "spanish": "es", "latam": "es", "brazilian": "pt", "portuguese": "pt", "polish": "pl", "turkish": "tr", "italian": "it", "ukrainian": "uk", "thai": "th",
               "swedish": "sv", "czech": "cs", "hungarian": "hu", "dutch": "nl", "danish": "da", "finnish": "fi", "norwegian": "no", "romanian": "ro",
-              "greek": "el", "bulgarian": "bg", "vietnamese": "vi", "indonesian": "id", "arabic": "ar"}
+              "greek": "el", "bulgarian": "bg", "vietnamese": "vi", "indonesian": "id", "arabic": "ar", "malay": "ms"}
 
 
 def steam_reviews(conn, source: str, settings: dict | None = None, batch: int = 2000) -> int:

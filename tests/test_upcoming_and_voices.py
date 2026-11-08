@@ -170,3 +170,10 @@ def test_pantip_comments_keep_text_but_not_member_number():
     rows, n = parse_comments(raw)
     assert n == 1 and [(r["id"], r["text"], r["at"].isoformat()) for r in rows] == [("c:1", "สนุกมาก", "2026-11-08T07:07:11+00:00"), ("r:2", "จริง", "2026-11-08T07:07:11+00:00")]
     assert "42" not in actor(42)
+
+
+def test_digest_headline_uses_short_title_for_long_names():
+    from game_signal_scout.ops.digest_checks import short_title
+    assert short_title("Probably Stolen - Cyberpunk Shopkeeper Sim") == "Probably Stolen"
+    assert short_title("Monster Hunter Wilds: Ascension Expansion Pack") == "Monster Hunter Wilds"
+    assert short_title("ELDEN RING NIGHTREIGN") == "ELDEN RING NIGHTREIGN"          # 短い題名はそのまま

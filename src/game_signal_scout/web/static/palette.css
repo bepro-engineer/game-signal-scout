@@ -230,6 +230,8 @@ main.sp #sp-digest > #sp-lead.in-digest .hero3 .h-t h1 { grid-column: 2 / -1; gr
 main.sp #sp-digest > #sp-lead.in-digest .hero3 .h-t > :not(h1) { grid-column: 2; margin: 0; }
 main.sp #sp-digest > #sp-lead.in-digest .hero3 .h-tl { grid-column: 3; grid-row: 2 / 5; }
 @media (max-width: 900px) { main.sp #sp-digest > #sp-lead.in-digest .hero3 > *, main.sp #sp-digest > #sp-lead.in-digest .hero3 .h-t > * { grid-column: 1 / -1 !important; grid-row: auto !important; } }
+/* 901〜1180px: 言語ごとの日（右の列）を説明の下の行へ（説明の列を細く押しつぶして縦に伸ばさない。2026-11-08 Issue #2） */
+@media (min-width: 901px) and (max-width: 1180px) { main.sp #sp-digest > #sp-lead.in-digest .hero3 .h-tl { grid-column: 2 / -1 !important; grid-row: 5 !important; } }
 /* 再燃: 再燃した作品は今日の兆しの中の一部。別の段の面・線・影を外し、区切り線の下に置く（中身は変えない） */
 #rv-sum > #rv-revived.in-digest { margin: 22px 0 0 !important; padding: 20px 0 0 !important; background: none !important; border: 0 !important; border-top: 1px solid var(--line) !important;
   border-radius: 0 !important; box-shadow: none !important; }

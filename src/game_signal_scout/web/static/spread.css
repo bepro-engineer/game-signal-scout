@@ -8,7 +8,7 @@
 .hero3 .h-t { gap: 14px; }
 .hero3 .h-t h1 { font-size: 32px; }
 .h-chg { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
-.h-chg > span { display: inline-flex; align-items: center; gap: 8px; }
+.h-chg > span { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }   /* 言語が多いときは枠の中で折り返す（2026-11-08 Issue #2: 一列のまま右へはみ出した） */
 .h-chg small { font-size: 14px; color: var(--ink-3); font-weight: 700; }
 .h-chg .h-now small { color: var(--brand); }
 .h-chg .ar { margin-right: 4px;  font-size: 22px; color: var(--ink-3); }
@@ -16,6 +16,18 @@
 .h-note { margin: 0; font-size: 15px; color: var(--ink-2); }
 .hero3 .more { margin-top: 0; }
 @media (max-width: 1360px) { .hero3 { grid-template-columns: 140px minmax(0, 1fr) auto; gap: 24px; } .hero3 .h-im .art { width: 140px; } .hero3 .h-t h1 { font-size: 27px; } }
+.hero3 .h-t, .hero3 .h-tl { min-width: 0; }
+.h-chg .lc-more { font-size: 14px; font-weight: 700; color: var(--ink-3); white-space: nowrap; }
+/* 幅が足りないときは、言語ごとの日（右の列）を説明の下の行へ（説明の列を細く押しつぶさない） */
+@media (max-width: 1180px) {
+  .hero3 { grid-template-columns: 140px minmax(0, 1fr) !important; } .hero3 .h-tl { grid-column: 1 / -1; }
+  /* 前日になかった言語にも広がった作品: 言語ごとの日（右の 420px）を説明の下の行へ。説明の列を 1 文字の幅に押しつぶして縦に伸ばさない（2026-11-08 Issue #2） */
+  .gr3 { grid-template-columns: 76px minmax(0, 1fr) !important; row-gap: 10px; } .gr3 .gr-tl { grid-column: 1 / -1; min-width: 0; }
+  /* 前から複数の言語で話題の作品: 言語の札は作品名の下の行に（4 列のままでは札の列が 96px になり、札が枠を越えた） */
+  .ct-h { display: none !important; }
+  .ct-list li { grid-template-columns: 36px minmax(0, 1fr) auto !important; row-gap: 6px; } .ct-list li .lcs { grid-column: 2 / -1; grid-row: 2; min-width: 0; }
+}
+@media (max-width: 360px) { .gr3 .gr-tl, .hero3 .h-tl { padding-left: 6px !important; padding-right: 6px !important; } }   /* 320px: 言語ごとの日の枠の余白を詰めて、枠の中に収める */
 
 /* ---- 新しく と 再び の見分け（濃い点＝初めて、白抜きの太い輪＝以前にもあった） ---- */
 .tl li.again .dot { background: #fff; border: 4px solid var(--lc); box-shadow: none; }
