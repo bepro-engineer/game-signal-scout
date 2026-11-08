@@ -63,3 +63,13 @@ def test_vague_actions_are_not_experiences():
     assert insight._clean_exp({"did": "ゲームをプレイした", "happened": "楽しかった", "verdict": "fun", "topic": "t"}) is None
     assert insight._clean_exp({"did": "遊んだ", "happened": "x", "verdict": "fun", "topic": "t"}) is None
     assert insight._clean_exp({"did": "大剣で溜め攻撃を連発した", "happened": "ボスを 1 回で倒せた", "verdict": "fun", "topic": "t"})["did"] == "大剣で溜め攻撃を連発した"
+
+
+def test_intent_and_caution_are_kept_only_when_most_of_the_group_agrees():
+    posts = {p["item_id"]: p for p in [post(1, "a", 1), post(2, "b", 1), post(3, "c", 1)]}
+    exps = {"p1": {"did": "d", "happened": "h", "verdict": "fun", "topic": "t", "intent": "friends", "caution": None},
+            "p2": {"did": "d", "happened": "h", "verdict": "fun", "topic": "t", "intent": "friends", "caution": "online"},
+            "p3": {"did": "d", "happened": "h", "verdict": "fun", "topic": "t", "intent": "deep", "caution": None}}
+    f = insight.tally([{"title": "2 人で拠点を守ると連携できる", "members": ["p1", "p2", "p3"]}], posts, exps, SINCE, 3)[0]
+    assert f["intent"] == "friends" and f["caution"] is None
+    assert insight._clean_exp({"did": "大剣で溜め攻撃", "happened": "ボスを倒せた", "verdict": "fun", "topic": "t", "intent": "solo"})["intent"] is None
