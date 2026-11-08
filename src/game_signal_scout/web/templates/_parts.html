@@ -1,4 +1,4 @@
-{# 共通の部品。札・割合の変化・内容の札（トップと作品のページで同じ形） #}
+{# 共通の部品（トップ・探す・作品・注意で同じ形） #}
 {% macro badge(side) %}<span class="badge {{ side }}">{{ '遊べなくなった' if side == 'fail' else '直った' }}</span>{% endmacro %}
 
 {% macro shift(e) %}<p class="shift {{ e.side }}" aria-label="遊べない割合 {{ e.share_prev|pct }} から {{ e.share_window|pct }}">
@@ -7,3 +7,16 @@
 
 {% macro chips(e) %}{% if e.themes %}<div class="chips"><p class="chips-h">報告 {{ e.n_key }} 件に書かれていたこと</p>
 {% for t in e.themes %}<span class="chip{% if t.key == 'workaround' %} tip{% endif %}">{{ t.label }}<em>{{ t.n }}/{{ e.n_key }}</em></span>{% endfor %}</div>{% endif %}{% endmacro %}
+
+{# 作品のカード: 画像 → 題名 → 説明 → 遊び方・日本語・機種 → 下端にそろえた補足。同じ行の高さはそろう（.gcard は縦の flex） #}
+{% macro gcard(c, show_rank=False) %}<article class="gcard">
+<a class="gimg" href="/games/{{ c.appid }}">{% if c.image %}<img src="{{ c.image }}" alt="" loading="lazy" width="460" height="215" referrerpolicy="no-referrer">{% endif %}
+{% if c.caution and c.caution.side == 'fail' %}<span class="flag">買う前の注意あり</span>{% endif %}</a>
+<div class="gbody">
+<h3><a href="/games/{{ c.appid }}">{{ c.title }}</a></h3>
+{% if c.genres %}<p class="genres">{{ c.genres|join('・') }}</p>{% endif %}
+<p class="gsum">{{ c.summary }}</p>
+<p class="tags">{% for m in c.modes %}<span class="tag">{{ m }}</span>{% endfor %}{% if c.ja_text %}<span class="tag ja">日本語{% if c.ja_voice %}・音声も{% endif %}</span>{% endif %}</p>
+<p class="gfoot">{% if show_rank and c.rank %}<span>Steam で遊ばれている順位 <b>{{ c.rank }}</b> 位</span>{% elif c.voices %}<span>プレイヤーの声 <b>{{ c.voices }}</b> 人</span>{% elif c.compat %}<span>動作の報告 <b>{{ c.compat.n }}</b> 件</span>{% else %}<span>{{ c.platforms|join('・') }}</span>{% endif %}<a href="/games/{{ c.appid }}">詳しく →</a></p>
+</div>
+</article>{% endmacro %}

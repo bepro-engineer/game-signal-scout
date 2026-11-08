@@ -10,24 +10,31 @@
 <link rel="stylesheet" href="/static/base.css">
 </head>
 <body>
-<header class="site">
-<a class="hero" href="/" aria-label="Game Signal Scout トップへ">
-<img src="/static/site-header.jpg" srcset="/static/site-header-1100.jpg 1100w, /static/site-header.jpg 2172w" sizes="(max-width: 1120px) 100vw, 1120px"
- width="2172" height="724" alt="Game Signal Scout（Beta） 世界のゲームの「いま」を見つける">
-</a>
-<nav class="nav" aria-label="ページ">
-<a href="/"{% if nav == 'top' %} class="on" aria-current="page"{% endif %}>変化の一覧</a>
-<a href="/about"{% if nav == 'about' %} class="on" aria-current="page"{% endif %}>このサイトについて</a>
-<span class="tag">非公開の試作</span>
-</nav>
+{% macro icon(name) %}<svg class="i" viewBox="0 0 24 24" aria-hidden="true">{% if name == 'home' %}<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>{% elif name == 'search' %}<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>{% elif name == 'alert' %}<path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.5"/>{% else %}<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>{% endif %}</svg>{% endmacro %}
+{% set links = [('top', '/', 'home', '今週末なにを遊ぶ？'), ('find', '/games', 'search', 'ゲームを探す'), ('caution', '/cautions', 'alert', '買う前の注意'), ('about', '/about', 'info', 'このサイトについて')] %}
+<div class="app">
+<header class="top">
+<a href="/" aria-label="Game Signal Scout トップへ"><picture>
+<source media="(max-width: 600px)" srcset="/static/banner-sp.jpg">
+<img src="/static/banner.jpg" srcset="/static/banner-1240.jpg 1240w, /static/banner.jpg 2148w" sizes="(max-width: 1440px) 100vw, 1392px"
+ width="2148" height="447" alt="Game Signal Scout（Beta） 世界のゲームの「いま」を見つける">
+</picture></a>
+<details class="navm"><summary>メニュー</summary>
+<nav class="side" aria-label="ページ">{% for key, href, ic, label in links %}<a href="{{ href }}"{% if nav == key %} class="on" aria-current="page"{% endif %}>{{ icon(ic) }}{{ label }}</a>{% endfor %}</nav>
+</details>
 </header>
-{% if health and health.stale %}<p class="notice">最後の作り直しに失敗したため、前回の内容を表示しています。</p>{% endif %}
+<div class="sidecol">
+<nav class="side" aria-label="ページ">{% for key, href, ic, label in links %}<a href="{{ href }}"{% if nav == key %} class="on" aria-current="page"{% endif %}>{{ icon(ic) }}{{ label }}</a>{% endfor %}</nav>
+<p class="sidenote">非公開の試作（Beta）</p>
+</div>
 <main class="{% block mainclass %}{% endblock %}">
+{% if health and health.stale %}<p class="notice">最後の作り直しに失敗したため、前回の内容を表示しています。</p>{% endif %}
 {% block main %}{% endblock %}
-</main>
 <footer class="site">
-<p>プレイヤーの報告: <a href="https://github.com/bdefore/protondb-data">ProtonDB の公開配布データ</a>（ODbL 1.0 / DbCL 1.0）を加工しています。Valve・ProtonDB とは関係ありません。</p>
-<p>非公開の試作です。内容を作った時刻: {{ health.built_at|ts if health else '—' }}</p>
+<p>作品の情報・画像・遊ばれている規模: Steam のストアと Steam Web API（画像は Steam の配信元から表示）。動作の報告: <a href="https://github.com/bdefore/protondb-data">ProtonDB の公開配布データ</a>（ODbL 1.0）。Valve・ProtonDB・各作品の権利者とは関係ありません。</p>
+<p>内容を作った時刻: {{ health.built_at|ts if health else '—' }}</p>
 </footer>
+</main>
+</div>
 </body>
 </html>

@@ -59,3 +59,21 @@ min_title_chars = 8
 title_context_words = ["game", "games", "gaming", "videogame", "video game", "steam", "steam deck", "ps5", "ps4", "playstation", "xbox",
                        "nintendo", "switch 2", "dlc", "early access", "patch notes", "speedrun", "gamedev", "indie game", "ゲーム", "プレイ",
                        "アプデ", "攻略", "神ゲー", "クソゲー", "プレステ", "任天堂", "游戏", "遊戲", "게임"]
+
+[steam_charts]
+adapter = "game_signal_scout.sources.steam_charts:SteamCharts"
+normalizer = "game_signal_scout.services.normalize:steam_charts"
+# 役割: 遊ばれている規模（Steam の最も遊ばれているゲームの上位 100。キー不要。Oshi Charts と同じ種類）。補助の材料で、満足度の根拠にしない。
+# 作品の情報（steam_store）より先に読む（上位の作品も作品の情報を揃える対象になる）
+min_interval_hours = 20
+
+[steam_store]
+adapter = "game_signal_scout.sources.steam_store:SteamStore"
+normalizer = "game_signal_scout.services.normalize:steam_store"
+# 役割: 作品の情報（画像・短い説明・ジャンル・遊び方・機種・日本語・発売日）。利用者がゲームを選ぶための項目（game_profile）。レビューは取らない。
+# 対象: プレイヤーの報告・発言の多い作品（repositories/catalog.active_apps）のうち、情報がない・refresh_days より古いもの。
+active_days = 90
+max_games = 150
+refresh_days = 30
+batch_size = 20
+min_interval_hours = 20

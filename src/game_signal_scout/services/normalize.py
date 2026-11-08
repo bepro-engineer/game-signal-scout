@@ -3,6 +3,7 @@
 
 - protondb: 報告 → player_report（遊べたか・機材構成の hash・記述）
 - bluesky: 発言 → player_post（作品の同定: Steam のストアのリンクの app ID、なければ題名の一致。services/identify）
+- steam_store: 作品の情報 → game_profile（画像・説明・ジャンル・遊び方・機種・日本語・発売日。取得元に依らない作品の項目）
 
 ProtonDB の報告の対応:
 - failed: 遊べない（verdict = no）か、起動しない（startsPlay = no）。検証P で事前に固定した定義。
@@ -82,6 +83,60 @@ def bluesky(conn, source: str, settings: dict | None = None, batch: int = 2000) 
         with conn.transaction():
             total += post_repo.insert(conn, out)
         conn.commit()
+    return total
+
+
+# 遊び方（Steam のカテゴリの ID → 利用者の言葉）。作品を選ぶ切り口の正本はこの言葉で、取得元のカテゴリの名前を画面に出さない
+STEAM_MODES = {2: "ひとりで遊べる", 9: "協力プレイ", 38: "協力プレイ", 39: "協力プレイ", 24: "画面分割・同じ画面で", 37: "画面分割・同じ画面で",
+               49: "対戦", 36: "対戦", 47: "対戦", 28: "コントローラーで遊べる"}
+STEAM_PLATFORMS = {"windows": "Windows", "mac": "Mac", "linux": "Linux・Steam Deck"}
+
+
+def steam_store_row(item_id: str, received_at, p: dict) -> dict | None:
+    if p.get("type") != "game" or not p.get("name"):
+        return None
+    modes = list(dict.fromkeys(STEAM_MODES[c["id"]] for c in p.get("categories") or [] if c.get("id") in STEAM_MODES))
+    langs = p.get("supported_languages") or ""
+    ja_text = "日本語" in langs if langs else None
+    ja_voice = None
+    if ja_text:
+        i = langs.find("日本語")
+        ja_voice = langs[i + 3:i + 40].lstrip().startswith("<strong>*</strong>")   # 「*」の印は音声も対応
+    return {"appid": p.get("appid") or item_id, "source": "", "item_id": item_id, "title": p["name"], "summary": (p.get("short_description") or "").strip() or None,
+            "image_url": p.get("header_image"), "genres": p.get("genres") or [], "modes": modes,
+            "platforms": [label for k, label in STEAM_PLATFORMS.items() if (p.get("platforms") or {}).get(k)],
+            "ja_text": ja_text, "ja_voice": ja_voice, "released": p.get("release_date"),
+            "store_url": f"https://store.steampowered.com/app/{p.get('appid') or item_id}/", "fetched_at": received_at}
+
+
+def steam_store(conn, source: str, settings: dict | None = None, batch: int = 500) -> int:
+    """作品の情報（Steam のストア）→ game_profile。作品でない項目は飛ばす（行を作らない）。"""
+    from game_signal_scout.repositories import catalog
+    total, seen = 0, set()
+    while rows := [r for r in catalog.unnormalized(conn, source, batch) if r[0] not in seen]:
+        out = []
+        for item_id, received_at, p in rows:
+            seen.add(item_id)
+            if row := steam_store_row(item_id, received_at, p):
+                out.append({**row, "source": source})
+        with conn.transaction():
+            total += catalog.upsert(conn, out)
+        conn.commit()
+    return total
+
+
+def steam_charts(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
+    """遊ばれている規模（Steam の順位）→ game_activity。"""
+    from datetime import date
+    from game_signal_scout.repositories import catalog
+    total = 0
+    while rows := catalog.activity_rows(conn, source, batch):
+        out = [(p["appid"], date.fromisoformat(p["day"]), source, item_id, p.get("rank"), p.get("prev_rank"), p.get("peak_players")) for item_id, p in rows]
+        with conn.transaction():
+            total += catalog.insert_activity(conn, out)
+        conn.commit()
+        if len(rows) < batch:
+            break
     return total
 
 

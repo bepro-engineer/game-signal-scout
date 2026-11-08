@@ -41,3 +41,8 @@ def get_health(conn) -> dict:
     tried = public_document_repo.get_last_finished_build(conn)
     return {"ok": last is not None, "built_at": last["finished_at"].isoformat() if last else None,
             "latest": str(last["latest_day"]) if last and last["latest_day"] else None, "stale": bool(tried and tried["status"] != "published")}
+
+
+def filter_catalog(cards: list[dict], mode: str | None, genre: str | None, ja: bool) -> list[dict]:
+    """「ゲームを探す」の絞り込み（公開の文書の一覧から選ぶだけ。内容は作らない）。"""
+    return [c for c in cards if (not mode or mode in c.get("modes", [])) and (not genre or genre in c.get("genres", [])) and (not ja or c.get("ja_text"))]

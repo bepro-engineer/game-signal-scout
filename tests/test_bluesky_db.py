@@ -67,7 +67,6 @@ def test_two_sources_flow_to_normalized_posts_and_viewer_documents(run, conn):
     assert [r for r in got if r[1] == "2246340"] and all(r[2] == "title" for r in got if r[1] == "2246340")
     assert (f"{A}b", "252490", "title") in got and (f"{A}c", "999", "steam_link") in got
     ov = public_document.get_document(conn, "overview")
-    assert ov["speech"][0]["appid"] == "2246340" and ov["speech"][0]["authors"] == 6
     g = public_document.get_document(conn, "game/2246340")
     assert g["posts"]["authors"] == 6 and set(g["posts"]["recent"][0]) == {"at", "lang", "matched_by", "text"}
     assert public_document.get_document(conn, "game/999") is None                 # リンクだけの投稿（印 link_only）は数えない

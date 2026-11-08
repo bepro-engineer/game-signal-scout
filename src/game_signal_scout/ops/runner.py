@@ -74,6 +74,7 @@ def job_collect(ctx: Context) -> JobResult:
         fetch_repo.mark_attempt(ctx.conn, name, now)
         ctx.conn.commit()
         reader = make(name)
+        reader.conn = ctx.conn              # 取得元が読む対象を DB から引くとき（作品の情報など）。どの取得元にも同じに渡す
         try:
             r = collect(ctx.conn, reader)
         except Exception as e:  # noqa: BLE001 — 取得元ごとに記録して、他の取得元へ進む

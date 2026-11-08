@@ -26,7 +26,8 @@ from game_signal_scout.web import public_content
 WEB = Path(__file__).resolve().parent
 SECURITY_HEADERS = {"X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "no-referrer",
                     "Cross-Origin-Opener-Policy": "same-origin"}
-CSP_HTML = ("default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; "
+# 作品の画像は Steam の配信元（*.steamstatic.com）からブラウザが読む（複製しない。Issue #2）
+CSP_HTML = ("default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.steamstatic.com; base-uri 'none'; form-action 'none'; "
             "frame-ancestors 'none'")
 CSP_OTHER = "default-src 'none'; frame-ancestors 'none'; sandbox"
 
@@ -90,6 +91,18 @@ def create_app(cfg: dict | None = None, pool=None) -> FastAPI:
         text, health = read(request, public_content.get_overview)
         return page("index.html", v=public_content.load(text), health=health, nav="top")
 
+    @app.get("/games", response_class=HTMLResponse)
+    def show_games(request: Request, mode: str | None = None, genre: str | None = None, ja: str | None = None):
+        text, health = read(request, public_content.get_overview)
+        v = public_content.load(text)
+        games = public_content.filter_catalog(v.get("catalog", []), mode, genre, bool(ja))
+        return page("games.html", v=v, games=games, q={"mode": mode, "genre": genre, "ja": bool(ja)}, health=health, nav="find")
+
+    @app.get("/cautions", response_class=HTMLResponse)
+    def show_cautions(request: Request):
+        text, health = read(request, public_content.get_overview)
+        return page("cautions.html", v=public_content.load(text), health=health, nav="caution")
+
     @app.get("/about", response_class=HTMLResponse)
     def show_about(request: Request):
         text, health = read(request, public_content.get_overview)
@@ -98,7 +111,7 @@ def create_app(cfg: dict | None = None, pool=None) -> FastAPI:
     @app.get("/games/{appid}", response_class=HTMLResponse)
     def show_game(appid: str, request: Request):
         text, health = read(request, public_content.get_game, appid)
-        return page("game.html", g=public_content.load(text), health=health, nav="game")
+        return page("game.html", g=public_content.load(text), health=health, nav="find")
 
     @app.get("/api/overview")
     def get_overview(request: Request):

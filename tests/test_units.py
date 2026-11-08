@@ -63,7 +63,7 @@ def test_corrupt_local_dump_is_not_retryable(tmp_path):
 
 
 def test_factory_reads_adapter_from_config():
-    assert factory.sources() == ["protondb"]          # steam_reviews は記述があっても enabled = false なので収集しない
+    assert factory.sources() == ["protondb", "steam_charts", "steam_store"]   # steam_reviews は enabled = false、bluesky は常駐（resident）なので日次では読まない
     assert factory.reader_class("protondb") is protondb.ProtonDBDump
     with pytest.raises(ValueError):
         factory.reader_class("nope", {})

@@ -37,7 +37,7 @@ def upsert_items(conn, items: list[SourceItem], seen_in: str | None) -> tuple[in
     return inserted, len(changed)
 
 
-NORMALIZED = ("player_report", "player_post")   # 正規化した行の表（版が変わった項目の行を消し、次の正規化でやり直す）
+NORMALIZED = ("player_report", "player_post", "game_profile", "game_activity")   # 正規化した行の表（版が変わった項目の行を消し、次の正規化でやり直す）
 
 
 def delete_items(conn, source: str, item_ids: list[str]) -> int:

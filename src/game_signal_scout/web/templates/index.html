@@ -1,85 +1,65 @@
 {% extends "base.html" %}
-{% from "_parts.html" import badge, shift, chips %}
-{% block title %}Linux で遊べなくなった・直ったゲーム{% endblock %}
-{% block mainclass %}top{% endblock %}
+{% from "_parts.html" import badge, gcard %}
+{% block title %}今週末なにを遊ぶ？{% endblock %}
+{% block mainclass %}home{% endblock %}
 {% block main %}
-{% set recent = v.events|selectattr("recent")|list %}
-{% set older = v.events|rejectattr("recent")|list %}
-{% set fails = recent|selectattr("side", "equalto", "fail")|list %}
-{% set fixes = recent|selectattr("side", "equalto", "fix")|list %}
-{% set lead = fails[0] if fails else (recent[0] if recent else None) %}
+{% set ranked = v.catalog|selectattr("rank")|sort(attribute="rank")|list %}
+{% set voiced = v.catalog|selectattr("voices")|sort(attribute="voices", reverse=True)|list %}
+{% set warn = v.events|selectattr("recent")|selectattr("side", "equalto", "fail")|list %}
 
 <section class="intro">
-<div>
-<h1>Linux で遊べなくなった・直ったゲーム</h1>
-<p>Steam のゲームを Linux や Steam Deck で遊んだプレイヤーの報告から、ある時期を境に「遊べない」という声が急に増えた・減ったゲームを見つけて、何が書かれていたかをまとめています。</p>
+<h1>限られた休日を、自分に合うゲームに。</h1>
+<p>いま遊ばれているゲームを、遊び方・日本語への対応・遊べる機種と、プレイヤーの声や買う前の注意でまとめています。</p>
+</section>
+
+<section class="block">
+<header class="sec-h"><h2>遊び方から選ぶ</h2><p>ひとりでじっくり遊ぶか、だれかと遊ぶか。いま遊ばれている {{ v.catalog|length }} 作品から絞り込めます。</p></header>
+<div class="modes">
+{% for m, desc in [('ひとりで遊べる', '自分のペースで進められる'), ('協力プレイ', '友だちと一緒に'), ('対戦', 'ほかのプレイヤーと競う'), ('コントローラーで遊べる', 'ソファでくつろいで')] %}
+<a class="mode" href="/games?mode={{ m|urlencode }}"><b>{{ m }}</b><span>{{ desc }}</span><em>{{ v.modes.get(m, 0) }} 作品 →</em></a>
+{% endfor %}
 </div>
-<a class="more" href="/about">このサイトについて →</a>
 </section>
 
-{% if lead %}
-<section class="lead {{ lead.side }}">
-<p class="kick">{{ badge(lead.side) }}<span>いちばん新しい{{ '「遊べなくなった」' if lead.side == 'fail' else '変化' }}</span></p>
-<h2><a href="/games/{{ lead.appid }}">{{ lead.title or lead.appid }}</a></h2>
-{{ shift(lead) }}
-<p class="lede">{{ lead.summary }}</p>
-{{ chips(lead) }}
-<p><a class="go" href="/games/{{ lead.appid }}">報告の原文と推移を見る →</a></p>
+{% if ranked %}
+<section class="block">
+<header class="sec-h"><h2>いま多くの人が遊んでいるゲーム</h2><p>Steam で同時に遊ばれている人数の順位です。遊ばれている規模の目安で、面白さや自分に合うかの評価ではありません。</p></header>
+<div class="gcards">{% for c in ranked[:8] %}{{ gcard(c, True) }}{% endfor %}</div>
+<p class="more"><a href="/games">ほかのゲームも探す →</a></p>
+</section>
+{% endif %}
+
+{% if voiced %}
+<section class="block">
+<header class="sec-h"><h2>プレイヤーの声が届いているゲーム</h2><p>最近 30 日に、プレイヤーが話題にしていたゲームです（声の数はまだ少なく、話題になった目安です）。</p></header>
+<div class="gcards">{% for c in voiced[:4] %}{{ gcard(c) }}{% endfor %}</div>
+</section>
+{% endif %}
+
+{% if warn %}
+<section class="block">
+<header class="sec-h fail"><h2>買う前に知っておきたいこと</h2><p>Linux や Steam Deck で、最近「遊べない」という報告が急に増えたゲームです。</p></header>
+<div class="wcards">
+{% for e in warn[:3] %}
+<article class="wcard">
+<a class="gimg" href="/games/{{ e.appid }}">{% if e.image %}<img src="{{ e.image }}" alt="" loading="lazy" width="460" height="215" referrerpolicy="no-referrer">{% endif %}</a>
+<div class="gbody">
+<p class="kick">{{ badge(e.side) }}<span>{{ e.window_start|md }}ごろから</span></p>
+<h3><a href="/games/{{ e.appid }}">{{ e.title or e.appid }}</a></h3>
+<p class="gsum">遊べない報告の割合が {{ e.share_prev|pct }} から <b class="bad">{{ e.share_window|pct }}</b> に。{% if e.themes %}多かった内容: {{ e.themes[:2]|map(attribute='label')|join('、') }}。{% endif %}</p>
+<p class="gfoot"><span>報告 {{ e.n_window }} 件から</span><a href="/games/{{ e.appid }}">詳しく →</a></p>
+</div>
+</article>
+{% endfor %}
+</div>
+<p class="more"><a href="/cautions">買う前の注意をすべて見る →</a></p>
 </section>
 {% endif %}
 
 <section class="block">
-<header class="sec-h fail"><h2>最近遊べなくなったゲーム</h2><p>最新の報告から 60 日の間に、「遊べない」という報告の割合が 30 ポイント以上増えたゲーム（{{ fails|length }} 件）</p></header>
-{% set rest = fails[1:] if lead and lead.side == 'fail' else fails %}
-{% if rest %}<div class="grid">
-{% for e in rest %}
-<article class="card {{ e.side }}">
-<p class="kick">{{ badge(e.side) }}<span>{{ e.window_start|md }}ごろから</span></p>
-<h3><a href="/games/{{ e.appid }}">{{ e.title or e.appid }}</a></h3>
-{{ shift(e) }}
-{{ chips(e) }}
-<p><a class="go" href="/games/{{ e.appid }}">詳しく見る →</a></p>
-</article>
-{% endfor %}
-</div>{% elif not fails %}<p class="empty">この 60 日に、遊べなくなったゲームは見つかっていません。</p>{% endif %}
-</section>
-
-<section class="block">
-<header class="sec-h fix"><h2>最近直ったゲーム</h2><p>同じ期間に、「遊べない」という報告の割合が 30 ポイント以上減ったゲーム（{{ fixes|length }} 件）</p></header>
-{% if fixes %}<div class="grid small">
-{% for e in fixes %}
-<article class="card {{ e.side }}">
-<p class="kick">{{ badge(e.side) }}<span>{{ e.window_start|md }}ごろから</span></p>
-<h3><a href="/games/{{ e.appid }}">{{ e.title or e.appid }}</a></h3>
-{{ shift(e) }}
-{{ chips(e) }}
-</article>
-{% endfor %}
-</div>{% else %}<p class="empty">この 60 日に、直ったゲームは見つかっていません。</p>{% endif %}
-</section>
-
-{% if older %}
-<section class="block">
-<details class="older">
-<summary>それより前の変化を見る（{{ older|length }} 件） ↓</summary>
-<ul class="rows">
-{% for e in older %}
-<li>{{ badge(e.side) }}<a href="/games/{{ e.appid }}">{{ e.title or e.appid }}</a><span class="when">{{ e.window_start|day }}</span>
-<span class="pair">{{ e.share_prev|pct }} → <b>{{ e.share_window|pct }}</b></span></li>
-{% endfor %}
-</ul>
-</details>
-</section>
-{% endif %}
-
-<section class="block">
-<header class="sec-h ref"><h2>参考：Bluesky でよく話題になったゲーム</h2><p>最新の発言から 7 日。発言とゲームの結び付けが正しいかは、まだ確かめていません（誤りを含みます）。</p></header>
-{% if v.speech %}
-<ul class="rows speech">
-{% for a in v.speech[:10] %}
-<li><a href="/games/{{ a.appid }}">{{ a.title or a.appid }}</a><span class="pair">{{ a.authors }} 人・{{ a.posts }} 件</span></li>
-{% endfor %}
-</ul>
-{% else %}<p class="empty">まだ発言を取得していません。</p>{% endif %}
+<div class="gap card">
+<h2>まだお届けできないこと</h2>
+<p>{{ v.missing|join('・') }}は、根拠になるデータをまだ集められていないため、出していません。推測で書くことはしません。</p>
+</div>
 </section>
 {% endblock %}

@@ -18,6 +18,14 @@ T0 = int(datetime(2026, 6, 1, tzinfo=timezone.utc).timestamp())
 TARGET = date(2026, 10, 31)
 
 
+
+@pytest.fixture(autouse=True)
+def only_protondb(monkeypatch):
+    """この試験は 1 つの取得元（ProtonDB の配布データ）の段の振る舞いを見る。ほかの取得元は記述から外す（偽の読み手を全取得元に渡すため）。"""
+    from game_signal_scout.sources import factory
+    real = factory.load_sources_config()
+    monkeypatch.setattr(factory, "load_sources_config", lambda: {k: real[k] for k in ("protondb", "steam_reviews")})   # steam_reviews は無効（試験の部品だけ使う）
+
 def dump_records():
     """作品 A は 6 月 1 日から遊べなくなる（7 件・機材 7 種類）。作品 C は変化なし。"""
     reps = [report("A", T0 - 50 * DAY + i * DAY, False, i) for i in range(10)]
