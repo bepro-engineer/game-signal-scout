@@ -6,7 +6,7 @@ Mac mini で動いています（2026-11-08 から。外への公開はしてい
 
 | 名前 | 起動 | 中身 | 状態 |
 |---|---|---|---|
-| `com.bepro.game-signal-scout.daily-run` | 毎日 6:15 | collect → normalize → observe → analyze → insight → digest → publish | 動作中 |
+| `com.bepro.game-signal-scout.daily-run` | 毎日 6:15 | collect → normalize → observe → analyze → insight → digest → publish（`--retry`: 再試行できる失敗は 30 分ごとに 3 回まで） | 動作中 |
 | `com.bepro.game-signal-scout.web` | 常駐 | Viewer（127.0.0.1:8720） | 動作中 |
 | `com.bepro.game-signal-scout.collect-bluesky` | 常駐（異常終了のときだけ起動し直す） | Bluesky の受信 | 動作中 |
 | `com.bepro.game-signal-scout.poll` | 10 分ごと | `poll = true` の掲示板の取得元を collect → 正規化 | 動作中（2026-11-08 オーナーの承認で登録） |

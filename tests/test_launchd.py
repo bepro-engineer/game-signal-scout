@@ -16,7 +16,7 @@ def test_write_renders_plists_and_finds_stale_ones(monkeypatch, tmp_path):
     assert set(r["written"]) == {"daily-run", "web", "collect-bluesky", "poll"} and set(r["changed"]) == set(r["written"]) and r["stale"] == ["old-thing"]
     d = plistlib.loads((out / f"{launchd.PREFIX}.daily-run.plist").read_bytes())
     assert d["Label"] == "com.bepro.game-signal-scout.daily-run" and d["StartCalendarInterval"] == {"Hour": 6, "Minute": 15}
-    assert d["RunAtLoad"] is False and "KeepAlive" not in d and d["ProgramArguments"][-1] == "daily-run"
+    assert d["RunAtLoad"] is False and "KeepAlive" not in d and d["ProgramArguments"][-2:] == ["daily-run", "--retry"]
     assert "game_signal_scout" in d["ProgramArguments"][2] and "anime" not in d["ProgramArguments"][2]
     w = plistlib.loads((out / f"{launchd.PREFIX}.web.plist").read_bytes())
     assert w["KeepAlive"] is True and w["StandardOutPath"].endswith("runtime/logs/web.launchd.log")
@@ -58,3 +58,20 @@ def test_poll_runs_on_an_interval(tmp_path):
     launchd.write(Path(tmp_path), tmp_path / "out")
     p = plistlib.loads((tmp_path / "out" / f"{launchd.PREFIX}.poll.plist").read_bytes())
     assert p["StartInterval"] == 600 and p["ProgramArguments"][-1] == "poll"
+
+
+def test_daily_run_retries_retryable_failures(monkeypatch, capsys):
+    """日次は再試行できる失敗（75）を max_attempts まで繰り返す（Anime の §22。待ちは retry_after_minutes）。"""
+    import time
+    from game_signal_scout import cli
+    from game_signal_scout.ops import runner
+    calls = []
+    def fake(day, only, attempt):
+        calls.append(attempt)
+        return (runner.EXIT_RETRY if attempt < 3 else runner.EXIT_OK), {"max_attempts": 3, "retry_after_minutes": 0}
+    monkeypatch.setattr(runner, "daily_run", fake)
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    assert cli.main(["daily-run", "--retry"]) == runner.EXIT_OK and calls == [1, 2, 3]
+    calls.clear()
+    monkeypatch.setattr(runner, "daily_run", lambda d, o, a: (calls.append(a) or runner.EXIT_RETRY, {"max_attempts": 3, "retry_after_minutes": 0}))
+    assert cli.main(["daily-run"]) == runner.EXIT_RETRY and calls == [1]          # --retry なしは 1 回だけ

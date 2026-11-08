@@ -14,6 +14,7 @@ def main(argv=None) -> int:
     d.add_argument("--day", type=date.fromisoformat)
     d.add_argument("--only", nargs="*")
     d.add_argument("--attempt", type=int, default=1)
+    d.add_argument("--retry", action="store_true", help="再試行できる失敗（終了コード 75）なら retry_after_minutes の後に max_attempts まで繰り返す（launchd の日次はこれを使う）")
     e = sub.add_parser("events", help="検出した変化を表示する")
     e.add_argument("--side", default="fail", choices=["fail", "fix"])
     e.add_argument("--limit", type=int, default=10)
@@ -59,10 +60,17 @@ def main(argv=None) -> int:
                     server_header=False)
         return 0
     if a.cmd == "daily-run":
-        from game_signal_scout.ops.runner import daily_run
-        code, out = daily_run(a.day, a.only, a.attempt)
-        print(json.dumps(out, ensure_ascii=False, default=str))
-        return code
+        from game_signal_scout.ops.runner import EXIT_RETRY, daily_run
+        attempt = a.attempt
+        while True:
+            code, out = daily_run(a.day, a.only, attempt)
+            print(json.dumps(out, ensure_ascii=False, default=str), flush=True)
+            # 再試行は呼ぶ側の 1 層だけ（Anime の §22）: 上限と待ちは config/daily.toml の [daily_run]
+            if not a.retry or code != EXIT_RETRY or attempt >= int(out.get("max_attempts") or 1):
+                return code
+            import time
+            time.sleep(int(out.get("retry_after_minutes") or 30) * 60)
+            attempt += 1
     from game_signal_scout import config, db
     from game_signal_scout.repositories import report
     with db.connect() as conn:

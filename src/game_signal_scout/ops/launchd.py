@@ -31,7 +31,7 @@ def services(root: Path) -> dict[str, dict]:
     logs = root / "runtime" / "logs"
     out = {
         # 日次の 4 段（collect → normalize → analyze → publish）。常駐しない。機械が寝ていた回は、起きたときに 1 回まとめて動く（launchd の仕様）
-        "daily-run": {"args": _python("daily-run"), "log": logs / "daily-run.launchd.log",
+        "daily-run": {"args": _python("daily-run", "--retry"), "log": logs / "daily-run.launchd.log",
                       "calendar": {"Hour": int(lc["hour"]), "Minute": int(lc["minute"])}, "exit_timeout": 3600},
         # Viewer（自分の機械だけで待ち受ける）
         "web": {"args": _python("web"), "log": logs / "web.launchd.log", "keepalive": True, "throttle": 60, "exit_timeout": 10},
