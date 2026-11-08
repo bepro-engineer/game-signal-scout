@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import json
 
-COLS = ("appid", "source", "item_id", "title", "summary", "image_url", "genres", "modes", "platforms", "ja_text", "ja_voice", "released", "store_url", "fetched_at", "about_ja", "about_en", "coming_soon")
-JSON_COLS = {"genres", "modes", "platforms"}
+COLS = ("appid", "source", "item_id", "title", "summary", "image_url", "genres", "modes", "platforms", "ja_text", "ja_voice", "released", "store_url", "fetched_at", "about_ja", "about_en", "coming_soon", "names")
+JSON_COLS = {"genres", "modes", "platforms", "names"}
 
 
 def active_apps(conn, days: int, limit: int) -> list[tuple[str, int]]:
@@ -48,7 +48,7 @@ def upsert(conn, rows: list[dict]) -> int:
     sql = (f"INSERT INTO game_profile ({', '.join(COLS)}) VALUES ({', '.join(['%s'] * len(COLS))}) ON CONFLICT (appid) DO UPDATE SET "
            + ", ".join(f"{c} = EXCLUDED.{c}" for c in COLS if c != "appid"))
     with conn.cursor() as cur:
-        cur.executemany(sql, [tuple(json.dumps(r[c]) if c in JSON_COLS else r[c] for c in COLS) for r in rows])
+        cur.executemany(sql, [tuple((json.dumps(r[c]) if r.get(c) is not None else None) if c in JSON_COLS else r.get(c) for c in COLS) for r in rows])
     return len(rows)
 
 

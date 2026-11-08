@@ -27,6 +27,7 @@ def main(argv=None) -> int:
     sc = sub.add_parser("source-collect", help="常駐の取得元の収集器（config/sources.toml の resident = true。launchd の collect-<取得元> が動かす）")
     sc.add_argument("--source", required=True)
     sc.add_argument("--once", action="store_true", help="1 周期だけ")
+    sub.add_parser("poll", help="短い間隔の収集（config/sources.toml の poll = true の取得元を collect → 正規化。launchd の poll が動かす）")
     sub.add_parser("init-author-key", help="投稿者の HMAC の鍵（runtime/author_hmac.key）を初回だけ作る（あれば作らない）")
     a = ap.parse_args(argv)
     if a.cmd == "launchd":
@@ -43,6 +44,9 @@ def main(argv=None) -> int:
     if a.cmd == "source-collect":
         from game_signal_scout.ops import collector
         return collector.run(a.source, a.once)
+    if a.cmd == "poll":
+        from game_signal_scout.ops import poll
+        return poll.main()
     if a.cmd == "init-author-key":
         from game_signal_scout import actor_key
         print(json.dumps({"created": actor_key.create_key()}))

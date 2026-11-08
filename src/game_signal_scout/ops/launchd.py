@@ -36,6 +36,8 @@ def services(root: Path) -> dict[str, dict]:
         # Viewer（自分の機械だけで待ち受ける）
         "web": {"args": _python("web"), "log": logs / "web.launchd.log", "keepalive": True, "throttle": 60, "exit_timeout": 10},
     }
+    # 短い間隔の収集（新着だけを返す掲示板のフィード。ops/poll）
+    out["poll"] = {"args": _python("poll"), "log": logs / "poll.launchd.log", "interval": int(lc.get("poll_minutes", 10)) * 60, "exit_timeout": 300}
     # 常駐の受信（Anime と同じ: 異常終了のときだけ起動し直す。使えない取得元は 0 で終わり、起動し直さない。二重起動は 75 で終わり 60 秒後に取り直す）
     for s in residents(load_sources_config()):
         out[f"collect-{s}"] = {"args": _python("source-collect", "--source", s), "log": logs / f"collect-{s}.launchd.log",

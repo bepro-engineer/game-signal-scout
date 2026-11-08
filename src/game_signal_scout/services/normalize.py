@@ -118,6 +118,7 @@ def steam_store_row(item_id: str, received_at, p: dict) -> dict | None:
             "ja_text": ja_text, "ja_voice": ja_voice, "released": p.get("release_date"),
             "store_url": f"https://store.steampowered.com/app/{p.get('appid') or item_id}/", "fetched_at": received_at,
             "coming_soon": p.get("coming_soon"),
+            "names": {**({"en": p["name_en"]} if p.get("name_en") else {}), **(p.get("names") or {})} or None,
             # ゲーム内容: 日本語の取得で返った文が日本語ならそれ（日本語の文がない作品は英語の文が返る）、英語は英語の取得の文
             "about_ja": p.get("about") if JA_CHARS.search(p.get("about") or "") else None,
             "about_en": p.get("about_en") or (p.get("about") if p.get("about") and not JA_CHARS.search(p["about"]) else None)}

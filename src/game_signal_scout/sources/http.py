@@ -30,6 +30,10 @@ class Fetcher:
         body = self._get(source, url, "application/json", None)
         return json.loads(body) if body is not None else None
 
+    def get_text(self, source: str, url: str) -> str | None:
+        """HTML などの文を取る。失敗は例外にせず None（記録は self.log）。"""
+        return self._get(source, url, "text/html,application/xhtml+xml", None)
+
     def download(self, source: str, url: str, dest: Path) -> bool:
         """ファイルに保存する（途中の失敗で壊れたファイルを残さない: .part に書いてから名前を替える）。"""
         return self._get(source, url, "application/octet-stream", Path(dest)) is not None

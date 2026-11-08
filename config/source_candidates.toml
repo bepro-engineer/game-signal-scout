@@ -1,0 +1,1821 @@
+# Game の取得元の候補の台帳（2026-11-08 作成。Claude の調査）。PC・家庭用機のプレイヤーの声を集める場の候補。
+# 書式は Anime（projects/anime-signal-scout/config/source_candidates.toml）の『記録する事実』を写し、表の形は [candidates.<id>] にした。
+# 既に取り込み済みの Bluesky・Steam のユーザーレビュー（steam_reviews）・ProtonDB・Steam の上位（steam_charts）・Steam の作品情報は含めない。
+# 並びは優先度の順（量 × 作品の同定のしやすさ × 言語の広さ）。needs_key・needs_decision も優先度は下げず、unblock に外す手順を書く（本人の指示 2026-11-08）。
+#
+# 欄:
+#   name / url / langs        名前・入口・言語（多言語 = 多数の言語が混在）
+#   voice                     何を 1 つの『声』と数えるか（レビュー・投稿・返信・コメント）
+#   access / endpoint         取得方法（API / RSS / HTML）と具体の URL の形
+#   game_id / game_id_note    作品の同定のしやすさ: easy（URL・板・ID = 作品）/ medium（題名・タグで照合）/ hard（本文の自由文）
+#   auth                      鍵・ログインの要否（秘密は書かない）
+#   robots / terms / terms_url  robots.txt の該当行と、規約の要点（短い引用か『未確認』）と根拠の URL
+#   volume                    実測できた量（『未実測』『未確認の推測』を明記）
+#   verified / verification   何をいつ取得したか。verification = content（内容まで取得）/ robots（robots・文書だけ）/ none（今回は取得せず他の台帳の転記）
+#   verdict                   ready（鍵・契約なしで今すぐ実装できる）/ needs_key（無料の鍵が要る・本人が作る）/ needs_decision（規約が不明確・本人の判断）/ rejected（規約の明確な禁止・範囲外・遮断・停止）
+#   unblock                   needs_key・needs_decision を外す具体の手順（どの鍵をどこで作るか・どの条項を確認するか）
+#   reject_reason / alternatives  不採用の理由と、ほかの正当な道
+#   priority                  優先度の順位（1 が最優先）
+# 『未確認』は禁止ではない。取得の速さは 1 ホストあたり 2 秒以上の間隔、UA は daily.toml と同じ（連絡先なし）で調べた。
+
+[candidates.blizzard_forums]
+name = "Blizzard 公式フォーラム（Discourse。WoW・Overwatch・Diablo・Hearthstone ほか、地域・言語ごと）"
+url = "https://us.forums.blizzard.com/en/wow/"
+langs = ["en", "de", "fr", "es", "it", "ru", "pt-BR", "ko", "zh-Hant"]
+voice = "トピックの投稿と返信（post）"
+access = "API"
+endpoint = "https://{us|eu|kr|tw}.forums.blizzard.com/{lang}/{game}/latest.json → /t/{id}.json（Discourse の公開 JSON。認証なし）"
+game_id = "easy"
+game_id_note = "フォーラム = 作品（wow・overwatch・d4・hearthstone…）。作品内の話題は category で分かれる"
+auth = "不要"
+robots = "許可（/t/*/*.rss・/c/*.rss・/search・/admin などだけ Disallow。.json は Disallow なし）"
+terms = "未確認（禁止の明文なし）: /en/wow/tos を取得し scrap|automat|crawl|robot|harvest で検索、自動取得の禁止条項は見つからず（請求の自動更新の条項だけ）"
+terms_url = "https://us.forums.blizzard.com/en/wow/tos"
+volume = "us/en/wow: 最新 30 トピックが約 13 分（06:40〜06:53Z）・計 1,959 投稿。eu/de/wow 30 件/約 7 時間、fr 30/約 12 時間、ru 30/約 16 時間、es 30/約 28 時間、it 30/約 4.7 日、us/pt 30/約 2 日、kr/ko 30/約 8 時間（11/05 まで）、tw/zh 30/約 6 日（低調）"
+verified = "2026-11-08 robots.txt・latest.json（en/wow・en/overwatch・de/fr/es/it/ru/pt/ko/zh の wow）・ToS を取得"
+verification = "content"
+verdict = "ready"
+notes = "1 つの adapter（Discourse 共通）で Microsoft Flight Simulator・EVE・War Thunder・Gamekult なども読める。latest.json の bumped_at で増分、/t/{id}/posts.json で本文"
+priority = 1
+
+[candidates.ptt_game_boards]
+name = "PTT のゲーム板（Steam・PlayStation・NSwitch・XBOX・LoL・MH ほか作品板）"
+url = "https://www.ptt.cc/bbs/Steam/index.html"
+langs = ["zh-Hant"]
+voice = "記事（[心得]・[閒聊]・[問題]）と推文（push = 短い返信）"
+access = "RSS+HTML"
+endpoint = "https://www.ptt.cc/atom/{board}.xml（新着 20 件）→ https://www.ptt.cc/bbs/{board}/M.{id}.html（本文と推文）"
+game_id = "medium"
+game_id_note = "板 = 機種または作品（LoL・MH は作品板）。機種板は題名の作品名で title_match（例: [心得] 影之刃零…）"
+auth = "不要（八卦板など 18 禁の板だけ over18 の cookie が要る。ゲーム板は不要）"
+robots = "許可（User-agent: * Allow: /。Content-Signal: search=yes, ai-train=no, use=reference。学習はしないので抵触しない）"
+terms = "条件つき（Anime の台帳: 非商用で本番運用中・収集の禁止・許可の明文なし）"
+terms_url = "https://www.ptt.cc/robots.txt"
+volume = "Steam Atom 20 件/約 27 時間、PlayStation 20 件/約 5 日、NSwitch 20 件/約 5 日、LoL 18 件/約 2 時間。記事 1 本の推文 14（標本）。index の前頁番号: LoL 15003・Steam 3999"
+verified = "2026-11-08 robots・index（Steam/PlayStation/NSwitch/XBOX/LoL/MH/C_Chat）・Atom（Steam/PlayStation/NSwitch/LoL/C_Chat）・記事 1 本を取得"
+verification = "content"
+verdict = "ready"
+notes = "Anime の sources/ptt をそのまま写せる（コピー可）。C_Chat にもゲームの話が多い（Anime と同じ板を Game の文脈語で読む）"
+priority = 2
+
+[candidates.steam_community_discussions]
+name = "Steam コミュニティの作品ごとの掲示板（General Discussions ほか）"
+url = "https://steamcommunity.com/app/730/discussions/"
+langs = ["en", "zh-Hans", "ru", "de", "pt-BR", "es", "fr", "pl", "tr", "ko", "ja", "多言語"]
+voice = "スレッドの投稿と返信"
+access = "HTML"
+endpoint = "https://steamcommunity.com/app/{appid}/discussions/（一覧 15 件/頁。data-timestamp・返信数・投稿者名）→ /app/{appid}/discussions/0/{topic_id}/（返信本文）"
+game_id = "easy"
+game_id_note = "URL の appid = 作品（既存の catalog の appid とそのまま結べる）"
+auth = "不要"
+robots = "許可（/actions/・/linkfilter/・/trade*・/email/ だけ Disallow）"
+terms = "条件つき・要判断: Steam 利用規約 4.C 'You may not use any form of scripts, bots, macros, or other non-human-controlled systems (\"Automation\") to interact with Content and Services on Steam in any manner'（例示はアカウント作成・統計偽装・報酬・判定への参加）。アカウントを持たない読み取りに当たるかは未確定"
+terms_url = "https://store.steampowered.com/subscriber_agreement/"
+volume = "CS2 の一覧の先頭が『Just now』。15 件/頁。全作品で 1 日数万スレ以上と推測（未確認の推測）"
+verified = "2026-11-08 robots・CS2 と GTA V Enhanced の一覧・スレ 1 本・利用規約を取得"
+verification = "content"
+verdict = "needs_decision"
+unblock = "本人が判断: 利用規約 4.C（Automation）がログインしない公開ページの読み取りにも及ぶか。steam_reviews（公式 API）と同じ扱いにするなら、appid ごと 1 日 1〜数リクエストで実装できる"
+notes = "既存の steam_reviews と同じ appid の集合で回せる。最大級の多言語の声"
+priority = 3
+
+[candidates.reddit]
+name = "Reddit（r/Games・r/pcgaming・r/PS5・r/NintendoSwitch・作品ごとの sub。各国語の sub）"
+url = "https://www.reddit.com/r/Games/"
+langs = ["en", "de", "fr", "es", "pt-BR", "pl", "tr", "多言語"]
+voice = "投稿とコメント"
+access = "API"
+endpoint = "https://oauth.reddit.com/r/{sub}/new（OAuth の Data API。承認後）"
+game_id = "easy"
+game_id_note = "作品ごとの sub（r/Eldenring 等）は sub = 作品。総合 sub は題名・flair で同定"
+auth = "要（Reddit アカウント + アプリ登録 + Data API の利用承認）"
+robots = "全面 Disallow（www・old とも 'User-agent: * Disallow: /'）。.json も 403 を確認"
+terms = "条件つき（Anime の台帳 2026-10-24 再確認: Data API Terms 3.1 商用・上限超の研究は別契約、3.2 承認用途外の保持禁止、Developer Terms 4.2 学習禁止・削除の追従）"
+terms_url = "https://www.redditinc.com/policies/data-api-terms"
+volume = "未実測（取得経路がない）。英語のゲームの声では最大級（未確認の推測）"
+verified = "2026-11-08 robots.txt と /r/Games/new.json（403）を取得"
+verification = "robots"
+verdict = "needs_key"
+unblock = "本人が: (1) https://www.reddit.com/prefs/apps で script 型アプリを作成（無料・非商用）、(2) Data API の利用申請（Responsible Builder Policy の承認。用途 = 非公開・非商用の集計）、(3) client id / secret を .env へ。Claude は承認後に adapter を作る"
+notes = "Anime 側も申請待ち。両方の用途を 1 申請にまとめられるか本人の判断"
+priority = 4
+
+[candidates.youtube_comments]
+name = "YouTube（ゲームの公式チャンネル・実況の動画コメント）"
+url = "https://www.googleapis.com/youtube/v3/"
+langs = ["多言語"]
+voice = "動画へのコメント"
+access = "API"
+endpoint = "commentThreads.list?videoId=…（1 単位）・search.list（100 単位）・playlistItems.list（公式チャンネルの新着）"
+game_id = "medium"
+game_id_note = "公式チャンネル・動画題名から作品を決める。コメント自体は作品名を含まないことが多い"
+auth = "要（Google Cloud の API キー。無料枠 10,000 単位/日）"
+robots = "RSS（/feeds/videos.xml）は robots で Disallow。API は対象外"
+terms = "条件つき（Anime の台帳: Developer Policies III.E.2 が API データの集計を原則禁止、III.L の承認で派生指標可、III.E.4 で 30 日以内に更新か削除）"
+terms_url = "https://developers.google.com/youtube/terms/developer-policies"
+volume = "未実測（キーなしで 403 を確認）"
+verified = "2026-11-08 search.list をキーなしで呼び 403 を確認・Developer Policies を取得"
+verification = "robots"
+verdict = "needs_key"
+unblock = "本人が: (1) Google Cloud で YouTube Data API v3 を有効にし API キーを作成（無料）、(2) III.E.2（集計の原則禁止）の扱いを判断（Anime は影運用で enabled_noncommercial = true にした先例あり）、(3) キーを .env へ"
+notes = "Anime の sources/youtube をコピーできる"
+priority = 5
+
+[candidates.lemmy_games]
+name = "Lemmy のゲームのコミュニティ（lemmy.world c/games・c/nintendo・c/pcgaming・c/patientgamers、lemmy.ml c/gaming、各国語のインスタンス）"
+url = "https://lemmy.world/c/games"
+langs = ["en", "de", "fr", "pt-BR", "it", "nl", "pl"]
+voice = "投稿とコメント"
+access = "API"
+endpoint = "https://lemmy.world/api/v3/post/list?community_name=games&sort=New&limit=50 ・ /api/v3/comment/list?post_id=…"
+game_id = "medium"
+game_id_note = "総合コミュニティは題名で title_match。作品のコミュニティ（c/eldenring 等）は作品が確定"
+auth = "不要"
+robots = "許可（/login・/settings・/search/ などだけ。Crawl-delay: 60 は HTML のクローラー向け）"
+terms = "条件つき（インスタンスの規約。lemmy.world/legal を取得、自動取得の禁止の明文は見つからず）"
+terms_url = "https://lemmy.world/legal"
+volume = "lemmy.world c/games: 1 日の活動 683 人・累計 229,692 コメント・投稿 20 件/約 3 日（New）。c/nintendo 101 人/日。c/pcgaming 1 人/日、c/patientgamers 9 人/日、lemmy.ml c/gaming 9 人/日、feddit.org c/gaming 0"
+verified = "2026-11-08 lemmy.world（games・pcgaming・patientgamers・nintendo・post/list）・lemmy.ml・feddit.org の API と robots・legal を取得"
+verification = "content"
+verdict = "ready"
+notes = "Anime の Lemmy の Pilot 実装を流用できる。各国語のインスタンス（jlai.lu・feddit.it・lemmy.eco.br）のゲームのコミュニティは未実測"
+priority = 6
+
+[candidates.stage1st_game]
+name = "Stage1st（S1）游戏论坛（fid=4）"
+url = "https://stage1st.com/2b/forum-4-1.html"
+langs = ["zh-Hans"]
+voice = "スレの投稿と返信"
+access = "RSS+HTML"
+endpoint = "https://stage1st.com/2b/forum.php?mod=rss&fid=4（新スレ）・/2b/forum-4-{N}.html（一覧）→ /2b/thread-{tid}-{page}-1.html"
+game_id = "medium"
+game_id_note = "分類（[NS]・[PC]・[新闻]）+ 題名の作品名。作品の専用スレ（例: 巫术678详细深度入门指南）が多い"
+auth = "不要（阅读权限の高いスレだけログインが要る。取らない）"
+robots = "許可（/2b/api/・search.php・member.php・mod=post などだけ Disallow。forum-・thread- は許可）"
+terms = "未確認（禁止の明文なし。Anime の台帳と同じ）"
+terms_url = "https://stage1st.com/robots.txt"
+volume = "一覧 1 頁に 100 スレ。RSS 20 件/約 2.4 日（新スレ）。スレ 1 頁 40 投稿（ゲストで読めた）"
+verified = "2026-11-08 robots・RSS・一覧・スレ 1 本（thread-2288959）を取得"
+verification = "content"
+verdict = "ready"
+notes = "Anime の sources/stage1st の fid を 4 に替えるだけで動く見込み"
+priority = 7
+
+[candidates.inven_boards]
+name = "인벤（Inven）作品ごとの掲示板（LoL・FF14・Diablo ほか）とニュースのコメント"
+url = "https://www.inven.co.kr/board/lol/4625"
+langs = ["ko"]
+voice = "掲示板の投稿とコメント"
+access = "HTML"
+endpoint = "https://www.inven.co.kr/board/{game}/{board_id}（一覧）→ /board/{game}/{board_id}/{article_id}"
+game_id = "easy"
+game_id_note = "URL の {game}（lol・ff14・diablo4…）= 作品"
+auth = "不要"
+robots = "許可（/board/prevnext.php・一部の板・/search/ などだけ Disallow）"
+terms = "未確認（利用約款の URL を見つけられず。実装前に約款の自動収集・複製の条項を読む）"
+terms_url = "https://www.inven.co.kr/robots.txt"
+volume = "LoL 自由掲示板の一覧 1 頁に 73 件、記事 1 本にコメント多数（標本）。韓国のゲームの声で最大級と推測（未確認の推測）"
+verified = "2026-11-08 robots・LoL の一覧・記事 1 本・ニュース一覧を取得"
+verification = "content"
+verdict = "ready"
+notes = "約款が未確認のため、最初は件数・作品・時刻だけを取る運用から始めるのが無難"
+priority = 8
+
+[candidates.arca_live_game_channels]
+name = "Arca.live（아카라이브）作品ごとのチャンネル（steam・stellarblade ほか）"
+url = "https://arca.live/b/steam"
+langs = ["ko"]
+voice = "投稿とコメント"
+access = "HTML"
+endpoint = "https://arca.live/b/{channel}（一覧。datetime 付き）→ /b/{channel}/{id}"
+game_id = "easy"
+game_id_note = "チャンネル = 作品（ゲームのチャンネルが多数。モバイル作品のチャンネルは除外が要る）"
+auth = "不要"
+robots = "許可（User-agent: * Allow: /。/u/・/b/my・edit・delete だけ Disallow）"
+terms = "未確認（/policy を取得したが表示が別言語の雛形で、自動取得の条項は見つからず）"
+terms_url = "https://arca.live/policy"
+volume = "b/steam 一覧の最新が 05:41Z〜02:08Z（標本 11 件。お知らせ含む）。b/stellarblade は 1 頁 99KB"
+verified = "2026-11-08 robots・b/steam・b/stellarblade・記事 1 本・policy を取得"
+verification = "content"
+verdict = "ready"
+notes = "Cloudflare の配下だが challenge は出なかった。モバイル作品のチャンネルは対象外（範囲の規則）"
+priority = 9
+
+[candidates.pantip_chalermkrung]
+name = "Pantip ห้องเฉลิมกรุง（ゲームの部屋）"
+url = "https://pantip.com/forum/chalermkrung"
+langs = ["th"]
+voice = "話題（topic）とコメント"
+access = "HTML"
+endpoint = "https://pantip.com/forum/chalermkrung（一覧）・https://pantip.com/tag/เกม → /topic/{id}（コメントは Anime と同じ render_comments）"
+game_id = "medium"
+game_id_note = "タグ（作品名のタグがつくことが多い）と題名で同定"
+auth = "不要"
+robots = "許可（/ads.php だけ Disallow。特定の SEO ボットは全面 Disallow）"
+terms = "未確認（Anime の台帳: 禁止の明文なし）"
+terms_url = "https://pantip.com/about/tos"
+volume = "ゲームの部屋の一覧 50 話題/頁、タグ『เกม』50 話題/頁（日次の量は未実測）"
+verified = "2026-11-08 robots・/forum/chalermkrung・/tag/เกม・ToS ページを取得（/forum/gamer・/forum/game は 404）"
+verification = "content"
+verdict = "ready"
+notes = "Anime の sources/pantip（cartoon）の部屋名を替えて流用できる"
+priority = 10
+
+[candidates.voz_gaming]
+name = "VOZ の PC Gaming（f/11）・Console Gaming（f/22）"
+url = "https://voz.vn/f/pc-gaming.11/"
+langs = ["vi"]
+voice = "スレの投稿と返信"
+access = "RSS+HTML"
+endpoint = "https://voz.vn/f/pc-gaming.11/index.rss・/f/console-gaming.22/index.rss → /t/{slug}.{id}/latest"
+game_id = "easy"
+game_id_note = "作品ごとの長期スレ（[PC] Total War: Warhammer 3…、[PC/PS] Phantom Blade Zero…）"
+auth = "不要"
+robots = "許可（Allow: /。Content-Signal ai-train=no, use=reference）"
+terms = "要判断: 規約 'không thu thập dữ liệu trái phép'（無断のデータ収集をしない）。RSS の丁寧な読み取りが『trái phép』に当たるかは未確定"
+terms_url = "https://voz.vn/help/terms/"
+volume = "PC Gaming RSS 20 件/約 21 時間、Console Gaming 20 件/約 1 か月（長期スレの更新順）"
+verified = "2026-11-08 robots・RSS 2 本・トップ・規約を取得"
+verification = "content"
+verdict = "needs_decision"
+unblock = "本人が判断: 規約第 7 条の『thu thập dữ liệu trái phép』を、公式 RSS の非商用の読み取りは該当しないと読むか。迷うなら運営（フッターの Liên hệ）に RSS の自動読み取りの可否を問い合わせる（Claude が文面を用意）"
+notes = "ベトナム語で唯一の大きなゲームの場。Anime も同じ論点で規約確認待ち"
+priority = 11
+
+[candidates.neogaf]
+name = "NeoGAF Gaming Discussion"
+url = "https://www.neogaf.com/forums/gaming-discussion.2/"
+langs = ["en"]
+voice = "スレの投稿と返信"
+access = "RSS+HTML"
+endpoint = "https://www.neogaf.com/forums/gaming-discussion.2/index.rss → /threads/{slug}.{id}/"
+game_id = "medium"
+game_id_note = "スレ題名に作品名"
+auth = "不要"
+robots = "許可（/members/・/search/・/whats-new/ などだけ Disallow）"
+terms = "未確認（/help/terms/ を取得し scrap|automated|crawl|robot で検索、該当なし）"
+terms_url = "https://www.neogaf.com/help/terms/"
+volume = "RSS 40 件/約 5 時間。スレの返信数 6〜272（slash:comments）"
+verified = "2026-11-08 robots・RSS・規約を取得"
+verification = "content"
+verdict = "ready"
+priority = 12
+
+[candidates.gog_reviews]
+name = "GOG の作品ごとのユーザーレビュー"
+url = "https://www.gog.com/"
+langs = ["en", "de", "fr", "ru", "pl", "zh-Hans", "pt-BR", "多言語"]
+voice = "レビュー（星・題・本文・言語）"
+access = "API"
+endpoint = "https://reviews.gog.com/v1/products/{product_id}/reviews?limit=…&page=…（JSON。言語・評価・投稿者 ID つき）"
+game_id = "easy"
+game_id_note = "GOG の product_id = 作品（題名で Steam の appid と対応づける）"
+auth = "不要"
+robots = "reviews.gog.com/robots.txt は 404（制限なし）。www.gog.com は /profile などだけ Disallow"
+terms = "未確認（文書のない公開 JSON。gog.com の利用規約の自動取得の条項は未読）"
+terms_url = "https://www.gog.com/"
+volume = "The Witcher: レビュー 2,245・評価 14,133。新作の日次の量は未実測"
+verified = "2026-11-08 reviews API（Witcher 1207658924）・robots を取得"
+verification = "content"
+verdict = "ready"
+notes = "Steam 以外のレビューで、DRM フリーの層の声。ストアの検索（product_id）は別の公開 API（未実測）"
+priority = 13
+
+[candidates.a9vg]
+name = "A9VG 电玩部落论坛（家庭用機・PC の総合）"
+url = "https://bbs.a9vg.com/forum.php"
+langs = ["zh-Hans"]
+voice = "スレの投稿と返信"
+access = "HTML"
+endpoint = "https://bbs.a9vg.com/forum-{fid}-{N}.html → /thread-{tid}-{page}-1.html（RSS は無効: mod=rss が 12 バイト）"
+game_id = "medium"
+game_id_note = "機種・作品の板と題名"
+auth = "不要"
+robots = "許可（User-agent: * Disallow: 空。AI のボットだけ名指しで Disallow）"
+terms = "未確認"
+terms_url = "https://bbs.a9vg.com/robots.txt"
+volume = "板 264 の一覧 1 頁に約 290 スレの行、スレ 1 頁 10 投稿（ゲストで読めた）"
+verified = "2026-11-08 robots・トップ・板 264・スレ 1 本・RSS（空）を取得"
+verification = "content"
+verdict = "ready"
+priority = 14
+
+[candidates.keylol]
+name = "其乐 Keylol（Steam のコミュニティ）"
+url = "https://keylol.com/"
+langs = ["zh-Hans"]
+voice = "スレの投稿と返信"
+access = "RSS+HTML"
+endpoint = "https://keylol.com/forum.php?mod=rss&fid={fid}（161 热点聚焦・148 谈天说地・127 平台工具 ほか）→ /t{tid}-1-1"
+game_id = "medium"
+game_id_note = "題名の《作品名》（二重山括弧）で同定しやすい"
+auth = "不要（板の一覧はゲストに『提示信息』が出る板あり。RSS とスレは読めた）"
+robots = "許可（/api/・search.php・mod=post などだけ Disallow）"
+terms = "未確認"
+terms_url = "https://keylol.com/robots.txt"
+volume = "fid=161 RSS 20 件/約 2.75 日、fid=148 20 件、fid=127 20 件/約 1 か月"
+verified = "2026-11-08 robots・RSS 3 本・スレ 1 本を取得（板の一覧はゲストに提示信息）"
+verification = "content"
+verdict = "ready"
+priority = 15
+
+[candidates.bbs_3dmgame]
+name = "3DM 论坛（PC 単機ゲーム）"
+url = "https://bbs.3dmgame.com/forum.php"
+langs = ["zh-Hans"]
+voice = "スレの投稿と返信"
+access = "HTML"
+endpoint = "https://bbs.3dmgame.com/forum-{fid}-{N}.html → /thread-{tid}-1-1.html（RSS は無効: 12 バイト）"
+game_id = "medium"
+game_id_note = "作品ごとの板（大作は専用板）と題名"
+auth = "不要"
+robots = "許可（/api/・member.php・home.php?mod=space* などだけ Disallow）"
+terms = "未確認"
+terms_url = "https://bbs.3dmgame.com/robots.txt"
+volume = "未実測（トップは 316KB で取得できた）"
+verified = "2026-11-08 robots・トップ・RSS（空）を取得"
+verification = "content"
+verdict = "ready"
+notes = "海賊版の配布の話題が混ざる板は除外する（範囲の判断）"
+priority = 16
+
+[candidates.donanimhaber_game]
+name = "DonanımHaber Forum のゲームの板（Pc Oyunları f208・Steam f2041・Oyunlar f585 ほか）"
+url = "https://forum.donanimhaber.com/pc-oyunlari--f208"
+langs = ["tr"]
+voice = "スレの投稿と返信"
+access = "HTML"
+endpoint = "https://forum.donanimhaber.com/{slug}--f{id} → スレの各ページ（板の RSS は 404。Anime の台帳）"
+game_id = "medium"
+game_id_note = "作品ごとのスレ（題名）と、ジャンルの板（Spor・Yarış）"
+auth = "不要"
+robots = "許可（/api/・/api2/・/login などだけ Disallow）"
+terms = "未確認（規約ページの URL を見つけられず）"
+terms_url = "https://forum.donanimhaber.com/robots.txt"
+volume = "f208 一覧に約 76 行、f2041 に約 64 行（日次の量は未実測）。トルコ語で最大級のゲームの板と推測（未確認の推測）"
+verified = "2026-11-08 robots・トップ・f208・f2041 を取得"
+verification = "content"
+verdict = "ready"
+priority = 17
+
+[candidates.true_gaming_boards]
+name = "منتديات ترو جيمنج（True Gaming のフォーラム）"
+url = "https://true-gaming.net/boards/"
+langs = ["ar"]
+voice = "スレの投稿と返信"
+access = "RSS+HTML"
+endpoint = "https://true-gaming.net/boards/forums/-/index.rss（全体）・/boards/forums/{slug}.{id}/index.rss"
+game_id = "medium"
+game_id_note = "作品・機種の板と題名（アラビア語と英字の作品名が混在）"
+auth = "不要"
+robots = "許可（/boards/search/・/boards/account/ などだけ Disallow）"
+terms = "未確認"
+terms_url = "https://true-gaming.net/robots.txt"
+volume = "全体 RSS 30 件/約 22 時間（雑談の板を含む）"
+verified = "2026-11-08 robots・RSS を取得（記事のコメントのフィード /comments/feed/ は 404）"
+verification = "content"
+verdict = "ready"
+notes = "アラビア語圏で唯一確認できたゲームの場"
+priority = 18
+
+[candidates.outerspace_forum]
+name = "Fórum Outer Space（ブラジル最大級のゲームの掲示板）"
+url = "https://forum.outerspace.com.br/"
+langs = ["pt-BR"]
+voice = "スレの投稿と返信"
+access = "RSS"
+endpoint = "https://forum.outerspace.com.br/index.php?forums/-/index.rss（全体）・forums/{slug}.{id}/index.rss"
+game_id = "medium"
+game_id_note = "作品スレの題名"
+auth = "不要"
+robots = "未確認（robots.txt・トップは Cloudflare の challenge で 403。RSS だけ 200）"
+terms = "未確認（Anime の台帳: 禁止の明文なし）"
+terms_url = "https://forum.outerspace.com.br/index.php?help/terms/"
+volume = "全体 RSS 35 件/約 4.3 時間（雑談を含む）"
+verified = "2026-11-08 RSS を取得（robots・トップは challenge）"
+verification = "content"
+verdict = "ready"
+notes = "HTML のスレ本文は challenge で読めない可能性。RSS（題名と 1 投稿目）中心"
+priority = 19
+
+[candidates.adrenaline_forum]
+name = "Fórum Adrenaline（ブラジル）"
+url = "https://forum.adrenaline.com.br/"
+langs = ["pt-BR"]
+voice = "スレの投稿と返信"
+access = "RSS+HTML"
+endpoint = "https://forum.adrenaline.com.br/forums/-/index.rss・forums/{slug}.{id}/index.rss"
+game_id = "medium"
+game_id_note = "ゲームの板（Jogos）の題名"
+auth = "不要"
+robots = "許可（/posts/・/account/ などだけ Disallow。Allow: /）"
+terms = "未確認"
+terms_url = "https://forum.adrenaline.com.br/robots.txt"
+volume = "全体 RSS 25 件/約 7 時間（ハード・雑談を含む）"
+verified = "2026-11-08 robots・RSS を取得"
+verification = "content"
+verdict = "ready"
+priority = 20
+
+[candidates.computerbase_games]
+name = "ComputerBase Forum のゲームの板（Actionspiele・Battlefield・Call of Duty・Counter-Strike・GTA・Nintendo・PlayStation・Xbox ほか）"
+url = "https://www.computerbase.de/forum/forums/actionspiele.124/"
+langs = ["de"]
+voice = "スレの投稿と返信"
+access = "RSS+HTML"
+endpoint = "https://www.computerbase.de/forum/forums/{slug}.{id}/index.rss（actionspiele.124・battlefield.153・call-of-duty.154・counter-strike.224・grand-theft-auto.225・nintendo.223・playstation.222・xbox.221・steam-deck-und-handhelds.162 ほか）"
+game_id = "easy"
+game_id_note = "作品ごとの板（battlefield・cod・cs・gta）と、ジャンル板の作品スレ"
+auth = "不要"
+robots = "許可（/forum/posts/・/forum/search/・/forum/members/ などだけ Disallow）"
+terms = "未確認"
+terms_url = "https://www.computerbase.de/robots.txt"
+volume = "actionspiele.124 RSS 40 件/約 17 日（更新順）"
+verified = "2026-11-08 robots・フォーラムのトップ・actionspiele.124 の RSS を取得"
+verification = "content"
+verdict = "ready"
+priority = 21
+
+[candidates.pcgh_extreme]
+name = "PCGH Extreme（PC Games Hardware のフォーラム）"
+url = "https://extreme.pcgameshardware.de/"
+langs = ["de"]
+voice = "スレの投稿と返信（記事のコメントのスレを含む）"
+access = "RSS+HTML"
+endpoint = "https://extreme.pcgameshardware.de/forums/-/index.rss・forums/{slug}.{id}/index.rss"
+game_id = "medium"
+game_id_note = "題名（記事のコメントのスレは記事題 = 作品名が多い）"
+auth = "不要"
+robots = "許可（/posts/・/account/・/find-new/ などだけ Disallow）"
+terms = "未確認"
+terms_url = "https://extreme.pcgameshardware.de/robots.txt"
+volume = "全体 RSS 40 件/約 12 時間（ハードを含む）"
+verified = "2026-11-08 robots・RSS を取得"
+verification = "content"
+verdict = "ready"
+priority = 22
+
+[candidates.wykop_gry]
+name = "Wykop のタグ #gry（と作品のタグ）"
+url = "https://wykop.pl/tag/gry"
+langs = ["pl"]
+voice = "投稿（mikroblog）とコメント"
+access = "HTML"
+endpoint = "https://wykop.pl/tag/{tag}（datetime 秒・投稿者名）"
+game_id = "hard"
+game_id_note = "タグ形式の作品名（#eldenring 等）と本文。#gry は総合"
+auth = "不要（公式 API v3 は開発者の鍵）"
+robots = "許可（Allow: /。/api/ だけ Disallow）"
+terms = "未確認（regulamin を取得し automaty|scrap|crawl|robot で検索、自動取得の禁止条項は見つからず）"
+terms_url = "https://wykop.pl/regulamin"
+volume = "#gry 23 件/約 13.5 時間"
+verified = "2026-11-08 robots・/tag/gry・regulamin を取得"
+verification = "content"
+verdict = "ready"
+priority = 23
+
+[candidates.stopgame_comments]
+name = "StopGame.ru のニュース・作品ページのコメント"
+url = "https://stopgame.ru/news"
+langs = ["ru"]
+voice = "記事・作品へのコメント"
+access = "HTML"
+endpoint = "https://stopgame.ru/news（一覧）→ /newsdata/{id}/{slug}（コメント）"
+game_id = "medium"
+game_id_note = "記事の題名と作品へのリンク"
+auth = "不要"
+robots = "許可（/search/・/user/*/*・/pm/ などだけ Disallow）"
+terms = "未確認（/rules は DDoS-Guard の 403 で読めない）"
+terms_url = "https://stopgame.ru/rules"
+volume = "記事 1 本（PoE2 の更新の記事）のページに comment の記述 96 か所（件数は未集計）"
+verified = "2026-11-08 robots・ニュース一覧・記事 1 本を取得（規約は 403）"
+verification = "content"
+verdict = "ready"
+priority = 24
+
+[candidates.playground_ru]
+name = "PlayGround.ru の作品ページ（コメント・フォーラム）"
+url = "https://www.playground.ru/elden_ring"
+langs = ["ru"]
+voice = "作品ページのコメント・フォーラムの投稿"
+access = "HTML"
+endpoint = "https://www.playground.ru/{game_slug}（作品ページ）・/{game_slug}/forum/（未実測）"
+game_id = "easy"
+game_id_note = "URL の slug = 作品"
+auth = "不要"
+robots = "許可（/search/・/c/・/a/・/feed/・?p= などは Disallow。作品ページは許可）"
+terms = "未確認"
+terms_url = "https://www.playground.ru/robots.txt"
+volume = "未実測（作品ページ 264KB を取得）"
+verified = "2026-11-08 robots・Elden Ring の作品ページを取得"
+verification = "content"
+verdict = "ready"
+notes = "コメントの取得経路が /c/（Disallow）の可能性。実装前に確かめる（未確認）"
+priority = 25
+
+[candidates.nicovideo_dic_bbs]
+name = "ニコニコ大百科の作品記事の掲示板"
+url = "https://dic.nicovideo.jp/a/elden%20ring"
+langs = ["ja"]
+voice = "掲示板のレス"
+access = "HTML"
+endpoint = "https://dic.nicovideo.jp/b/a/{記事名}/{開始番号}-（30 件ずつ）"
+game_id = "easy"
+game_id_note = "記事 = 作品（記事名で同定）"
+auth = "不要"
+robots = "許可（/b/c/・/api/・/p/ などは Disallow。/b/a/ は許可。Crawl-delay: 5）"
+terms = "未確認"
+terms_url = "https://dic.nicovideo.jp/robots.txt"
+volume = "ELDEN RING の掲示板 3,751 レス以上、最新のレスが 2026-11-08"
+verified = "2026-11-08 robots・記事・掲示板（3751-）を取得"
+verification = "content"
+verdict = "ready"
+notes = "日本語で作品ごとに声が集まる数少ない公開の場。新着の発見は作品の一覧から（Crawl-delay を守る）"
+priority = 26
+
+[candidates.hatena_bookmark_comments]
+name = "はてなブックマークのコメント（ゲームのニュース記事への）"
+url = "https://b.hatena.ne.jp/"
+langs = ["ja"]
+voice = "ブックマークのコメント"
+access = "API"
+endpoint = "https://b.hatena.ne.jp/entry/json/?url={記事URL}（公式のエントリー情報取得 API。count・bookmarks[comment,user,timestamp]）"
+game_id = "medium"
+game_id_note = "記事（4Gamer・AUTOMATON・電ファミ等）の題名で作品を決める"
+auth = "不要"
+robots = "条件つき: /entry/json は Disallow なし（/entry/jsonlite・/entry.count は Disallow）。Crawl-delay: 5"
+terms = "未確認（公式文書に利用条件の記載なし）"
+terms_url = "https://developer.hatena.ne.jp/ja/documents/bookmark/apis/getinfo"
+volume = "4gamer.net トップの count 1,386（標本）"
+verified = "2026-11-08 robots・/entry/json・公式文書を取得（/entry/jsonlite は robots で Disallow と確認）"
+verification = "content"
+verdict = "ready"
+notes = "記事の URL の入口は各誌の RSS（4gamer の robots は全許可）"
+priority = 27
+
+[candidates.shitaraba_game]
+name = "したらば掲示板のゲームのカテゴリ（作品・機種ごとの掲示板）"
+url = "https://jbbs.shitaraba.net/bbs/subject.cgi/game/1/"
+langs = ["ja"]
+voice = "スレのレス"
+access = "HTML"
+endpoint = "https://jbbs.shitaraba.net/bbs/subject.cgi/game/{board_id}/ → /bbs/read.cgi/game/{board_id}/{thread}/（rawmode.cgi は Disallow なので使わない）"
+game_id = "easy"
+game_id_note = "掲示板 = 作品・コミュニティ"
+auth = "不要"
+robots = "許可（/bbs/rawmode.cgi と /bbs/api/setting.cgi だけ Disallow）"
+terms = "未確認"
+terms_url = "https://jbbs.shitaraba.net/robots.txt"
+volume = "未実測（どの板が活発か未調査）"
+verified = "2026-11-08 robots・game/1 のスレ一覧を取得"
+verification = "content"
+verdict = "ready"
+priority = 28
+
+[candidates.niconico_snapshot]
+name = "ニコニコ動画のスナップショット検索 API（ゲームのタグの動画・実況）"
+url = "https://snapshot.search.nicovideo.jp/api/v2/snapshot/video/contents/search"
+langs = ["ja"]
+voice = "動画の投稿（実況・感想）とコメント数"
+access = "API"
+endpoint = "…/contents/search?q={作品名}&targets=tags&fields=contentId,title,commentCounter,startTime&_sort=-startTime（UA にサービス名）"
+game_id = "easy"
+game_id_note = "タグに作品名"
+auth = "不要"
+robots = "API（文書あり）"
+terms = "条件つき: 『本API及び本ドキュメントを、営利目的に利用することはできません』（非営利の本件は可）"
+terms_url = "https://site.nicovideo.jp/search-api-docs/snapshot"
+volume = "タグ『ゲーム』8,833,345 件。新着に SEKIRO 実況 #21 など"
+verified = "2026-11-08 search・version・利用規約を取得"
+verification = "content"
+verdict = "ready"
+notes = "声そのもの（文章）ではなく『動画を作るほど遊んだ人』の数の指標"
+priority = 29
+
+[candidates.hookshot_comments]
+name = "Nintendo Life・Push Square・Pure Xbox の作品ページと記事のコメント"
+url = "https://www.pushsquare.com/games/ps5/ghost_of_yotei"
+langs = ["en"]
+voice = "記事・作品ページへのコメント"
+access = "HTML"
+endpoint = "https://www.{nintendolife|pushsquare|purexbox}.com/games/{platform}/{slug}（作品ページ。記事ごとのコメント数）→ 記事の /comments"
+game_id = "easy"
+game_id_note = "作品ページ = 作品"
+auth = "不要"
+robots = "許可（/api/・/cache/ などだけ Disallow。Crawl-delay: 5）"
+terms = "未確認"
+terms_url = "https://www.pushsquare.com/robots.txt"
+volume = "Ghost of Yotei のページに記事のコメント数 178 など"
+verified = "2026-11-08 3 サイトの robots・Push Square の作品ページを取得"
+verification = "content"
+verdict = "ready"
+priority = 30
+
+[candidates.mein_mmo_comments]
+name = "Mein-MMO のコメント（WordPress のコメントのフィード）"
+url = "https://mein-mmo.de/comments/feed/"
+langs = ["de"]
+voice = "記事へのコメント"
+access = "RSS"
+endpoint = "https://mein-mmo.de/comments/feed/（全体の最新 10 件）・/{記事}/feed/（記事ごと）"
+game_id = "medium"
+game_id_note = "記事題に作品名"
+auth = "不要"
+robots = "許可（wp-admin だけ Disallow）"
+terms = "未確認"
+terms_url = "https://mein-mmo.de/robots.txt"
+volume = "最新 10 件/約 15.5 時間（フィードは 10 件まで。記事ごとのフィードで補う）"
+verified = "2026-11-08 robots・コメントのフィードを取得"
+verification = "content"
+verdict = "ready"
+priority = 31
+
+[candidates.playua_comments]
+name = "PlayUA のコメント（ウクライナ語のゲームのニュース）"
+url = "https://playua.net/comments/feed/"
+langs = ["uk"]
+voice = "記事へのコメント"
+access = "RSS"
+endpoint = "https://playua.net/comments/feed/・/{記事}/feed/"
+game_id = "medium"
+game_id_note = "記事題に作品名"
+auth = "不要"
+robots = "許可（wp-admin などだけ）"
+terms = "未確認"
+terms_url = "https://playua.net/robots.txt"
+volume = "10 件/約 3.9 日（小さい）"
+verified = "2026-11-08 robots・コメントのフィードを取得"
+verification = "content"
+verdict = "ready"
+notes = "ウクライナ語で唯一確認できた場。量は小さい"
+priority = 32
+
+[candidates.technopat_oyun]
+name = "Technopat Sosyal のゲームの板（Oyun Haberleri 149・Oyun Performansı 247 ほか）"
+url = "https://www.technopat.net/sosyal/bolum/oyun-haberleri.149/"
+langs = ["tr"]
+voice = "スレの投稿と返信"
+access = "RSS"
+endpoint = "https://www.technopat.net/sosyal/bolum/{slug}.{id}/index.rss"
+game_id = "medium"
+game_id_note = "題名に作品名"
+auth = "不要"
+robots = "許可（Anime の台帳: Crawl-delay 5・Content-Signal ai-train=no, ai-input=yes）"
+terms = "要判断（Anime が運営に確認中。規約ページ /sosyal/yardim/terms/ は 404）"
+terms_url = "https://www.technopat.net/sosyal/"
+volume = "Oyun Haberleri RSS 20 件/約 3.7 日"
+verified = "2026-11-08 フォーラムのトップ・RSS 2 本（oyunlar.10 は Hackintosh の板だった）を取得"
+verification = "content"
+verdict = "needs_decision"
+unblock = "Anime で送った運営への問い合わせの返事を Game にも適用してよいか本人が判断（同じサイト・同じ使い方）"
+priority = 33
+
+[candidates.ruliweb_game]
+name = "Ruliweb（루리웹）のゲームの板（PS・Switch・PC の 게임 이야기 ほか）"
+url = "https://bbs.ruliweb.com/ps/board/300421"
+langs = ["ko"]
+voice = "投稿とコメント"
+access = "RSS+HTML"
+endpoint = "https://bbs.ruliweb.com/{family}/board/{board_id}/rss（公式 RSS。本文なし・題名・投稿者・時刻）"
+game_id = "medium"
+game_id_note = "題名の [作品名]"
+auth = "不要"
+robots = "許可（/search・/member・?cate= などだけ Disallow）"
+terms = "要判断: Anime の台帳で 제13조①2（事前の承諾なしの複製・第三者提供の禁止）を確認。保存しない件数だけの使い方は未確定"
+terms_url = "https://bbs.ruliweb.com/etcs/board/10/read/164"
+volume = "PS4/5 の 게임 이야기 RSS 28 件/約 21 時間"
+verified = "2026-11-08 robots・RSS を取得"
+verification = "content"
+verdict = "needs_decision"
+unblock = "本人が判断: (a) RSS の題名だけを読み、本文を保存せず件数・作品・時刻だけを残す使い方なら 제13조 の『複製』に当たらないとするか、(b) 고객센터 に承諾を求めるか（Claude が文面を用意）"
+priority = 34
+
+[candidates.fourchan_v]
+name = "4chan /v/・/vg/（ゲームの板）"
+url = "https://boards.4chan.org/v/"
+langs = ["en"]
+voice = "スレの投稿（匿名）"
+access = "API"
+endpoint = "https://a.4cdn.org/v/catalog.json・/vg/catalog.json → /v/thread/{no}.json（公式の読み取り専用 API）"
+game_id = "medium"
+game_id_note = "/vg/ は作品の常設スレ（題名 = 作品の general）。/v/ は題名・本文"
+auth = "不要"
+robots = "a.4cdn.org は 'User-agent: * Disallow: /'（API の文書とは矛盾）"
+terms = "条件つき: API Rules '1. Do not make more than one request per second. 2. Thread updating should be set to a minimum of 10 seconds'"
+terms_url = "https://github.com/4chan/4chan-API"
+volume = "/v/ のカタログ 200 スレ・返信 15,570（現時点）"
+verified = "2026-11-08 robots・/v/catalog.json・API の README を取得"
+verification = "content"
+verdict = "needs_decision"
+unblock = "本人が判断: (1) 公式 API の文書（使い方の規則あり）を robots の全面 Disallow より優先してよいか、(2) 投稿者を区別できない（/v/ に ID なし）ので『人数』ではなく『投稿数』で数えるか、(3) 内容の荒さ（差別表現）を AI の要約に入れるか"
+priority = 35
+
+[candidates.twitch]
+name = "Twitch（カテゴリ = 作品ごとの視聴・チャット）"
+url = "https://dev.twitch.tv/docs/api/"
+langs = ["多言語"]
+voice = "チャットの発言（と視聴者数）"
+access = "API"
+endpoint = "Helix: GET https://api.twitch.tv/helix/streams?game_id=…（視聴者数）・チャットは IRC/EventSub"
+game_id = "easy"
+game_id_note = "配信のカテゴリ = 作品（IGDB の ID と対応）"
+auth = "要（Twitch の開発者アプリの Client ID と App Access Token。チャットの読み取りは利用者トークンが要る可能性・未確認）"
+robots = "API（helix はキーなしで 401 を確認）"
+terms = "未確認（Developer Agreement は未読）"
+terms_url = "https://www.twitch.tv/p/legal/developer-agreement/"
+volume = "未実測"
+verified = "2026-11-08 helix/games/top をキーなしで呼び 401・docs を取得"
+verification = "robots"
+verdict = "needs_key"
+unblock = "本人が: (1) https://dev.twitch.tv/console でアプリを登録（無料・Twitch アカウント）、(2) Client ID と Secret を .env へ、(3) Developer Agreement のデータ保存・分析の条項を確認。まずは視聴者数（声ではなく規模）から"
+priority = 36
+
+[candidates.misskey_io]
+name = "Misskey.io（ゲームのハッシュタグ）"
+url = "https://misskey.io/"
+langs = ["ja"]
+voice = "ノート（投稿）"
+access = "API"
+endpoint = "POST https://misskey.io/api/notes/search-by-tag（GET は 405）"
+game_id = "hard"
+game_id_note = "本文・タグの作品名"
+auth = "不要（未実測）"
+robots = "許可（allow: /）"
+terms = "条件つき（Anime の台帳: 年 500 件以上の取得は事前連絡）"
+terms_url = "https://support.misskey.io/ja/articles/14193143"
+volume = "未実測"
+verified = "2026-11-08 robots を取得・GET で 405 を確認"
+verification = "robots"
+verdict = "needs_decision"
+unblock = "本人が判断: 運営への事前連絡（年 500 件以上の取得）をするか。するなら Claude が連絡文を用意する"
+priority = 37
+
+[candidates.mastodon_tags]
+name = "Mastodon のゲームのタグ（#gaming・#steam・#ゲーム ほか）"
+url = "https://mastodon.social/tags/gaming"
+langs = ["en", "es", "pt-BR", "ja", "多言語"]
+voice = "投稿"
+access = "API"
+endpoint = "https://mastodon.social/api/v1/timelines/tag/{tag}?limit=40（認証なし）"
+game_id = "hard"
+game_id_note = "本文の作品名（title_match）"
+auth = "不要"
+robots = "API"
+terms = "条件つき（インスタンスごと）"
+terms_url = "https://mastodon.social/about"
+volume = "#gaming 40 件/約 3 時間・25 アカウント（en 37）、#steam 40 件/約 8 時間・10 アカウント、#ゲーム 40 件/約 2.7 時間・3 アカウント（bot 中心）"
+verified = "2026-11-08 3 タグの API・about を取得"
+verification = "content"
+verdict = "ready"
+notes = "量は小さい。Bluesky の補完"
+priority = 38
+
+[candidates.tildes_games]
+name = "Tildes ~games"
+url = "https://tildes.net/~games"
+langs = ["en"]
+voice = "話題とコメント"
+access = "RSS+HTML"
+endpoint = "https://tildes.net/~games/topics.atom"
+game_id = "medium"
+game_id_note = "題名"
+auth = "不要"
+robots = "許可（'scrapers are welcome if they are collecting data for informational uses ... and maintain a reasonable rate'）"
+terms = "条件つき（robots.txt のコメントの条件）"
+terms_url = "https://tildes.net/robots.txt"
+volume = "Atom 50 件/約 18 日（小さい）"
+verified = "2026-11-08 robots・Atom を取得"
+verification = "content"
+verdict = "ready"
+priority = 39
+
+[candidates.discourse_official_game_forums]
+name = "作品の公式フォーラム（Discourse）: Microsoft Flight Simulator・EVE Online・War Thunder"
+url = "https://forums.flightsimulator.com/latest.json"
+langs = ["en", "ru", "de", "fr"]
+voice = "トピックの投稿と返信"
+access = "API"
+endpoint = "https://forums.flightsimulator.com/latest.json・https://forums.eveonline.com/latest.json・https://forum.warthunder.com/latest.json（Discourse の公開 JSON）"
+game_id = "easy"
+game_id_note = "フォーラム = 作品"
+auth = "不要"
+robots = "許可（3 つとも Discourse の標準。/search・/admin・*.rss だけ Disallow）"
+terms = "未確認（MSFS は Microsoft Services Agreement、EVE は CCP の EULA へのリンク。自動取得の条項の検索では該当なし（EVE）・MSFS は未検索）"
+terms_url = "https://forums.flightsimulator.com/tos"
+volume = "MSFS 30 トピック/約 5.4 時間（計 14,821 投稿）、EVE 30/約 5 時間、War Thunder 30/約 3.3 時間"
+verified = "2026-11-08 3 フォーラムの robots・latest.json・ToS を取得"
+verification = "content"
+verdict = "ready"
+notes = "blizzard_forums と同じ adapter"
+priority = 40
+
+[candidates.gamekult_forum]
+name = "Gamekult のフォーラム（Discourse・フランス語）"
+url = "https://www.gamekult.com/forum/"
+langs = ["fr"]
+voice = "トピックの投稿と返信"
+access = "API"
+endpoint = "https://www.gamekult.com/forum/latest.json"
+game_id = "medium"
+game_id_note = "トピック題"
+auth = "不要"
+robots = "許可（/forum/search・/forum/admin などだけ Disallow）"
+terms = "未確認"
+terms_url = "https://www.gamekult.com/robots.txt"
+volume = "30 トピックの最終投稿が 11/07 まで（固定トピックを除くと低調）"
+verified = "2026-11-08 robots・latest.json を取得"
+verification = "content"
+verdict = "ready"
+notes = "フランス語の場は jeuxvideo.com が challenge で取れないため、ここが補完"
+priority = 41
+
+[candidates.guildwars2_forum]
+name = "Guild Wars 2 公式フォーラム（Invision）"
+url = "https://en-forum.guildwars2.com/"
+langs = ["en", "de", "fr", "es"]
+voice = "投稿と返信"
+access = "RSS"
+endpoint = "https://en-forum.guildwars2.com/discover/all.xml/（全活動）・de-forum/fr-forum/es-forum（未実測）"
+game_id = "easy"
+game_id_note = "フォーラム = 作品"
+auth = "不要"
+robots = "許可（Cloudflare 管理の robots: Allow: /・ai-train=no）"
+terms = "未確認"
+terms_url = "https://en-forum.guildwars2.com/robots.txt"
+volume = "All Activity 25 件/約 4.2 時間"
+verified = "2026-11-08 robots・RSS を取得"
+verification = "content"
+verdict = "ready"
+priority = 42
+
+[candidates.cdpr_forum]
+name = "CD PROJEKT RED 公式フォーラム（Cyberpunk 2077・The Witcher）"
+url = "https://forums.cdprojektred.com/"
+langs = ["en", "pl", "多言語"]
+voice = "スレの投稿と返信"
+access = "RSS"
+endpoint = "https://forums.cdprojektred.com/index.php?forums/-/index.rss"
+game_id = "easy"
+game_id_note = "板 = 作品"
+auth = "不要"
+robots = "許可（GPTBot だけ Disallow）"
+terms = "未確認"
+terms_url = "https://forums.cdprojektred.com/robots.txt"
+volume = "RSS 20 件/約 12 時間"
+verified = "2026-11-08 robots・RSS を取得"
+verification = "content"
+verdict = "ready"
+priority = 43
+
+[candidates.tarkov_forum]
+name = "Escape from Tarkov 公式フォーラム（Invision。ロシア語・英語）"
+url = "https://forum.escapefromtarkov.com/"
+langs = ["ru", "en"]
+voice = "スレの投稿と返信"
+access = "RSS"
+endpoint = "https://forum.escapefromtarkov.com/forum/{id}-{slug}.xml（Invision の板の RSS。1 は Russian speaking forum）"
+game_id = "easy"
+game_id_note = "フォーラム = 作品"
+auth = "不要"
+robots = "許可（AhrefsBot だけ Disallow）"
+terms = "未確認"
+terms_url = "https://forum.escapefromtarkov.com/robots.txt"
+volume = "未集計（RSS 153KB を取得）"
+verified = "2026-11-08 robots・板 1 の RSS を取得"
+verification = "content"
+verdict = "ready"
+priority = 44
+
+[candidates.ffxiv_forum]
+name = "FINAL FANTASY XIV 公式フォーラム（vBulletin。日英独仏）"
+url = "https://forum.square-enix.com/ffxiv/forum.php"
+langs = ["ja", "en", "de", "fr"]
+voice = "スレの投稿と返信"
+access = "HTML"
+endpoint = "https://forum.square-enix.com/ffxiv/forum.php → forumdisplay.php?{id} → threads/{id}"
+game_id = "easy"
+game_id_note = "フォーラム = 作品（板 = 言語・話題）"
+auth = "不要（閲覧はログイン不要）"
+robots = "robots.txt は 404（制限なし）"
+terms = "未確認（Square Enix の利用規約は未読）"
+terms_url = "https://forum.square-enix.com/ffxiv/forum.php"
+volume = "未実測（トップ 211KB）"
+verified = "2026-11-08 robots（404）・トップを取得"
+verification = "content"
+verdict = "ready"
+notes = "日本語の公式フォーラムがある数少ない作品"
+priority = 45
+
+[candidates.larian_forum]
+name = "Larian Studios 公式フォーラム（Baldur's Gate 3・Divinity。UBB.threads）"
+url = "https://forums.larian.com/ubbthreads.php?ubb=cfrm"
+langs = ["en", "de", "fr", "ru", "pl"]
+voice = "スレの投稿と返信"
+access = "HTML"
+endpoint = "https://forums.larian.com/ubbthreads.php?ubb=postlist&Board={id}（未実測）"
+game_id = "easy"
+game_id_note = "板 = 作品"
+auth = "不要"
+robots = "robots.txt は 404（制限なし）"
+terms = "未確認"
+terms_url = "https://forums.larian.com/"
+volume = "未実測（トップ 186KB）"
+verified = "2026-11-08 robots（404）・トップを取得"
+verification = "content"
+verdict = "ready"
+priority = 46
+
+[candidates.multiplayer_it_forum]
+name = "Multiplayer.it のフォーラム"
+url = "https://multiplayer.it/forum/"
+langs = ["it"]
+voice = "スレの投稿と返信"
+access = "HTML"
+endpoint = "https://multiplayer.it/forum/（一覧）"
+game_id = "medium"
+game_id_note = "作品の板・題名"
+auth = "不要"
+robots = "許可（User-agent: * は Googlebot と同じ組で、利用者の領域だけ Disallow。悪質ボットの名指しの Disallow あり）"
+terms = "未確認"
+terms_url = "https://multiplayer.it/robots.txt"
+volume = "未実測（トップ 79KB）"
+verified = "2026-11-08 robots・フォーラムのトップを取得"
+verification = "content"
+verdict = "ready"
+notes = "イタリア語で確認できた唯一のゲームの掲示板"
+priority = 47
+
+[candidates.steam_news]
+name = "Steam の作品ごとのニュース・アップデートの告知（事象の印）"
+url = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/"
+langs = ["en", "多言語"]
+voice = "なし（開発者の告知。声の『きっかけ』の印）"
+access = "API+RSS"
+endpoint = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid={appid}&count=…（キー不要）・https://store.steampowered.com/feeds/news/app/{appid}/"
+game_id = "easy"
+game_id_note = "appid"
+auth = "不要"
+robots = "store: /share/・/widget/ などだけ Disallow。API は対象外"
+terms = "条件つき（Steam Web API Terms は API キー保持者向け。キー不要の本 API の扱いは未確定だが公開の配信）"
+terms_url = "https://steamcommunity.com/dev/apiterms"
+volume = "CS2 で 3 件を取得（gid・title・contents・date・feedlabel）"
+verified = "2026-11-08 GetNewsForApp・RSS・robots・API 規約を取得"
+verification = "content"
+verdict = "ready"
+notes = "『アップデートの前後で声がどう変わったか』を読むための日付の印。声の数には入れない"
+priority = 48
+
+[candidates.itch_io]
+name = "itch.io（作品ページのコメント・コミュニティ）"
+url = "https://itch.io/games/new-and-popular.xml"
+langs = ["en", "多言語"]
+voice = "作品ページのコメント"
+access = "RSS+HTML"
+endpoint = "https://itch.io/games/new-and-popular.xml（発見）→ https://{dev}.itch.io/{game}（コメント欄。未実測）"
+game_id = "easy"
+game_id_note = "作品ページ = 作品"
+auth = "不要"
+robots = "許可（/search・/checkout/・/game/download/ などだけ Disallow）"
+terms = "未確認"
+terms_url = "https://itch.io/robots.txt"
+volume = "未実測（フィード 36 件）"
+verified = "2026-11-08 robots・3 つのフィードを取得"
+verification = "content"
+verdict = "ready"
+notes = "インディーの小さな声。量は作品ごとに小さい（未確認の推測）"
+priority = 49
+
+[candidates.hacker_news]
+name = "Hacker News（ゲームの話題）"
+url = "https://hn.algolia.com/api"
+langs = ["en"]
+voice = "投稿とコメント"
+access = "API"
+endpoint = "https://hn.algolia.com/api/v1/search_by_date?query={作品名}&tags=comment"
+game_id = "hard"
+game_id_note = "本文の作品名"
+auth = "不要"
+robots = "API（news.ycombinator.com は Crawl-delay 30）"
+terms = "未確認"
+terms_url = "https://hn.algolia.com/api"
+volume = "ゲームの話題は少ない（未確認の推測）"
+verified = "2026-11-08 API・robots を取得"
+verification = "content"
+verdict = "ready"
+notes = "優先度は低い"
+priority = 50
+
+[candidates.steam_workshop_comments]
+name = "Steam ワークショップのコメント"
+url = "https://steamcommunity.com/sharedfiles/filedetails/comments/3070212801"
+langs = ["多言語"]
+voice = "MOD へのコメント"
+access = "HTML"
+endpoint = "https://steamcommunity.com/sharedfiles/filedetails/comments/{id}・/workshop/browse/?appid={appid}"
+game_id = "easy"
+game_id_note = "appid"
+auth = "不要"
+robots = "許可"
+terms = "要判断（steam_community_discussions と同じ利用規約 4.C）"
+terms_url = "https://store.steampowered.com/subscriber_agreement/"
+volume = "1 頁に 50 コメント（標本）"
+verified = "2026-11-08 ワークショップの一覧・コメント頁を取得"
+verification = "content"
+verdict = "needs_decision"
+unblock = "steam_community_discussions と同じ判断（4.C）で決まる"
+priority = 51
+
+[candidates.steam_announcement_comments]
+name = "Steam の告知（アップデート）へのコメント"
+url = "https://steamcommunity.com/app/730/allnews/"
+langs = ["多言語"]
+voice = "告知へのコメント"
+access = "HTML"
+endpoint = "https://steamcommunity.com/games/{appid}/announcements/detail/{gid}（コメント欄）・/app/{appid}/allnews/"
+game_id = "easy"
+game_id_note = "appid"
+auth = "不要"
+robots = "許可"
+terms = "要判断（利用規約 4.C）"
+terms_url = "https://store.steampowered.com/subscriber_agreement/"
+volume = "未集計"
+verified = "2026-11-08 /app/730/allnews/ を取得"
+verification = "content"
+verdict = "needs_decision"
+unblock = "steam_community_discussions と同じ判断。アップデートへの直接の反応なので『更新の効き目』の材料として価値が高い"
+priority = 52
+
+[candidates.metacritic_user_reviews]
+name = "Metacritic のユーザーレビュー"
+url = "https://www.metacritic.com/game/elden-ring/user-reviews/"
+langs = ["en", "多言語"]
+voice = "ユーザーレビュー（点数・本文）"
+access = "HTML"
+endpoint = "https://www.metacritic.com/game/{slug}/user-reviews/（機種ごとの ?platform=）"
+game_id = "easy"
+game_id_note = "slug = 作品"
+auth = "不要"
+robots = "許可（/search・/user・/login などだけ Disallow。/game/ は許可）"
+terms = "要判断（利用規約の URL /terms-of-use/ は 404 で未読。運営会社の規約がスクレイピングを禁じている可能性は未確認の推測）"
+terms_url = "https://www.metacritic.com/"
+volume = "Elden Ring のページに review-card の記述 300 か所"
+verified = "2026-11-08 robots・レビュー頁を取得（規約は 404）"
+verification = "content"
+verdict = "needs_decision"
+unblock = "本人が: 正しい利用規約のページ（フッターの Terms of Use）をブラウザで開き、自動取得・データ収集の条項を確認（Claude が要点を読む）。禁止がなければ ready"
+priority = 53
+
+[candidates.disqus_comment_sites]
+name = "Disqus を使うゲームのサイトのコメント（Gematsu など）"
+url = "https://disqus.com/api/docs/"
+langs = ["en", "多言語"]
+voice = "記事へのコメント"
+access = "API"
+endpoint = "https://disqus.com/api/3.0/threads/listPosts.json?forum={shortname}&thread=link:{記事URL}&api_key=…"
+game_id = "medium"
+game_id_note = "記事題"
+auth = "要（Disqus の API アプリの公開キー。無料の Basic は 1,000 リクエスト/時）"
+robots = "API"
+terms = "未確認（Disqus の API 規約は未読）"
+terms_url = "https://disqus.com/api/docs/"
+volume = "未実測（どのサイトが Disqus かの洗い出しも未実施）"
+verified = "2026-11-08 API 文書を取得（'Basic API accounts are restricted to 1,000 requests per hour'）"
+verification = "robots"
+verdict = "needs_key"
+unblock = "本人が: https://disqus.com/api/applications/ で API アプリを登録（無料・Disqus アカウント）→ public key を .env へ。Claude が対象サイトの shortname を洗い出す"
+priority = 54
+
+[candidates.tumblr]
+name = "Tumblr（ゲームのタグ）"
+url = "https://www.tumblr.com/docs/en/api/v2"
+langs = ["en", "多言語"]
+voice = "投稿"
+access = "API"
+endpoint = "https://api.tumblr.com/v2/tagged?tag={tag}&api_key=…"
+game_id = "hard"
+game_id_note = "タグ = 作品名"
+auth = "要（OAuth consumer key。無料 1,000 回/時）"
+robots = "/tagged/ は一部許可（Anime の台帳）"
+terms = "条件つき（Anime の台帳: Content の保存は 3 日まで・帰属表示）"
+terms_url = "https://www.tumblr.com/docs/en/api/v2"
+volume = "未実測"
+verified = "2026-11-08 robots を取得"
+verification = "robots"
+verdict = "needs_key"
+unblock = "本人が: https://www.tumblr.com/oauth/apps でアプリを登録し consumer key を .env へ。保存は 3 日以内（件数だけ残す設計）"
+priority = 55
+
+[candidates.rawg_reviews]
+name = "RAWG のユーザーレビュー"
+url = "https://rawg.io/"
+langs = ["en", "ru"]
+voice = "ユーザーレビュー"
+access = "API"
+endpoint = "https://api.rawg.io/api/games/{id}/reviews?key=…（未確認）"
+game_id = "easy"
+game_id_note = "RAWG の game id"
+auth = "要（無料の API キー）"
+robots = "未確認（調査時は Cloudflare 522）"
+terms = "未確認（無料枠の帰属表示の条件があると記憶。未確認）"
+terms_url = "https://rawg.io/apidocs"
+volume = "未実測"
+verified = "2026-11-08 API・apidocs とも 522（相手の障害）"
+verification = "none"
+verdict = "needs_key"
+unblock = "本人が: https://rawg.io/apidocs で無料の API キーを取得（アカウント）→ .env へ。Claude が復旧を待って実測"
+priority = 56
+
+[candidates.mobygames_reviews]
+name = "MobyGames のプレイヤーレビュー"
+url = "https://www.mobygames.com/"
+langs = ["en"]
+voice = "プレイヤーレビュー"
+access = "API"
+endpoint = "https://api.mobygames.com/v1/games?title=…&api_key=…"
+game_id = "easy"
+game_id_note = "MobyGames の game id"
+auth = "要（API キー。無料か有料（MobyPro）かは未確認）"
+robots = "許可（Cloudflare 管理の robots: Allow: /）"
+terms = "未確認（/info/api/ は challenge で 403）"
+terms_url = "https://www.mobygames.com/info/api/"
+volume = "未実測（キーなしで 401）"
+verified = "2026-11-08 robots・API（401）を取得"
+verification = "robots"
+verdict = "needs_key"
+unblock = "本人が: MobyGames のアカウントで API キーの取得条件（無料枠の有無）を確認。有料なら対象外（範囲の規則）"
+priority = 57
+
+[candidates.nexusmods_comments]
+name = "Nexus Mods の MOD ページのコメント"
+url = "https://www.nexusmods.com/games"
+langs = ["en", "多言語"]
+voice = "MOD へのコメント・バグ報告"
+access = "API"
+endpoint = "https://api.nexusmods.com/v1/games/{game}/mods/updated.json（API キー）。コメントの API は未確認"
+game_id = "easy"
+game_id_note = "URL の game"
+auth = "要（Nexus のアカウントの個人 API キー）"
+robots = "許可（/ajax/ だけ Disallow）。ただし RSS・規約ページは Cloudflare の challenge"
+terms = "未確認（規約ページは challenge で 403）"
+terms_url = "https://www.nexusmods.com/about/terms-of-service"
+volume = "未実測"
+verified = "2026-11-08 robots・/games を取得（RSS・規約は challenge）"
+verification = "content"
+verdict = "needs_key"
+unblock = "本人が: Nexus のアカウントの Site Preferences → API Keys で個人キーを作成、規約（Acceptable use of API）を確認"
+priority = 58
+
+[candidates.modio_comments]
+name = "mod.io の MOD のコメント"
+url = "https://mod.io/"
+langs = ["en", "多言語"]
+voice = "MOD へのコメント"
+access = "API"
+endpoint = "https://api.mod.io/v1/games/{game_id}/mods/{mod_id}/comments?api_key=…"
+game_id = "easy"
+game_id_note = "game_id"
+auth = "要（無料の API キー。アカウント）"
+robots = "許可（Allow: /・ai-train=no）"
+terms = "未確認（/terms の本文は JS で未読）"
+terms_url = "https://mod.io/terms"
+volume = "未実測"
+verified = "2026-11-08 robots・terms（JS）を取得"
+verification = "robots"
+verdict = "needs_key"
+unblock = "本人が: mod.io のアカウントの /me/access で API キーを作成 → .env へ"
+priority = 59
+
+[candidates.threads]
+name = "Threads（ゲームのキーワード）"
+url = "https://developers.facebook.com/docs/threads/keyword-search"
+langs = ["多言語"]
+voice = "投稿"
+access = "API"
+endpoint = "threads_keyword_search（App Review の承認後）"
+game_id = "hard"
+game_id_note = "本文"
+auth = "要（Meta のアカウント・アプリ・App Review）"
+robots = "全面 Disallow（Anime の台帳）"
+terms = "条件つき（承認後）"
+terms_url = "https://developers.facebook.com/docs/threads/keyword-search"
+volume = "未実測"
+verified = "Anime の台帳（2026-10-15）の転記。今回は取得していない"
+verification = "none"
+verdict = "needs_key"
+unblock = "本人が: Meta for Developers でアプリを作り threads_keyword_search の App Review を申請（Anime と共通にできる）"
+priority = 60
+
+[candidates.kakao_daum_search]
+name = "Kakao（Daum）検索 API（韓国のブログ・カフェの記事）"
+url = "https://developers.kakao.com/"
+langs = ["ko"]
+voice = "ブログ・カフェの記事"
+access = "API"
+endpoint = "https://dapi.kakao.com/v2/search/blog?query=…・/v2/search/cafe"
+game_id = "hard"
+game_id_note = "記事の題名・抜粋"
+auth = "要（Kakao Developers の REST API キー）"
+robots = "API"
+terms = "条件つき（Anime の台帳: キャッシュ・複製は事前承諾。一次情報は未確認）"
+terms_url = "https://developers.kakao.com/"
+volume = "未実測"
+verified = "Anime の台帳の転記。今回は取得していない"
+verification = "none"
+verdict = "needs_key"
+unblock = "本人が: Kakao Developers でアプリを作り REST API キーを発行、運営政策のキャッシュ・複製の条項を確認"
+priority = 61
+
+[candidates.vk_game_groups]
+name = "VK のゲームのグループ"
+url = "https://dev.vk.ru/"
+langs = ["ru", "uk"]
+voice = "投稿とコメント"
+access = "API"
+endpoint = "wall.get・wall.getComments（アクセストークン）"
+game_id = "medium"
+game_id_note = "グループ = 作品のコミュニティ"
+auth = "要（VK のアカウント・アプリ）"
+robots = "許可（グループのページ）。ただし利用規約 6.3.9 が許可なしの自動の収集を禁止（Anime の台帳）"
+terms = "要判断: 開発者規約 2.4 が分析レポートに運営の明示の同意を要求（Anime の台帳）"
+terms_url = "https://dev.vk.ru/en/rules"
+volume = "未実測"
+verified = "Anime の台帳の転記。今回は取得していない"
+verification = "none"
+verdict = "needs_decision"
+unblock = "本人が: (1) VK のアプリを登録、(2) 開発者規約 2.4 の『分析レポート』に本件（非公開の集計）が当たるか判断、当たるなら運営に同意を求める"
+priority = 62
+
+[candidates.discord_game_servers]
+name = "Discord（作品の公式・コミュニティのサーバー）"
+url = "https://discord.com/developers/docs/"
+langs = ["多言語"]
+voice = "チャンネルの発言"
+access = "API"
+endpoint = "Gateway（ボット。MESSAGE_CONTENT の特権インテント）"
+game_id = "easy"
+game_id_note = "サーバー = 作品"
+auth = "要（ボットの作成 + サーバーの管理者の招待・同意）"
+robots = "公開の場ではない"
+terms = "未確認（Developer Policy は Anime の調査で 403）"
+terms_url = "https://support-dev.discord.com/hc/en-us/articles/8563934450327-Discord-Developer-Policy"
+volume = "未実測"
+verified = "Anime の台帳の転記。今回は取得していない"
+verification = "none"
+verdict = "needs_decision"
+unblock = "本人が: Developer Policy をブラウザで読み Claude に貼る → 承認後にボットを作成 → サーバーの管理者に招待と同意を依頼（Claude が依頼文を用意）"
+priority = 63
+
+[candidates.fivech]
+name = "5ch（家ゲー・PC ゲーム板など）"
+url = "https://developer.5ch.net/"
+langs = ["ja"]
+voice = "スレのレス"
+access = "API"
+endpoint = "許諾制の API（developer.5ch.net）"
+game_id = "medium"
+game_id_note = "作品の専用スレ"
+auth = "要（許諾。条件・費用は未確認）"
+robots = "未確認"
+terms = "禁止（無許諾の API 利用・スクレイピング。Anime の台帳）／許諾があれば可"
+terms_url = "https://developer.5ch.net/"
+volume = "日本語のゲームの声で最大級と推測（未確認の推測）"
+verified = "Anime の台帳の転記。今回は取得していない"
+verification = "none"
+verdict = "needs_decision"
+unblock = "本人が: developer.5ch.net で API の許諾の条件（費用・用途の制限）を確認し、非商用で申請するか判断。有料なら対象外"
+priority = 64
+
+[candidates.kakaku_game_reviews]
+name = "価格.com のゲームソフトのレビュー"
+url = "https://kakaku.com/game/"
+langs = ["ja"]
+voice = "レビュー（点数・本文）"
+access = "HTML"
+endpoint = "https://review.kakaku.com/review/{製品ID}/（標本の ID は 404。正しい ID の形は未確認）"
+game_id = "easy"
+game_id_note = "製品 = 作品 × 機種"
+auth = "不要"
+robots = "許可（/ksearch/・/auth/・/kuchikomi/review/results/ などは Disallow。/review/ は Disallow なし）"
+terms = "要判断（利用規約は未読）"
+terms_url = "https://kakaku.com/robots.txt"
+volume = "未実測"
+verified = "2026-11-08 robots を取得・レビュー頁は 404（ID 違い）"
+verification = "robots"
+verdict = "needs_decision"
+unblock = "本人が: 価格.com の利用規約の『情報の収集・転載』の条項を確認（Claude が要点を読む）。可なら Claude が製品 ID の形を調べて実測"
+priority = 65
+
+[candidates.gamestar_comments]
+name = "GameStar / GamePro（ドイツ）の記事のコメント・フォーラム"
+url = "https://www.gamestar.de/"
+langs = ["de"]
+voice = "記事へのコメント"
+access = "HTML"
+endpoint = "未調査（robots の宣言を見て止めた）"
+game_id = "medium"
+game_id_note = "記事題"
+auth = "不要"
+robots = "宣言: 'Jegliche Nutzung ... die ueber eine rein individuelle Nutzung hinausgeht (einschliesslich ... Web-Monitoring oder Medienbeobachtung), ist an den Abschluss einer Lizenzvereinbarung mit der Webedia GmbH gebunden'"
+terms = "条件つき（個人の利用を超える利用はライセンス契約が要る）"
+terms_url = "https://www.gamestar.de/robots.txt"
+volume = "未実測"
+verified = "2026-11-08 robots を取得"
+verification = "robots"
+verdict = "needs_decision"
+unblock = "本人が判断: compliance@webedia-group.de に非商用の集計のライセンスを問い合わせるか（費用がかかるなら対象外）"
+priority = 66
+
+[candidates.gry_online_forum]
+name = "GRYOnline.pl のフォーラム（ポーランド最大級）"
+url = "https://www.gry-online.pl/forum/"
+langs = ["pl"]
+voice = "スレの投稿と返信"
+access = "HTML"
+endpoint = "https://www.gry-online.pl/forum/（一覧）"
+game_id = "medium"
+game_id_note = "作品の板・題名"
+auth = "不要"
+robots = "許可（/ajax/・/user.asp* などだけ Disallow）"
+terms = "要判断（運営は Webedia Polska。regulamin を取得したが自動取得の条項は見つからず。同じグループの GameStar はライセンス必須を宣言）"
+terms_url = "https://www.gry-online.pl/regulamin.asp"
+volume = "未実測（フォーラムのトップ 431KB）"
+verified = "2026-11-08 robots・フォーラム・regulamin を取得"
+verification = "content"
+verdict = "needs_decision"
+unblock = "本人が判断: regulamin に禁止がない以上 ready とするか、Webedia のグループ方針に合わせて問い合わせるか"
+priority = 67
+
+[candidates.howlongtobeat_reviews]
+name = "HowLongToBeat のレビュー"
+url = "https://howlongtobeat.com/"
+langs = ["en"]
+voice = "レビュー（遊んだ時間つき）"
+access = "HTML"
+endpoint = "https://howlongtobeat.com/game/{id}/reviews（未実測・JS 描画の可能性）"
+game_id = "easy"
+game_id_note = "game id"
+auth = "不要"
+robots = "許可（/admin・/api だけ Disallow）"
+terms = "要判断（規約は未読）"
+terms_url = "https://howlongtobeat.com/robots.txt"
+volume = "未実測"
+verified = "2026-11-08 robots を取得"
+verification = "robots"
+verdict = "needs_decision"
+unblock = "本人が: 規約（Terms of Use）の自動取得の条項を確認。可なら Claude が HTML に本文が出るか実測"
+priority = 68
+
+[candidates.gamejolt]
+name = "Game Jolt（作品ページのコメント）"
+url = "https://gamejolt.com/"
+langs = ["en", "pt-BR", "es"]
+voice = "作品・投稿へのコメント"
+access = "API"
+endpoint = "https://gamejolt.com/site-api/web/discover（サイト自身の内部 JSON。文書なし）"
+game_id = "easy"
+game_id_note = "作品ページ"
+auth = "不要"
+robots = "許可（/site-api/ の Disallow なし）"
+terms = "要判断（文書のない内部 API。規約は未読）"
+terms_url = "https://gamejolt.com/robots.txt"
+volume = "discover の JSON 894KB"
+verified = "2026-11-08 robots・site-api/web/discover を取得"
+verification = "content"
+verdict = "needs_decision"
+unblock = "本人が判断: 文書のない内部 API を使ってよいか。規約の確認は Claude が行う"
+priority = 69
+
+[candidates.resetera]
+name = "ResetEra Gaming Forum"
+url = "https://www.resetera.com/forums/gaming-forum.7/"
+langs = ["en"]
+access = "RSS"
+robots = "許可"
+terms_url = "https://www.resetera.com/help/terms/"
+volume = "RSS 40 件/約 1.6 時間"
+verified = "2026-11-08 robots（許可）・RSS（40 件/約 1.6 時間・返信 3,754 のスレあり）・規約を取得"
+verification = "content"
+verdict = "rejected"
+reject_reason = "規約が自動取得を明確に禁止: 'engaging in any automated use of the system, such as using any data mining, robots or similar data gathering and extraction tools'"
+alternatives = "運営に書面の許可を求める"
+priority = 70
+
+[candidates.pathofexile_forum]
+name = "Path of Exile 公式フォーラム"
+url = "https://www.pathofexile.com/forum"
+langs = ["en", "ru", "pt-BR", "th", "de", "fr", "es", "ko", "ja"]
+terms_url = "https://www.pathofexile.com/legal/terms-of-use-and-privacy-policy"
+verified = "2026-11-08 robots・フォーラム（en・ru）・規約を取得"
+verification = "content"
+verdict = "rejected"
+reject_reason = "規約が明確に禁止: 'Utilise any automated software or bots in relation to your access or use of the Website'"
+alternatives = "Grinding Gear Games に許可を求める"
+priority = 71
+
+[candidates.bahamut_forum]
+name = "巴哈姆特 哈啦區（台湾最大のゲームの掲示板）"
+url = "https://forum.gamer.com.tw/"
+langs = ["zh-Hant"]
+terms_url = "https://user.gamer.com.tw/help/detail.php?sn=294"
+verified = "2026-11-08 robots（/Bo.php・/embed.php だけ Disallow）・B.php?bsn=60076 を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "會員規範 §14 が書面の授權なしの再製・利用を禁止（Anime の台帳 2026-10-15 確認）。今回の取得では B.php が『兒少保護警示』の画面"
+alternatives = "巴哈姆特の客服に書面の授權を求める（台湾のゲームの声では最重要。本人の判断で問い合わせる価値あり）"
+priority = 72
+
+[candidates.dcinside_game]
+name = "DCInside のゲームのギャラリー"
+url = "https://gall.dcinside.com/"
+langs = ["ko"]
+terms_url = "https://nstatic.dcinside.com/dc/w/policy/policy_index.html"
+verified = "2026-11-08 robots（Allow: /）を取得。約款は Anime の台帳"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "約款 제16조① が事前の書面同意なしのクローリングを目的を問わず禁止（Anime の台帳 2026-10-15 再確認）"
+alternatives = "제휴안내 の窓口に書面の同意を求める"
+priority = 73
+
+[candidates.bilibili]
+name = "bilibili（ゲームの動画・コメント）"
+url = "https://www.bilibili.com/"
+langs = ["zh-Hans"]
+terms_url = "https://api.bilibili.com/robots.txt"
+verified = "Anime の台帳の転記"
+verification = "none"
+verdict = "rejected"
+reject_reason = "規約 5.6(3) が書面許可のない自動取得を禁止・api.bilibili.com は robots で Disallow: /（Anime の台帳）"
+alternatives = "書面の許可"
+priority = 74
+
+[candidates.douban_game]
+name = "豆瓣 游戏（作品ごとの短評）"
+url = "https://www.douban.com/game/"
+langs = ["zh-Hans"]
+terms_url = "https://www.douban.com/robots.txt"
+verified = "2026-11-08 robots を取得。規約は Anime の台帳"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "使用协议 10.4『豆瓣が提供する界面以外の途径で使わない』（Anime の台帳）。/j/ ・/forum/ は robots で Disallow"
+alternatives = "書面の同意"
+priority = 75
+
+[candidates.dtf]
+name = "DTF（ロシアのゲームのコミュニティ）"
+url = "https://dtf.ru/"
+langs = ["ru"]
+terms_url = "https://dtf.ru/terms"
+verified = "2026-11-08 robots を取得。規約は Anime の台帳"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "規約 5.3.8 が運営の許可なしの自動の収集を禁止（Anime の台帳）。api.dtf.ru は robots で Disallow: /"
+alternatives = "規約 5.3.8 の『特別の許可』を運営に申請（ロシア語のゲームの声では最重要級。本人の判断で申請する価値あり）"
+priority = 76
+
+[candidates.telegram_channels]
+name = "Telegram の公開チャンネル（ゲームのニュース・コメント）"
+url = "https://t.me/s/"
+langs = ["ru", "uk", "fa", "多言語"]
+terms_url = "https://telegram.org/tos"
+verified = "Anime の台帳の転記"
+verification = "none"
+verdict = "rejected"
+reject_reason = "規約が通常の利用以外のアクセス・スクレイピングを禁止（Anime の台帳）"
+alternatives = "チャンネルの運営者の招待によるボット（AI 利用は利用者の明示の同意）"
+priority = 77
+
+[candidates.lihkg_game]
+name = "LIHKG 遊戲台"
+url = "https://lihkg.com/category/"
+langs = ["zh-Hant"]
+terms_url = "https://lihkg.com/robots.txt"
+verified = "2026-11-08 robots を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "robots が API・一覧を Disallow（/thread/・/category/ だけ Allow で、データは JS の API 経由）。以前の調査で商用・複製の禁止"
+priority = 78
+
+[candidates.x_twitter]
+name = "X（Twitter）"
+url = "https://x.com/"
+langs = ["多言語"]
+terms_url = "https://docs.x.com/x-api/getting-started/pricing"
+verified = "Anime の台帳の転記"
+verification = "none"
+verdict = "rejected"
+reject_reason = "有料（API は従量課金、無料枠なし）。robots は全面 Disallow（Anime の台帳）"
+priority = 79
+
+[candidates.amazon_reviews]
+name = "Amazon のゲームソフトのレビュー"
+url = "https://www.amazon.co.jp/"
+langs = ["ja", "en", "多言語"]
+terms_url = "https://www.amazon.co.jp/gp/help/customer/display.html?nodeId=201909000"
+verified = "Anime の台帳の転記"
+verification = "none"
+verdict = "rejected"
+reject_reason = "利用規約がロボット・データ抽出を禁止（Anime の台帳）"
+priority = 80
+
+[candidates.backloggd]
+name = "Backloggd のレビュー"
+url = "https://backloggd.com/games/elden-ring/reviews/"
+langs = ["en"]
+terms_url = "https://backloggd.com/robots.txt"
+verified = "2026-11-08 robots・レビュー頁（取得はできたが robots の対象と判明）を取得"
+verification = "content"
+verdict = "rejected"
+reject_reason = "robots.txt の 'Disallow: /games/*/*/' がレビューの頁（/games/{slug}/reviews/）を含む。/api/* も Disallow"
+alternatives = "運営に許可・API を問い合わせる"
+priority = 81
+
+[candidates.glitchwave]
+name = "Glitchwave（RYM のゲーム版）"
+url = "https://glitchwave.com/"
+langs = ["en"]
+terms_url = "https://glitchwave.com/robots.txt"
+verified = "2026-11-08 https://glitchwave.com/robots.txt を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "robots.txt が 'User-agent: * Disallow: /'"
+priority = 82
+
+[candidates.fmkorea_game]
+name = "FM Korea のゲームの板"
+url = "https://www.fmkorea.com/"
+langs = ["ko"]
+terms_url = "https://www.fmkorea.com/robots.txt"
+verified = "2026-11-08 https://www.fmkorea.com/robots.txt を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "robots.txt が一般のボットに Disallow: /（/best・/humor・トップだけ Allow）"
+priority = 83
+
+[candidates.game8_forums]
+name = "Game8 の掲示板"
+url = "https://game8.jp/"
+langs = ["ja"]
+terms_url = "https://game8.jp/robots.txt"
+verified = "2026-11-08 https://game8.jp/robots.txt を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "範囲外（スマホのゲームが中心）。robots で /*/forums/・/*/comments が Disallow"
+priority = 84
+
+[candidates.gamewith]
+name = "GameWith の掲示板"
+url = "https://gamewith.jp/"
+langs = ["ja"]
+terms_url = "https://gamewith.jp/robots.txt"
+verified = "2026-11-08 https://gamewith.jp/robots.txt を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "範囲外（スマホのゲームが中心）"
+priority = 85
+
+[candidates.taptap]
+name = "TapTap"
+url = "https://www.taptap.cn/"
+langs = ["zh-Hans"]
+terms_url = "https://www.taptap.cn/robots.txt"
+verified = "2026-11-08 https://www.taptap.cn/robots.txt を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "範囲外（スマホのゲームが中心）。robots で /post/ が Disallow"
+priority = 86
+
+[candidates.opencritic]
+name = "OpenCritic"
+url = "https://opencritic.com/"
+langs = ["en"]
+terms_url = "https://opencritic.com/robots.txt"
+verified = "2026-11-08 https://opencritic.com/robots.txt を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "範囲外（批評家のレビューだけでプレイヤーの声がない）"
+priority = 87
+
+[candidates.igdb]
+name = "IGDB"
+url = "https://api-docs.igdb.com/"
+langs = ["en"]
+terms_url = "https://api-docs.igdb.com/"
+verified = "2026-11-08 https://api-docs.igdb.com/ を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "範囲外（作品のデータだけで声がない）。作品の同定（別名・機種）の辞書としては有用（Twitch のキーが要る）"
+priority = 88
+
+[candidates.uk_us_media_comments]
+name = "Eurogamer・PC Gamer・Rock Paper Shotgun の記事のコメント"
+url = "https://www.eurogamer.net/"
+langs = ["en"]
+terms_url = "https://www.eurogamer.net/robots.txt https://www.pcgamer.com/robots.txt https://www.rockpapershotgun.com/robots.txt"
+verified = "2026-11-08 https://www.eurogamer.net/robots.txt https://www.pcgamer.com/robots.txt https://www.rockpapershotgun.com/robots.txt を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "robots でコメントの経路が Disallow（Eurogamer '/*?view=comments'・'/community/'、PC Gamer '*/comments/*'）"
+priority = 89
+
+[candidates.thisisgame_comments]
+name = "디스이즈게임（This Is Game）の記事のコメント"
+url = "https://www.thisisgame.com/"
+langs = ["ko"]
+terms_url = "https://www.thisisgame.com/robots.txt"
+verified = "2026-11-08 https://www.thisisgame.com/robots.txt を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "robots で /article-comments・/post-comments・/api/ が Disallow"
+priority = 90
+
+[candidates.saudigamer_comments]
+name = "Saudi Gamer の記事のコメント"
+url = "https://www.saudigamer.com/"
+langs = ["ar"]
+terms_url = "https://www.saudigamer.com/robots.txt"
+verified = "2026-11-08 https://www.saudigamer.com/robots.txt を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "robots で */comments/feed/・*/feed/・/wp-json/ が Disallow（Crawl-delay 20）"
+priority = 91
+
+[candidates.gamefaqs_boards]
+name = "GameFAQs の作品ごとの掲示板"
+url = "https://gamefaqs.gamespot.com/boards/"
+langs = ["en"]
+terms_url = "https://gamefaqs.gamespot.com/robots.txt"
+verified = "2026-11-08 robots（Cloudflare 管理・Allow: /）・板 2 つ（403）を取得"
+verification = "content"
+verdict = "rejected"
+reject_reason = "技術的な遮断: 板の頁が Cloudflare の challenge（403 'Just a moment...'）。回避しない（範囲の規則）"
+alternatives = "運営（Fandom / GameSpot）にボットの許可を問い合わせる"
+priority = 92
+
+[candidates.jeuxvideo_forum]
+name = "jeuxvideo.com のフォーラム（フランス最大のゲームの掲示板）"
+url = "https://www.jeuxvideo.com/forums/"
+langs = ["fr"]
+terms_url = "https://www.jeuxvideo.com/robots.txt"
+verified = "Anime の台帳の転記"
+verification = "none"
+verdict = "rejected"
+reject_reason = "技術的な遮断（Cloudflare の challenge 403。Anime の台帳 2026-10-15）。運営は Webedia"
+alternatives = "Webedia に許可を問い合わせる"
+priority = 93
+
+[candidates.forums_cloudflare_blocked]
+name = "Cloudflare の challenge で読めない公式・地域のフォーラム（Warframe・Factorio・Albion Online・Elder Scrolls Online・Hardware Upgrade（it）・Nexus の RSS）"
+url = "https://forums.warframe.com/"
+langs = ["en", "it"]
+terms_url = "https://forums.warframe.com/forum/36-general-discussion/ https://forums.factorio.com/ https://forum.albiononline.com/index.php/BoardList/ https://forums.elderscrollsonline.com/en/discussions/feed.rss https://www.hwupgrade.it/forum/"
+verified = "2026-11-08 各頁を取得（すべて 403 challenge）"
+verification = "content"
+verdict = "rejected"
+reject_reason = "技術的な遮断: 本文の頁が Cloudflare の challenge（403）。回避しない"
+alternatives = "各運営にボットの許可を問い合わせる"
+priority = 94
+
+[candidates.paradox_forum]
+name = "Paradox Interactive 公式フォーラム"
+url = "https://forum.paradoxplaza.com/forum/"
+langs = ["en", "de", "fr"]
+terms_url = "https://forum.paradoxplaza.com/forum/forums/-/index.rss"
+verified = "2026-11-08 robots（圧縮で読めず）・RSS（403）・フォーラムを取得"
+verification = "content"
+verdict = "rejected"
+reject_reason = "技術的な遮断: RSS が 403、フォーラムは 1.3KB の応答（challenge と推測）"
+alternatives = "運営に許可を問い合わせる"
+priority = 95
+
+[candidates.dcard_game]
+name = "Dcard 遊戲板"
+url = "https://www.dcard.tw/f/game"
+langs = ["zh-Hant"]
+terms_url = "https://www.dcard.tw/robots.txt"
+verified = "2026-11-08 robots を取得。本体は Anime の台帳"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "技術的な遮断（Cloudflare の bot 確認で 403。Anime の台帳）"
+priority = 96
+
+[candidates.nga]
+name = "NGA 玩家社区"
+url = "https://bbs.nga.cn/"
+langs = ["zh-Hans"]
+terms_url = "https://bbs.nga.cn/robots.txt"
+verified = "2026-11-08 robots（404）を取得"
+verification = "robots"
+verdict = "rejected"
+reject_reason = "ログイン必須（匿名は 403『访客不能直接访问』。Anime の台帳）。今回は robots.txt も 404"
+priority = 97
+
+[candidates.tieba]
+name = "百度贴吧（作品の吧）"
+url = "https://tieba.baidu.com/"
+langs = ["zh-Hans"]
+terms_url = "https://tieba.baidu.com/robots.txt"
+verified = "Anime の台帳の転記"
+verification = "none"
+verdict = "rejected"
+reject_reason = "CAPTCHA（百度安全验证）で遮断（Anime の台帳）。回避しない"
+priority = 98
+
+[candidates.eksi_sozluk]
+name = "Ekşi Sözlük（作品の見出し）"
+url = "https://eksisozluk.com/"
+langs = ["tr"]
+terms_url = "https://eksisozluk.com/robots.txt"
+verified = "Anime の台帳の転記"
+verification = "none"
+verdict = "rejected"
+reject_reason = "技術的な遮断（Cloudflare の managed challenge で全頁 403。Anime の台帳）"
+priority = 99
+
+[candidates.mediavida_forocoches]
+name = "Mediavida・Forocoches（スペイン）"
+url = "https://www.mediavida.com/foro/juegos"
+langs = ["es"]
+terms_url = "https://www.mediavida.com/ https://www.forocoches.com/robots.txt"
+verified = "Anime の台帳の転記"
+verification = "none"
+verdict = "rejected"
+reject_reason = "技術的な遮断（robots.txt から 403。Anime の台帳）"
+priority = 100
+
+[candidates.vandal_foro]
+name = "Vandal のフォーラム（スペイン）"
+url = "https://vandal.elespanol.com/foro/"
+langs = ["es"]
+terms_url = "https://vandal.elespanol.com/robots.txt"
+verified = "2026-11-08 robots（/comunidad/・/usuarios/ などは Disallow）・/foro/（403）を取得"
+verification = "content"
+verdict = "rejected"
+reject_reason = "技術的な遮断（/foro/ が 403 Forbidden）"
+priority = 101
+
+[candidates.3djuegos_foros]
+name = "3DJuegos のフォーラム（スペイン）"
+url = "https://www.3djuegos.com/foros/"
+langs = ["es"]
+terms_url = "https://www.3djuegos.com/foros/"
+verified = "2026-11-08 robots・/foros/（410）を取得"
+verification = "content"
+verdict = "rejected"
+reject_reason = "停止（/foros/ が 410『Foro no disponible』）"
+priority = 102
+
+[candidates.kaskus_games]
+name = "Kaskus のゲームの komunitas"
+url = "https://www.kaskus.co.id/"
+langs = ["id"]
+terms_url = "https://www.kaskus.co.id/robots.txt"
+verified = "Anime の台帳の転記"
+verification = "none"
+verdict = "rejected"
+reject_reason = "取得経路が robots で Disallow の /api/ に限られる（Anime の台帳）"
+priority = 103
+
+[candidates.id_wp_comment_feeds]
+name = "インドネシアのゲームのニュース（Jagat Play・Gamebrott）の WordPress のコメントのフィード"
+url = "https://jagatplay.com/comments/feed/"
+langs = ["id"]
+terms_url = "https://jagatplay.com/comments/feed/ https://gamebrott.com/comments/feed/"
+verified = "2026-11-08 robots・フィード 2 本を取得"
+verification = "content"
+verdict = "rejected"
+reject_reason = "停止: コメントのフィードの最新が Jagat Play 2012-11・Gamebrott 2022-09（いまのコメントは別の仕組み。未確認）"
+alternatives = "いまのコメントの仕組み（Disqus なら disqus_comment_sites）を調べる"
+priority = 104
+
+[candidates.ubisoft_forums]
+name = "Ubisoft 公式フォーラム"
+url = "https://discussions.ubisoft.com/"
+langs = ["多言語"]
+terms_url = "https://discussions.ubisoft.com/"
+verified = "2026-11-08 取得（閉鎖の告知へ転送）"
+verification = "content"
+verdict = "rejected"
+reject_reason = "停止（'Our official Ubisoft Forums have now closed'）"
+priority = 105
+
+[candidates.wot_forum]
+name = "World of Tanks 公式フォーラム（EU）"
+url = "https://forum.worldoftanks.eu/"
+langs = ["en", "de", "pl", "ru"]
+terms_url = "https://worldoftanks.eu/en/content/wot-forum-closure/"
+verified = "2026-11-08 取得（閉鎖の告知へ転送）"
+verification = "content"
+verdict = "rejected"
+reject_reason = "停止（'World of Tanks—Forum Closure' へ転送）"
+priority = 106
+
+[candidates.automaton_comments]
+name = "AUTOMATON のコメント"
+url = "https://automaton-media.com/"
+langs = ["ja"]
+terms_url = "https://automaton-media.com/comments/feed/"
+verified = "2026-11-08 robots・コメントのフィード（0 件）を取得"
+verification = "content"
+verdict = "rejected"
+reject_reason = "声がない（コメントのフィードが 0 件。記事のコメント欄がないと推測）"
+priority = 107

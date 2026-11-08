@@ -31,7 +31,7 @@ def _name(c: dict, loc: str) -> str:
     return (c.get("display_name") or {}).get(loc) or c.get("name") or c["key"]
 
 
-VERSION = "dd-2026-10-26"   # 生成の規則の版（保存した記録の鍵。名前は記録の出どころなので変えない。規則を次に変えるときは、決めた日付の名前にする。CONTRIBUTING.md）。決まりは docs/TODAYS-SIGNAL-PAGES.md と ADR 0044〜0046・0052・0054
+VERSION = "dd-game-2026-11-08"   # 生成の規則の版（Game: ゲームの話題の種類・見出しの上限 70 字。2026-11-08）（保存した記録の鍵。名前は記録の出どころなので変えない。規則を次に変えるときは、決めた日付の名前にする。CONTRIBUTING.md）。決まりは docs/TODAYS-SIGNAL-PAGES.md と ADR 0044〜0046・0052・0054
 JOB = "dashboard_digest"
 KINDS_NEWS = ("none", "share")      # 宣伝・ニュースの共有（プレイヤー本人の声ではない）
 URL = re.compile(r"https?://|www\.|\.(com|be|jp|tv|app|moe|me|net|io|tw)/|youtu", re.I)

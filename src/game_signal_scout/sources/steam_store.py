@@ -18,6 +18,8 @@ from game_signal_scout.sources.contract import Batch, SourceItem, SourceReader
 
 URL = "https://store.steampowered.com/api/appdetails?appids={appid}&l=japanese&cc=jp"
 URL_EN = "https://store.steampowered.com/api/appdetails?appids={appid}&l=english&cc=us&filters=basic"   # ゲーム内容の英語の文だけ
+URL_NAME = "https://store.steampowered.com/api/appdetails?appids={appid}&l={l}&cc=us&filters=basic"   # その言語の表示名
+NAME_LANGS = {"tchinese": "zh-Hant", "schinese": "zh-Hans", "koreana": "ko"}
 KEEP = ("type", "name", "short_description", "header_image", "genres", "categories", "platforms", "release_date", "supported_languages", "controller_support")
 ABOUT_MAX = 4000
 
@@ -69,6 +71,14 @@ class SteamStore(SourceReader):
                 en = self.http.get_json(self.name, URL_EN.format(appid=appid)) or {}
                 ed = (en.get(str(appid)) or {}).get("data")
                 payload["about_en"] = about_text(ed.get("about_the_game")) if isinstance(ed, dict) else None
+                if isinstance(ed, dict) and ed.get("name"):
+                    payload["name_en"] = ed["name"]
+                names = {}
+                for l, code in NAME_LANGS.items():              # 中国語・韓国語の掲示板の発言を作品に結び付ける題名
+                    nd = ((self.http.get_json(self.name, URL_NAME.format(appid=appid, l=l)) or {}).get(str(appid)) or {}).get("data")
+                    if isinstance(nd, dict) and nd.get("name"):
+                        names[code] = nd["name"]
+                payload["names"] = names
             version = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
             items.append(SourceItem(self.name, str(appid), datetime.now(timezone.utc), payload, version))
             if len(items) >= size or i == len(todo):

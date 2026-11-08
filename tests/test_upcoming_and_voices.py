@@ -33,6 +33,8 @@ def test_cjk_titles_are_found_without_spaces():
     ix = TitleIndex([("2246340", "モンスターハンターワイルズ"), ("1", "Monster Hunter Wilds")], [], ["ゲーム"], 8)
     assert identify({"text": "モンスターハンターワイルズのアプデでゲームが重い"}, ix)[0] == "2246340"
     assert identify({"text": "モンスターハンターワイルズ"}, ix)[0] is None                 # 文脈の語がなければ採らない
+    zh = TitleIndex([("2246340", "魔物獵人 荒野")], [], [], 8, game_only=True)                       # 各言語の表示名（game_profile.names）
+    assert identify({"text": "[心得] 魔物獵人荒野 新武器好用"}, zh)[0] == "2246340"
     board = TitleIndex([("2246340", "モンスターハンターワイルズ")], [], [], 8, game_only=True)
     assert identify({"text": "モンスターハンターワイルズ 新武器"}, board)[0] == "2246340"   # ゲームだけの掲示板は文脈を求めない
     assert identify({"text": "x", "appid": "5"}, board)[0] is None or True
@@ -61,3 +63,54 @@ def test_reviews_go_back_until_history_is_complete(monkeypatch):
         return http.calls
     assert run(covered=True) == 1        # 過去がそろっている: 保存済みの最初のページで止まる
     assert run(covered=False) == 3       # そろっていない: 28 日より古いレビューに届くまで遡る
+
+
+def test_steam_discussions_topics_and_replies_from_html():
+    """Steam の掲示板: 一覧の新しい話題だけを開き、最初の投稿と返信を 1 件ずつ（引用した他人の文は除く・投稿者の番号は持たない）。"""
+    from game_signal_scout.sources.steam_discussions import parse_list, parse_topic
+    lst = ('<a class="forum_topic_overlay" href="https://steamcommunity.com/app/10/discussions/0/111/"></a>'
+           '<div class="forum_topic_lastpost" title="x" data-timestamp="200">')
+    assert parse_list(lst) == [("https://steamcommunity.com/app/10/discussions/0/111/", "111", 200)]
+    page = ('<div id="forum_op_111"><a data-miniprofile="42"></a><div class="date commentthread_comment_timestamp" title="t" data-timestamp="100"></div>'
+            '<div class="topic" id="forum_op_topic_111">Crash after patch</div>\n<div class="content" id="forum_op_content_111">Game crashes<br>help</div>\n'
+            '<div class="forum_op_footer"></div></div>'
+            '<div class="commentthread_comment  " id="comment_222"><a class="hoverunderline commentthread_author_link " data-miniprofile="43"></a>'
+            '<div class="commentthread_comment_timestamp" title="t" data-timestamp="150"></div>'
+            '<div class="commentthread_comment_text" id="comment_content_222"><blockquote class="bb_blockquote"><div>Originally posted by X:</div>quoted</blockquote>same here</div>'
+            '\n<div class="comment_footer_ctn"></div></div><a href="?ctp=3">3</a>')
+    posts, pages = parse_topic(page)
+    assert [(p["id"], p["text"], p["at"]) for p in posts] == [("111", "Crash after patch\nGame crashes\nhelp", 100), ("222", "same here", 150)]
+    assert pages == 3 and "42" not in posts[0]["author"]
+
+
+def test_feed_and_discourse_sources_read_only_new_items():
+    """共通の読み方: RSS / Atom の項目と Discourse の投稿を 1 件ずつ。前回より新しいものだけ。作品の掲示板は記述の appid。"""
+    from game_signal_scout.sources.feeds import Discourse, FeedForum, parse_feed
+    rss = ('<rss xmlns:dc="http://purl.org/dc/elements/1.1/"><channel><item><title>Elden Ring patch</title><link>https://f/1</link><guid>g1</guid>'
+           '<pubDate>Sat, 07 Nov 2026 10:00:00 +0000</pubDate><dc:creator>bob</dc:creator><description>&lt;p&gt;lag &amp;amp; crash&lt;/p&gt;</description></item></channel></rss>')
+    atom = ('<feed xmlns="http://www.w3.org/2005/Atom"><entry><id>a1</id><title>[心得] 新作</title><updated>2026-11-07T10:00:00Z</updated>'
+            '<author><name>x</name></author><link href="https://p/1"/><content>好玩</content></entry></feed>')
+    assert [(e["id"], e["title"]) for e in parse_feed(rss) + parse_feed(atom)] == [("g1", "Elden Ring patch"), ("a1", "[心得] 新作")]
+
+    class Http:
+        def get_text(self, s, url):
+            return rss
+
+        def get_json(self, s, url):
+            return {"latest_posts": [{"id": 5, "created_at": "2026-11-07T10:00:00Z", "cooked": "<p>queue is broken</p>", "topic_title": "Queue",
+                                      "username": "u", "topic_slug": "q", "topic_id": 9, "post_number": 2}]}
+    f = FeedForum({"feeds": [{"url": "https://f/rss", "appid": 1245620, "lang": "en"}]}, Http())
+    b = list(f.read(None))[0]
+    assert b.items[0].payload["appid"] == "1245620" and b.items[0].payload["text"] == "Elden Ring patch\nlag & crash" and "bob" not in str(b.items[0].payload)
+    assert list(f.read(b.cursor))[0].items == []                                   # 前回より新しい項目だけ
+    d = Discourse({"sites": [{"base": "https://forum.x", "appid": 236390}]}, Http())
+    b = list(d.read(None))[0]
+    assert b.items[0].payload["text"] == "Queue\nqueue is broken" and b.items[0].payload["appid"] == "236390"
+    assert list(d.read(b.cursor))[0].items == []
+
+
+def test_poll_sources_are_the_feed_forums():
+    from game_signal_scout.ops.poll import pollers
+    cfg = factory.load_sources_config()
+    p = pollers(cfg)
+    assert {"blizzard_forums", "ptt_games", "computerbase"} <= set(p) and "steam_reviews" not in p and "bluesky" not in p

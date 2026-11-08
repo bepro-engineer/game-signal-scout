@@ -1,4 +1,4 @@
-# Anime Signal Scout — 検索エンジンは許可。AI の学習用として知られているクローラーは断る（利用規約・データ利用ポリシー）
+# Game Signal Scout — 検索エンジンは許可。AI の学習用として知られているクローラーは断る（利用規約・データ利用ポリシー）
 User-agent: GPTBot
 Disallow: /
 

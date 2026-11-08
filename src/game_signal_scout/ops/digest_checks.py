@@ -8,7 +8,7 @@ import re
 from game_signal_scout.languages import NAMES
 from game_signal_scout.ops.digest_verbatim import normalize
 
-LEAD_MAX = {"ja": 56, "en": 140}   # ダッシュボードの 1 文目（見出し）の長さの上限
+LEAD_MAX = {"ja": 70, "en": 160}   # ダッシュボードの 1 文目（見出し）の長さの上限（Game: 題名が長いので Anime の 56・140 から広げる。画面で 2 行）
 
 
 def cite_pool(f: dict) -> list[dict]:
@@ -204,7 +204,7 @@ def classify(errors: list[str]) -> dict[str, list[str]]:
 
 
 FIX = {   # 書き直しの指示（LLM が書くのは論点の名詞句 point・contrast_point・also_point だけ。見出しは規則で組む）
-    "ja": {"lead_too_long": "見出しが 56 字を超える。point を、次の字数以内の短い名詞句にする",
+    "ja": {"lead_too_long": "見出しが 70 字を超える。point を、次の字数以内の短い名詞句にする",
            "not_in_source": "原文にない数・話数・名前を書かない。", "untranslated_word": "外国語の言葉をそのまま書かず、日本語で書く（人名・作中の固有名詞は excerpts の meaning の表記。カタカナなど）。",
            "causal_claim": "ある言語から別の言語へ広まった・伝わったと書かない。", "language_as_country": "言語圏を国・地域（海外・国内）として書かない。",
            "banned_phrase": "次の語を point などに書かず、原文に書かれた具体的な言葉に言い換える", "overgeneralized": "人数を大きく見せる言い方（プレイヤーの間で・多くの・続出）を使わない。",
@@ -212,7 +212,7 @@ FIX = {   # 書き直しの指示（LLM が書くのは論点の名詞句 point�
            "number_not_in_finding": "point に人数・数字を書かない（原文にある話数だけ）。",
            "point_not_noun": "point などは「〜について書いたプレイヤー」に入る名詞句にする（動詞で終えない）。",
            "point_repeats_frame": "point に「〜について書いた」「プレイヤーが」を入れない（見出しの枠は組み立て側が付ける）。"},
-    "en": {"lead_too_long": "The headline is over 140 characters. Make point a shorter noun phrase within this many characters",
+    "en": {"lead_too_long": "The headline is over 160 characters. Make point a shorter noun phrase within this many characters",
            "not_in_source": "No numbers, episode numbers or names that are not in the posts.", "untranslated_word": "Do not leave Japanese words untranslated.",
            "causal_claim": "Do not say the topic spread or moved between languages.", "banned_phrase": "Do not use this word; rephrase it with the concrete words in the posts",
            "overgeneralized": "Do not make it sound bigger (no many fans, widespread, backlash).",

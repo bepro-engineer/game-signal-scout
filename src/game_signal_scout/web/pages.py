@@ -40,7 +40,7 @@ class Page:
 
 
 PAGES: dict[str, Page] = {
-    "index": Page("Anime Signal Scout", "Anime Signal Scout", CSS_BASE, "day", "dashboard.js", ("world.js",)),
+    "index": Page("ダッシュボード", "Dashboard", CSS_BASE, "day", "dashboard.js", ("world.js",)),
     "spread": Page("世界で広がる作品", "Spreading worldwide", CSS_BASE + ["spread.css"], "day", "spread.js"),
     "lang": Page("言語別の作品", "Titles by language", CSS_BASE, "day", "lang.js"),
     "revival": Page("再燃している作品", "Heating up again", CSS_PAGE, "pages", "revival.js"),

@@ -8,3 +8,88 @@ label = ["Steam のレビュー", "Steam reviews"]
 reader = "foundation"
 production = true
 label = ["Bluesky の投稿", "Bluesky posts"]
+
+[sources.blizzard_forums]
+reader = "foundation"
+production = true
+label = ["Blizzard の公式掲示板", "Blizzard forums"]
+
+[sources.game_official_forums]
+reader = "foundation"
+production = true
+label = ["ゲームの公式掲示板", "Official game forums"]
+
+[sources.gamekult]
+reader = "foundation"
+production = true
+label = ["Gamekult の掲示板", "Gamekult forum"]
+
+[sources.neogaf]
+reader = "foundation"
+production = true
+label = ["NeoGAF", "NeoGAF"]
+
+[sources.tildes]
+reader = "foundation"
+production = true
+label = ["Tildes", "Tildes"]
+
+[sources.ptt_games]
+reader = "foundation"
+production = true
+label = ["PTT のゲームの板", "PTT game boards"]
+
+[sources.keylol]
+reader = "foundation"
+production = true
+label = ["其乐 Keylol", "Keylol"]
+
+[sources.stage1st_games]
+reader = "foundation"
+production = true
+label = ["Stage1st のゲームの板", "Stage1st games"]
+
+[sources.computerbase]
+reader = "foundation"
+production = true
+label = ["ComputerBase のゲームの板", "ComputerBase game forums"]
+
+[sources.pcgh_extreme]
+reader = "foundation"
+production = true
+label = ["PCGH Extreme", "PCGH Extreme"]
+
+[sources.mein_mmo]
+reader = "foundation"
+production = true
+label = ["Mein-MMO のコメント", "Mein-MMO comments"]
+
+[sources.playua]
+reader = "foundation"
+production = true
+label = ["PlayUA のコメント", "PlayUA comments"]
+
+[sources.true_gaming]
+reader = "foundation"
+production = true
+label = ["True Gaming", "True Gaming"]
+
+[sources.outerspace]
+reader = "foundation"
+production = true
+label = ["Outer Space", "Outer Space"]
+
+[sources.adrenaline]
+reader = "foundation"
+production = true
+label = ["Adrenaline の掲示板", "Adrenaline forum"]
+
+[sources.guildwars2_forum]
+reader = "foundation"
+production = true
+label = ["Guild Wars 2 の公式掲示板", "Guild Wars 2 forums"]
+
+[sources.cdpr_forum]
+reader = "foundation"
+production = true
+label = ["CD PROJEKT RED の掲示板", "CD PROJEKT RED forums"]
