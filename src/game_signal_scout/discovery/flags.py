@@ -9,9 +9,10 @@ import re
 from game_signal_scout.discovery.text import PostText
 
 _AFFILIATE = re.compile(r"(#ad\b|amzn\.to|amazon\.[a-z.]+/(dp|gp)/|a\.r10\.to|tag=|affiliate|paidlink|アフィリエイト)", re.I)
-_PROMO = re.compile(r"(【PR】|#PR\b|sponsored|giveaway|プレゼントキャンペーン|wishlist now|ウィッシュリスト登録)", re.I)
+_PROMO = re.compile(r"(【PR】|#PR\b|sponsored|give ?away|プレゼントキャンペーン|wishlist now|ウィッシュリスト登録|bonus code|promo code|#bonplan|#deals?\b|#sale\b|#promo\b"
+                    r"|\d+[.,]\d{2} ?(€|\$|£|円)|(€|\$|£)\d+[.,]\d{2})", re.I)   # 2026-11-08: セールの価格・プレゼント企画・ボーナスコードが声に混ざった
 _NEWS = re.compile(r"(📰|breaking:|news:|#gamingnews|#ゲームニュース|速報)", re.I)
-_STREAM = re.compile(r"(live now|going live|twitch\.tv/|youtube\.com/live|配信中|配信開始|配信します)", re.I)
+_STREAM = re.compile(r"(live now|going live|twitch\.tv/|youtube\.com/live|配信中|配信開始|配信します|streaming at:|current viewers|kick\.com/)", re.I)
 _ADULT = re.compile(r"(hentai|nsfw|porn|rule34|lewd|ecchi|dlsite|r18|r-18)", re.I)
 _PIRACY = re.compile(r"(\broms?\b|\bnsp\b|\bxci\b|free download|repack|cracked)", re.I)   # 2026-11-07 の実データで、海賊版の配布の投稿が作品に数えられた
 _AUTOPOST = re.compile(r"(自動投稿|auto[- ]?post|#bot\b|new post:|new video:|now playing|tune in now|#trending)", re.I)

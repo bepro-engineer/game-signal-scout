@@ -213,3 +213,13 @@ def test_steam_assets_give_portrait_cover_and_hero():
     assert u == {"capsule": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/10/h1/library_capsule_2x.jpg?t=1",
                  "hero": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/10/h2/library_hero.jpg?t=1"}
     assert asset_urls({}) == {"capsule": None, "hero": None}
+
+
+def test_sales_giveaways_and_stream_bots_are_flagged_not_player_voices():
+    """宣伝の印（2026-11-08 の見本で混ざったもの）: セールの価格・プレゼント企画・ボーナスコード・配信の自動告知。プレイヤーの値段の感想は印を付けない。"""
+    from game_signal_scout.discovery.flags import flags_for
+    from game_signal_scout.discovery.text import PostText
+    f = lambda t: flags_for(PostText(text=t))
+    assert "promo" in f("The Crew Motorfest PS5 38.49 € #BonPlan") and "promo" in f("one copy to give away!") and "promo" in f("Bonus code R45THKX")
+    assert "stream" in f("Streaming at: Nov 7 Game: X Current viewers: 0")
+    assert f("Finished Baldur's Gate 3. It cost me $60 but worth it") == []
