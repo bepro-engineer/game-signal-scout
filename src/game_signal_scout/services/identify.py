@@ -108,3 +108,14 @@ def identify(payload: dict, index: TitleIndex) -> tuple[str | None, str | None, 
     text = " ".join(x for x in (payload.get("text"), payload.get("link_title"), " ".join(payload.get("tags") or [])) if x)
     hit = index.match(text)
     return (hit[0], hit[1], "title") if hit else (None, None, None)
+
+
+def version(titles: list[tuple[str, str]], ambiguous: list[str], context_words: list[str], min_chars: int, game_only: bool) -> str:
+    """同定の版: このファイル（規則）・作品の辞書・記述（曖昧な題名・文脈の語・最小の字数・ゲームだけの場か）の指紋。どれかが変われば作り直す。"""
+    import hashlib
+    from pathlib import Path
+    h = hashlib.sha256(Path(__file__).read_bytes())
+    for a, t in sorted((str(a), str(t)) for a, t in titles):
+        h.update(f"{a}\t{t}\n".encode())
+    h.update(repr((sorted(ambiguous), sorted(context_words), min_chars, game_only)).encode())
+    return h.hexdigest()[:16]

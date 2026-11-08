@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 
-COLS = ("source", "item_id", "at", "author", "lang", "appid", "title", "matched_by", "flags", "text", "stance", "playtime_minutes", "url")
+COLS = ("source", "item_id", "at", "author", "lang", "appid", "title", "matched_by", "flags", "text", "stance", "playtime_minutes", "url", "id_version")
 
 
 def unnormalized(conn, source: str, limit: int):
@@ -75,3 +75,9 @@ def urls_of(conn, keys: list[tuple[str, str]]) -> dict[tuple[str, str], str]:
     rows = conn.execute("SELECT source, item_id, url FROM player_post WHERE (source, item_id) IN (SELECT * FROM unnest(%s::text[], %s::text[])) "
                         "AND url LIKE 'https://%%'", ([k[0] for k in keys], [k[1] for k in keys])).fetchall()
     return {(s, i): u for s, i, u in rows}
+
+
+def forget_stale_identification(conn, source: str, version: str) -> int:
+    """本文の題名で同定する発言（作品が取得元で決まらないもの）のうち、同定の版が違う行を消す（次の正規化で今の版で作り直す）。"""
+    return conn.execute("DELETE FROM player_post WHERE source = %s AND matched_by IS DISTINCT FROM 'source' AND id_version IS DISTINCT FROM %s",
+                        (source, version)).rowcount

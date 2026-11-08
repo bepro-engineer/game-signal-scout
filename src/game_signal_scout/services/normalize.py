@@ -79,13 +79,20 @@ def bluesky(conn, source: str, settings: dict | None = None, batch: int = 2000) 
     from game_signal_scout.discovery.flags import flags_for
     from game_signal_scout.discovery.text import PostText
     settings = settings or {}
+    from game_signal_scout.services.identify import version as id_version
+    titles = post_repo.known_titles(conn)
+    args = (settings.get("ambiguous_titles") or [], settings.get("title_context_words") or settings.get("context_words") or [],
+            int(settings.get("min_title_chars", 8)), bool(settings.get("game_only")))
+    ver = id_version(titles, *args)
+    # 同定の規則・作品の辞書が変わったら、本文の題名で同定する発言を今の版で作り直す（Anime の §5.3・§21）
+    with conn.transaction():
+        post_repo.forget_stale_identification(conn, source, ver)
+    conn.commit()
     index = None
     total = 0
     while rows := post_repo.unnormalized(conn, source, batch):
         if index is None:
-            index = TitleIndex(post_repo.known_titles(conn), settings.get("ambiguous_titles") or [],
-                               settings.get("title_context_words") or settings.get("context_words") or [], int(settings.get("min_title_chars", 8)),
-                               game_only=bool(settings.get("game_only")))
+            index = TitleIndex(titles, args[0], args[1], args[2], game_only=args[3])
         out = []
         for item_id, occurred_at, p in rows:
             # 作品が取得元で決まる発言（作品ごとの掲示板・作品のページのコメント）は、その作品。ほかは本文から同定する
@@ -94,7 +101,7 @@ def bluesky(conn, source: str, settings: dict | None = None, batch: int = 2000) 
                 p["flags"] = flags_for(PostText(text=p.get("text") or "", link_title=p.get("link_title") or "", tags=p.get("tags") or []))
             out.append({"source": source, "item_id": item_id, "at": occurred_at, "author": p.get("author") or "", "lang": p.get("lang"),
                         "appid": appid, "title": title, "matched_by": how, "flags": p.get("flags") or [], "text": p.get("text") or "",
-                        "url": p.get("url") if str(p.get("url") or "").startswith("https://") else None})
+                        "url": p.get("url") if str(p.get("url") or "").startswith("https://") else None, "id_version": ver})
         with conn.transaction():
             total += post_repo.insert(conn, out)
         conn.commit()

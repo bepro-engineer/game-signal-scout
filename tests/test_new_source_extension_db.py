@@ -119,3 +119,22 @@ def test_language_is_uncertain_when_the_detector_is_not_sure():
     from game_signal_scout.languages_detect import detect
     assert detect("これは重い") == "ja" and detect("이 게임 재밌다") == "ko" and detect("這個遊戲很好玩") == "zh-Hant"
     assert detect("ok lol") in ("uncertain", "en")
+
+
+def test_posts_are_reidentified_when_the_title_dictionary_changes(conn):
+    """同定の版（Anime の §5.3・§21）: 作品の辞書が変わったら、本文の題名で同定する発言を作り直す（取得元で決まる発言はそのまま）。"""
+    from game_signal_scout.services import normalize
+    t = day_range(DAY)[0] + timedelta(hours=1)
+    conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES "
+                 "('forum_y', 'a', %s, %s, '{\"author\": \"u1\", \"text\": \"Hollow Knight Silksong is great\"}'), "
+                 "('forum_y', 'b', %s, %s, '{\"author\": \"u2\", \"text\": \"fun\", \"appid\": \"10\"}')", (t, t, t, t))
+    conn.commit()
+    cfg = {"game_only": True}
+    normalize.voices(conn, "forum_y", cfg)
+    assert dict(conn.execute("SELECT item_id, appid FROM player_post WHERE source='forum_y'").fetchall()) == {"a": None, "b": "10"}
+    conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', '1030300', now(), now(), '{}')")
+    conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) "
+                 "VALUES ('1030300', 'steam_store', '1030300', 'Hollow Knight: Silksong', '[]', '[]', '[]', now())")
+    conn.commit()
+    normalize.voices(conn, "forum_y", cfg)                       # 辞書が変わった: 題名で同定する発言だけ作り直す
+    assert dict(conn.execute("SELECT item_id, appid FROM player_post WHERE source='forum_y'").fetchall()) == {"a": "1030300", "b": "10"}
