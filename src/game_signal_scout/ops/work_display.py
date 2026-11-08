@@ -8,8 +8,11 @@ def work_meta(conn, work_ids: list[int]) -> dict[int, dict]:
         return {}
     from game_signal_scout.repositories import catalog
     rows = catalog.names_images(conn, [str(i) for i in ids])
+    art = catalog.covers(conn, list(rows))
     conn.rollback()
-    return {int(a): {"id": f"w{a}", "name": {"ja": t, "en": en or t}, "cover": img, "banner": img} for a, (t, en, img) in rows.items()}
+    # 画像: 縦長の枠には縦長の表紙（なければストアのヘッダー）、作品詳細の帯には横長の帯（なければヘッダー）
+    return {int(a): {"id": f"w{a}", "name": {"ja": t, "en": en or t}, "cover": (art.get(a) or (None, None))[0] or img,
+                     "banner": (art.get(a) or (None, None))[1] or img} for a, (t, en, img) in rows.items()}
 
 
 def display_names(conn, work_ids: list[int]) -> dict[int, dict]:

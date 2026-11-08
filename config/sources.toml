@@ -95,6 +95,12 @@ normalizer = "game_signal_scout.services.normalize:steam_upcoming"
 max_items = 100
 min_interval_hours = 20
 
+[steam_assets]
+adapter = "game_signal_scout.sources.steam_assets:SteamAssets"
+normalizer = "game_signal_scout.services.normalize:steam_assets"
+# 役割: 作品の画像の場所（縦長の表紙・横長の帯。IStoreBrowseService/GetItems。キー不要・50 作品ずつ）。画面の作品の画像の枠は縦長（Anime と同じ）
+min_interval_hours = 20
+
 [steam_store]
 adapter = "game_signal_scout.sources.steam_store:SteamStore"
 normalizer = "game_signal_scout.services.normalize:steam_store"

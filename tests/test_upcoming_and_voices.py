@@ -201,3 +201,12 @@ def test_rss1_feed_and_hatena_comments_after_12_hours():
     b = list(r.read(None))[0]
     assert [(i.payload["text"], i.payload["link_title"], i.occurred_at.isoformat()) for i in b.items] == [("重くなった", "『ELDEN RING』大型アップデート", "2026-11-07T21:00:00+09:00")]
     assert list(r.read(b.cursor))[0].items == [] and Http.calls == 1              # 12 時間の回は済み。72 時間まで読み直さない
+
+
+def test_steam_assets_give_portrait_cover_and_hero():
+    from game_signal_scout.sources.steam_assets import asset_urls
+    u = asset_urls({"asset_url_format": "steam/apps/10/${FILENAME}?t=1", "library_capsule": "h1/library_capsule.jpg", "library_capsule_2x": "h1/library_capsule_2x.jpg",
+                    "library_hero": "h2/library_hero.jpg"})
+    assert u == {"capsule": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/10/h1/library_capsule_2x.jpg?t=1",
+                 "hero": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/10/h2/library_hero.jpg?t=1"}
+    assert asset_urls({}) == {"capsule": None, "hero": None}

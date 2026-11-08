@@ -182,6 +182,17 @@ def steam_upcoming(conn, source: str, settings: dict | None = None, batch: int =
     return total
 
 
+def steam_assets(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
+    """作品の画像の場所 → game_assets（版が変われば置き換える）。"""
+    from game_signal_scout.repositories import catalog
+    total = 0
+    while rows := catalog.asset_rows(conn, source, batch):
+        with conn.transaction():
+            total += catalog.upsert_assets(conn, [(p["appid"], source, item_id, p.get("capsule"), p.get("hero"), received_at) for item_id, received_at, p in rows])
+        conn.commit()
+    return total
+
+
 def steam_charts(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
     """遊ばれている規模（Steam の順位）→ game_activity。"""
     from datetime import date

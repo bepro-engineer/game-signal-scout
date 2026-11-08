@@ -75,8 +75,9 @@ def insert_upcoming(conn, rows: list[tuple]) -> int:
 
 def upcoming(conn) -> list[dict]:
     """これから発売の作品（最新の日の一覧の順）: app ID・順位・作品の情報（題名・画像・発売日の文・発売前か・ストアの URL）。"""
-    rows = conn.execute("SELECT u.appid, u.rank, g.title, g.image_url, g.released, g.coming_soon, g.store_url, g.genres, g.platforms FROM game_upcoming u "
-                        "LEFT JOIN game_profile g ON g.appid = u.appid WHERE u.day = (SELECT max(day) FROM game_upcoming) ORDER BY u.rank").fetchall()
+    rows = conn.execute("SELECT u.appid, u.rank, g.title, coalesce(a.capsule_url, g.image_url), g.released, g.coming_soon, g.store_url, g.genres, g.platforms FROM game_upcoming u "
+                        "LEFT JOIN game_profile g ON g.appid = u.appid LEFT JOIN game_assets a ON a.appid = u.appid "
+                        "WHERE u.day = (SELECT max(day) FROM game_upcoming) ORDER BY u.rank").fetchall()
     keys = ("appid", "rank", "title", "image", "released", "coming_soon", "store_url", "genres", "platforms")
     return [dict(zip(keys, r)) for r in rows]
 
@@ -112,9 +113,15 @@ def voice_counts(conn, appids: list[str], days: int) -> dict[str, int]:
 
 # ---- 作品の情報を読む（Service・画面の文書が使う。SQL はここだけ）
 def names_images(conn, appids: list[str]) -> dict[str, tuple[str, str | None, str | None]]:
-    """app ID → (題名〔日本語のストアの表示〕, 英語の題名, 画像の URL)。"""
+    """app ID → (題名〔日本語のストアの表示〕, 英語の題名, 画像の URL〔ストアのヘッダー〕)。"""
     rows = conn.execute("SELECT appid, title, names->>'en', image_url FROM game_profile WHERE appid = ANY(%s)", (list(appids),)).fetchall()
     return {a: (t, en, img) for a, t, en, img in rows}
+
+
+def covers(conn, appids: list[str]) -> dict[str, tuple[str | None, str | None]]:
+    """app ID → (縦長の表紙, 横長の帯)（game_assets。ない作品は含まない）。"""
+    rows = conn.execute("SELECT appid, capsule_url, hero_url FROM game_assets WHERE appid = ANY(%s)", (list(appids),)).fetchall()
+    return {a: (c, h) for a, c, h in rows}
 
 
 def game_appids(conn, appids: list[str], not_game: list[str]) -> set[str]:
@@ -138,3 +145,16 @@ def profile_of(conn, appid: str) -> dict | None:
 def upcoming_appids(conn, limit: int) -> list[str]:
     """最新の近日発売の一覧の上位（順位の順）。"""
     return [a for (a,) in conn.execute("SELECT appid FROM game_upcoming WHERE day = (SELECT max(day) FROM game_upcoming) ORDER BY rank LIMIT %s", (limit,))]
+
+
+def asset_rows(conn, source: str, limit: int):
+    return conn.execute("SELECT s.item_id, s.received_at, s.payload FROM source_item s LEFT JOIN game_assets a ON a.source = s.source AND a.item_id = s.item_id "
+                        "WHERE s.source = %s AND a.item_id IS NULL ORDER BY s.item_id LIMIT %s", (source, limit)).fetchall()
+
+
+def upsert_assets(conn, rows: list[tuple]) -> int:
+    with conn.cursor() as cur:
+        cur.executemany("INSERT INTO game_assets (appid, source, item_id, capsule_url, hero_url, fetched_at) VALUES (%s,%s,%s,%s,%s,%s) "
+                        "ON CONFLICT (appid) DO UPDATE SET capsule_url = EXCLUDED.capsule_url, hero_url = EXCLUDED.hero_url, fetched_at = EXCLUDED.fetched_at, "
+                        "source = EXCLUDED.source, item_id = EXCLUDED.item_id", rows)
+        return cur.rowcount
