@@ -43,3 +43,9 @@ DB は共有の PostgreSQL のバックアップに含まれます（Game 専用
 
 - 実証済み: 日次の各段・Viewer・取得元ごとの収集（手動の 1 回）・試験（一時の PostgreSQL）。
 - 未実証: 障害からの自動復旧の実地（試験だけ）、外への公開（していない）。
+
+## 7. 入口（Anime と同じ形。Issue #6）
+
+- 利用者の入口は VAIO の Apache（ポート 80）だけです。家の中は `http://192.168.11.3/game/`（`deploy/apache-game.conf` → VAIO の `/etc/apache2/viewers.d/game.conf`）、公開は `https://game-signal-scout.com/`（`deploy/apache-game-public.conf` → `/etc/apache2/sites-available/30-game-public.conf`。Cloudflare Tunnel の公開の名前のルートの URL は Anime と同じ `localhost:80`）。
+- 画面の処理（Mac mini のポート 8720）は VAIO の Apache が中継する裏の口で、受ける相手は Mac mini 自身と VAIO だけです（`[web] allow_from`）。利用者は使いません。
+- 入口を置く・変えるときは VAIO の sudo が要ります（オーナーの操作）。
