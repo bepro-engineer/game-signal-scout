@@ -4,8 +4,6 @@
 .fd-a .art { aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; }
 .fd-b h3 { margin: 0 0 2px; font-size: 18px; } .fd-b h3 a { color: inherit; text-decoration: none; }
 .fd-meta { margin: 0 0 8px; font-size: 12px; color: #666; overflow-wrap: anywhere; }
-.fd-meta .jp { display: inline-block; padding: 0 6px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #eee; color: #555; }
-.fd-meta .jp-voice, .fd-meta .jp-sub, .fd-meta .jp-ui { background: #e07a9a; color: #fff; }
 .fd-fs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .fd-f { padding: 8px 10px; border-radius: 10px; background: #f7f6fb; border-left: 4px solid #b9b3d6; }
 .fd-fun { border-left-color: #57b08a; } .fd-frustration { border-left-color: #d9826a; } .fd-mixed { border-left-color: #c9a63a; }
@@ -39,3 +37,12 @@
 .fd-s { padding: 6px 10px; border-radius: 8px; background: #fbfbfd; border-left: 3px solid #d9d6e6; font-size: 13px; overflow-wrap: anywhere; }
 .fd-src a { margin-left: 4px; font-weight: 700; color: #5246c9; text-decoration: none; }
 .fd-alt { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; } .fd-alt a { font-weight: 700; color: #5246c9; }
+/* 買う前に知っておきたいこと（不満・注意）・出どころ */
+.fd-warn { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.fd-warn li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 14px; background: var(--card, #fff); border-radius: 12px; box-shadow: 0 0 0 1px var(--line, #e5e8f0); font-size: 14px; line-height: 1.7; }
+.fd-warn li a { color: var(--ink, #20283d); text-decoration: none; } .fd-warn li small { color: var(--ink-3, #697386); }
+.fd-how { margin-top: 28px; padding: 12px 16px; border-radius: 12px; background: var(--card, #fff); box-shadow: 0 0 0 1px var(--line, #e5e8f0); font-size: 14px; color: var(--ink-2, #3e475c); }
+.fd-how summary { cursor: pointer; font-weight: 700; min-height: 28px; }
+.fd-row { margin: 0 0 14px; gap: 8px; }
+.fd-row a { min-height: 40px; display: inline-flex; align-items: center; padding: 0 14px; background: var(--card, #fff); color: var(--ink-2, #3e475c); box-shadow: 0 0 0 1px var(--line, #e5e8f0); font-size: 14px; }
+.fd-row a.on { background: var(--accent, #5b55d6); color: #fff; box-shadow: none; } .fd-row a.on small { color: rgba(255,255,255,.85); }

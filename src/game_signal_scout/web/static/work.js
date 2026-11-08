@@ -52,7 +52,7 @@
   const links = [offi, strm].filter(x => x.length).map(x => x.map(link).join("")).join('<span class="wk-lsep" aria-hidden="true"></span>');
   const other = A.lang === "en" ? W.name.ja : W.name.en;
   // 前のページへ: このタブで作品詳細へ移る直前のページ（common.js の ass.from）。直接開いたときは作品を探すへの通常のリンク
-  const PN = { index: ["ダッシュボード", "Dashboard"], finds: ["プレイヤーの発見", "What players found"], revival: ["再燃", "Heating up again"], postair: ["放送後も熱い", "After the finale"],
+  const PN = { index: ["ダッシュボード", "Dashboard"], finds: ["見つけた面白さ", "The fun players found"], revival: ["再燃", "Heating up again"], postair: ["放送後も熱い", "After the finale"],
     langspread: ["言語圏の広がり", "Language spread"], search: ["作品を探す", "Find titles"], lang: ["言語別の作品", "Titles by language"] };
   const from = A.fromPage(W.id);
   const back = from ? `<a class="wk-back" id="wk-back" href="${esc(from.href)}">${tr(`← 前のページ（${(PN[from.page] || PN.search)[0]}）へ`, `← Back to ${(PN[from.page] || PN.search)[1]}`)}</a>`
@@ -62,8 +62,8 @@
   const J = W.jp;
   const PLAT = { "Windows": "Windows", "Mac": "Mac", "Linux・Steam Deck": "Linux・Steam Deck" };
   const judge = `<div class="wk-judge" id="wk-judge">
-      <p class="wkj-jp">${A.jpTag(W)}<span class="wkj-d">${tr("UI", "Interface")} ${yn(J && J.ui)}　${tr("字幕", "Subtitles")} ${yn(J && J.sub)}　${tr("音声", "Voice")} ${yn(J && J.voice)}</span>
-        <small class="wkj-s">${J ? tr(`ストアの表記（${esc(W.jp_at || "")} 確認）`, `Store listing (checked ${esc(W.jp_at || "")})`) : tr("ストアの表記を確かめられていません", "Not checked yet")}</small></p>
+      <p class="wkj-jp">${A.jpTag(W)}<span class="wkj-d">${J ? tr(`メニュー ${J.ui ? "日本語" : "外国語"}・字幕 ${J.sub ? "日本語" : "なし／外国語"}・声 ${J.voice ? "日本語" : "外国語"}`, `Menus ${J.ui ? "JP" : "–"} · Subtitles ${J.sub ? "JP" : "–"} · Voice ${J.voice ? "JP" : "–"}`) : ""}</span>
+        <small class="wkj-s">${J ? tr(`販売元がストアに載せている対応言語の表より（${esc(W.jp_at || "")} 確認）`, `From the publisher's store listing (checked ${esc(W.jp_at || "")})`) : tr("ストアの表記を確かめられていません", "Not checked yet")}</small></p>
       <p class="wkj-dev"><b>${tr("開発元", "Developer")}</b> ${A.devLine(W, 99)}${(W.dev || []).some(d => d.ref) ? ` <small class="wkj-s">${tr("国・地域の出典: ", "Country source: ")}${W.dev.filter(d => d.ref).map(d => `<a href="${esc(d.ref)}" rel="noopener" target="_blank">${esc(d.n)} ↗</a>`).join(" ")}</small>` : ""}</p>
       ${(W.plat || []).length ? `<p class="wkj-pl"><b>${tr("機種", "Platforms")}</b> ${W.plat.map(p => esc(PLAT[p] || p)).join(tr("・", ", "))}</p>` : ""}
     </div>`;
@@ -73,12 +73,15 @@
   const CJ = { time: ["時間がかかる", "Time-consuming"], price: ["価格・課金", "Price"], performance: ["動作が重い", "Performance"], bugs: ["不具合", "Bugs"], difficulty: ["難しさ", "Difficulty"], online: ["接続・対戦相手", "Online"] };
   const fc = f => A.FACETS.filter(x => x[5](f)).map(x => `<span class="wkf-fc">${esc(tr(x[1], x[2]))}</span>`).join("");
   const tag = f => `<span class="wkf-v wkf-v-${esc(f.verdict)}">${esc(tr(...VJ[f.verdict]))}</span>${f.caution ? `<span class="wkf-c">${tr("注意: ", "Note: ")}${esc(tr(...CJ[f.caution]))}</span>` : ""}${fc(f)}`;
-  const finds = FW ? `<section class="wk-finds"><h2>${tr("プレイヤーがしたこと・起きたこと", "What players did and what happened")}</h2>
-      ${FW.finds.length ? `<ul class="wkf">${FW.finds.map(f => `<li>${tag(f)}<b>${esc(f.title)}</b>${f.fits ? `<small>${tr("向いている人: ", "Suits: ")}${esc(f.fits)}</small>` : ""}
-        <small>${tr(`${f.people}人が同じ体験を書いた`, `${f.people} players wrote the same`)}${f.people < 3 ? tr("・まだ少数の声", " · still few") : ""}${(f.verdict === "fun" ? f.frustration : f.verdict === "frustration" ? f.fun : 0) ? tr(`・反対の声 ${f.verdict === "fun" ? f.frustration : f.fun}人`, " · some disagreed") : ""}</small></li>`).join("")}</ul>` : ""}
-      ${FW.singles.length ? `<p class="wkf-one">${tr("ひとりの体験（まだほかの人の声と重なっていません）", "Single players' experiences")}</p><ul class="wkf wkf-s">${FW.singles.map(e => `<li>${tag(e)}${esc(e.did)} → ${esc(e.happened)}</li>`).join("")}</ul>` : ""}
-      <p class="wkf-src">${tr(`${esc(FW.since)}からの 7 日に書いた ${FW.read_people || 0}人の発言を AI が読み、具体的な体験 ${FW.experiences || 0}件を取り出しました。原文は載せていません。`, `AI read posts by ${FW.read_people || 0} players over 7 days and found ${FW.experiences || 0} concrete experiences.`)}</p></section>`
-    : `<section class="wk-finds"><h2>${tr("プレイヤーがしたこと・起きたこと", "What players did and what happened")}</h2><p class="wkf-src">${tr("この作品のプレイヤーの発言は、まだ AI が読んでいません。", "Players' posts on this title have not been read yet.")}</p></section>`;
+  const FX = FW ? A.discover.items([FW]) : [];
+  const finds = `<section class="wk-finds"><h2>${tr("プレイヤーが見つけた面白さ", "The fun players found")}</h2>
+      ${FX.length ? `<ul class="wkf">${FX.map(x => `<li><b class="wkf-a">${esc(x.appeal)}</b><span>${A.discover.evLine(x.ev)}</span>
+        <small>${esc(tr(...A.discover.VJ[x.verdict]))}・${A.discover.pplWrote(x.people)}${x.against ? tr(`・反対の声 ${x.against}人`, ` · ${x.against} disagreed`) : ""}</small></li>`).join("")}</ul>`
+        : `<p class="wkf-src">${FW ? tr("この作品の発言から、面白さを書いた体験はまだ見つかっていません。", "No fun experiences found in the posts yet.") : tr("この作品のプレイヤーの発言は、まだ AI が読んでいません。", "Players' posts on this title have not been read yet.")}</p>`}
+      ${FW ? (() => { const ws = [...FW.finds.filter(f => f.verdict === "frustration" || f.caution).map(f => ({ ev: (f.examples || [])[0] || {}, people: f.people, c: f.caution })),
+          ...FW.singles.filter(e => e.verdict === "frustration" || e.caution).map(e => ({ ev: e, people: 1, c: e.caution }))];
+        return ws.length ? `<p class="wkf-one">${tr("買う前に知っておきたいこと", "Good to know before buying")}</p><ul class="wkf wkf-s">${ws.map(x => `<li>${x.c ? `<b class="dc-w">${esc(tr(...A.discover.CJ[x.c]))}</b> ` : ""}${A.discover.evLine(x.ev)}<small>${A.discover.pplWrote(x.people)}</small></li>`).join("")}</ul>` : ""; })() : ""}
+    </section>`;
   const head = `${back}
     ${W.banner ? `<div class="wk-banner"><img src="${esc(W.banner)}" alt="" referrerpolicy="no-referrer"></div>` : ""}
     <section class="wk-head${W.banner ? "" : " nob"}"><div class="art">${W.cover ? `<img src="${esc(W.cover)}" alt="${esc(name)}" referrerpolicy="no-referrer">` : ""}</div>

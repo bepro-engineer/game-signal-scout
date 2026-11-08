@@ -14,19 +14,18 @@
   const widthOf = el => Math.floor(el.getBoundingClientRect().width);
 
   /* ---------- 紹介・表示している日 ---------- */
-  // 入口（#2: 次に遊びたいゲームを発見する）: 体験の観点から探し始める。観点は固定の分類ではなく、プレイヤーの体験に付いたもの（#2 6723386003）。
-  // 件数は実際に読めた体験の数。0 件の観点は「まだなし」と書く。その下に、いま読めたいちばん具体的な発見を作品つきで出す（入口だけにしない）
-  const FI = ((A.P && A.P.finds) || {}).items || [];
-  const nOf = k => FI.reduce((t, w) => t + w.finds.filter(f => A.facetHit(f, k)).length + w.singles.filter(e => A.facetHit(e, k)).length, 0);
-  const VJ = { fun: ["面白い", "Fun"], frustration: ["不満", "Frustrating"], mixed: ["賛否", "Mixed"] };
-  const tops = FI.flatMap(w => w.finds.map(f => ({ w, f }))).sort((a, b) => b.f.people - a.f.people).slice(0, 3);
-  $("intro").innerHTML = `<div class="ask"><h2>${tr("今日は、どんな体験をしたい？", "What do you want to experience today?")}</h2>
-    <p>${tr("世界のプレイヤーが実際に遊んで書いた「何をして、何が起きたか」から、次に遊びたいゲームを見つけます。", "Find your next game from what players around the world actually did and what happened.")}</p>
-    <div class="ask-i">${A.FACETS.map(([k, ja, en, dja, den]) => { const n = nOf(k);
-      return `<a class="ask-b ask-${k}${n ? "" : " zero"}" href="finds.html?f=${k}"><b>${tr(ja, en)}</b><small>${tr(dja, den)}</small><em>${n ? tr(`体験 ${num(n)}件`, `${num(n)} experiences`) : tr("まだなし", "None yet")}</em></a>`; }).join("")}</div>
-    ${tops.length ? `<ul class="ask-f">${tops.map(({ w, f }) => `<li><a href="${A.workUrl(w.id)}">${art(w)}</a><div><span class="ask-v ask-v-${esc(f.verdict)}">${esc(tr(...VJ[f.verdict]))}</span>
-      <b>${esc(f.title)}</b><small>${wn(w.name, 1, "span")}・${tr(`${num(f.people)}人が書いた`, `${num(f.people)} players`)}</small></div></li>`).join("")}</ul>
-      <p class="ask-more"><a href="finds.html">${tr("プレイヤーの発見をすべて見る →", "See all discoveries →")}</a></p>` : ""}</div>`;
+  // 入口（#2）: いちばん具体的な醍醐味を大きな絵で → どんな面白さを味わいたい？（実際に体験のある種類だけ）→ プレイヤーが見つけた面白さ（日本語の凡例つき）。
+  // 体験がまだ読めていない日は、そう書く（空の入口は作らない）
+  const FI = ((A.P && A.P.finds) || {}).items || [], DS = A.discover, IT = DS.items(FI), VJ = DS.VJ;
+  const HX = IT.find(x => x.verdict === "fun") || IT[0];
+  if (HX) $("intro").classList.add("dsc");
+  $("intro").innerHTML = !HX ? `<div class="ask"><h2>${tr("プレイヤーの体験を読んでいるところです", "Reading players' experiences")}</h2><p>${tr("世界のプレイヤーが書いた「何をして、何が起きて、何が面白かったか」を、ここに出します。", "What players did, what happened and what was fun will appear here.")}</p></div>`
+    : `${DS.hero(HX)}
+    <div class="dsec"><h2>${tr("どんな面白さを味わいたい？", "What kind of fun are you after?")}</h2><p class="dl">${tr("世界のプレイヤーが実際に遊んで書いた体験から、面白さの種類ごとに集めました。", "Collected by kind of fun from what players actually wrote.")}</p>
+      ${DS.kinds(IT, k => `finds.html?k=${k}`)}</div>
+    <div class="dsec"><h2>${tr("プレイヤーが見つけた面白さ", "The fun players found")}</h2><p class="dl">${tr("何をして、何が起きて、何が面白かったのか。", "What they did, what happened, and what was fun.")}</p>
+      ${A.jpLegend()}<div class="dcs">${IT.filter(x => x !== HX).slice(0, 6).map(DS.card).join("")}</div>
+      <p class="dmore"><a href="finds.html">${tr("プレイヤーが見つけた面白さをすべて見る →", "See all →")}</a></p></div>`;
   A.dayBar($("intro"), "afterend");   // 表示している日は紹介のブロックの下に右寄せ（2026-10-15 のユーザーの指示）
 
   /* ---------- 今日の兆し ---------- */
@@ -63,7 +62,7 @@
       b.addEventListener("click", () => { const open = b.getAttribute("aria-expanded") !== "true"; b.setAttribute("aria-expanded", String(open)); t.classList.toggle("open", open); b.textContent = open ? tr("閉じる", "Close") : tr("続きを読む", "Read more"); }); } }
 
   /* ---------- 言語ごとの作品数（地図） ---------- */
-  { const O = G.lang_obs, CN = O.countries || {};
+  if ($("world")) { const O = G.lang_obs, CN = O.countries || {};
     // 作品数の多い順。同じ数のときは言語コードの順（日英で同じ並び。毎回同じ）
     const langs = [...O.langs].sort((a, b) => b.n - a.n || (a.code < b.code ? -1 : a.code > b.code ? 1 : 0));
     // 国・地域 → 話題の作品のある言語圏と役割（p = 主要な社会言語 / s = 共通語・第二言語。ADR 0049）。役割がなければ主要として扱う（従来の対応表）

@@ -246,17 +246,8 @@ details.how[open] summary { border-bottom: 1px solid var(--line); }
 
 /* 日本語の対応の札（#2）: カードの画像の下の端に重ねる。色は言語にだけ使う（日本語の色）。小さな画像では出さない */
 .art { position: relative; container-type: inline-size; }
-@container (max-width: 110px) { .art .jp { display: none; } }
-.art .jp { position: absolute; left: 4px; bottom: 4px; max-width: calc(100% - 8px); padding: 1px 6px; border-radius: 999px; font-size: 11px; line-height: 1.6;
-  font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(255,255,255,.92); color: #555; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
-.art .jp-voice, .art .jp-sub, .art .jp-ui { background: #e07a9a; color: #fff; }
-.wk-head .art .jp { display: none; }
-.sr-dev .jp { display: inline-block; padding: 0 6px; margin-right: 4px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #eee; color: #555; }
-.sr-dev .jp-voice, .sr-dev .jp-sub, .sr-dev .jp-ui { background: #e07a9a; color: #fff; }
 .wk-judge { margin: 8px 0 4px; display: grid; gap: 4px; font-size: 14px; }
 .wk-judge p { margin: 0; }
-.wk-judge .jp { position: static; display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; font-weight: 700; background: #eee; color: #555; }
-.wk-judge .jp-voice, .wk-judge .jp-sub, .wk-judge .jp-ui { background: #e07a9a; color: #fff; }
 .wkj-d { white-space: normal; }
 .wkj-d .jy { font-weight: 700; color: #c2456f; } .wkj-d .jn { color: #777; } .wkj-d .jq { color: #999; }
 .wkj-s { color: #888; margin-left: 6px; }

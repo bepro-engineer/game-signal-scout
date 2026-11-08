@@ -12,17 +12,16 @@
   const W = P.works.filter(w => !MODE || (w.modes || []).includes(MODE)), NPAGE = W.filter(w => w.page_only).length;
   // 遊び方のページ（#2 6723386003）: 対応の一覧の前に、その遊び方で実際に遊んだプレイヤーの体験（何をして → 何が起きたか）を出す。
   // 体験は、発言にその遊び方が書いてあったものだけ（作品が対応しているだけでは載せない）。作品の一覧は、そのあとの補助
-  if (MODE) { const FK = { solo: "solo", coop: "coop", versus: "versus", pad: "controller" }[PAGE], FC = A.FACETS.find(x => x[0] === FK), FX = P.finds || {};
+  if (MODE) { const FK = { solo: "solo", coop: "coop", versus: "versus", pad: "controller" }[PAGE], FC = A.FACETS.find(x => x[0] === FK), FX = P.finds || {}, FA = P.finds_art || {};
     const byId = Object.fromEntries(P.works.map(w => [w.id, w]));
-    const got = Object.entries(FX).map(([id, fs]) => ({ w: byId[id], fs: fs.filter(f => FC[5](f)) })).filter(x => x.w && x.fs.length)
-      .sort((a, b) => b.fs[0].people - a.fs[0].people || b.fs.length - a.fs.length);
-    const VJ = { fun: ["面白い", "Fun"], frustration: ["不満", "Frustrating"], mixed: ["賛否", "Mixed"] };
-    const ex = got.length ? `<div class="sr-exp">${got.slice(0, 8).map(({ w, fs }) => `<article><a href="${A.workUrl(w.id)}">${art(w)}</a><div><h3><a href="${A.workUrl(w.id)}">${wn(w.name, 2, "span")}</a></h3>
-        <ul>${fs.slice(0, 3).map(f => `<li><span class="sr-v sr-v-${esc(f.verdict)}">${esc(tr(...VJ[f.verdict]))}</span>${esc(f.title)}<small>${f.single ? tr("1人の体験", "1 player") : tr(`${num(f.people)}人が書いた`, `${num(f.people)} players`)}</small>${f.fits ? `<small class="sr-fit">${tr("向いている人: ", "Suits: ")}${esc(f.fits)}</small>` : ""}</li>`).join("")}</ul></div></article>`).join("")}</div>
-        <p class="sr-exp-more"><a href="finds.html?f=${FK}">${tr(`「${FC[1]}」をすべて見る →`, `See all “${FC[2]}” →`)}</a></p>`
-      : `<p class="sr-exp-none">${tr(`この遊び方で遊んだプレイヤーの体験は、まだ読めていません。プレイヤーの発言にこの遊び方の体験が書かれていたときに、ここに出ます。`, "No player experiences for this way of playing have been read yet.")}</p>`;
+    // その遊び方で遊んだ体験のうち、醍醐味（何が面白かったか）が書かれていたもの。カードは トップ・プレイヤーの発見 と同じ部品
+    const xs = Object.entries(FX).flatMap(([id, fs]) => { const w = byId[id] && { ...byId[id], ...(FA[id] || {}) };
+      return w ? fs.filter(f => FC[5](f) && f.appeal).map(f => ({ w, appeal: f.appeal, kind: f.appeal_kind, verdict: f.verdict, people: f.people, ev: f.ev || {}, caution: f.caution,
+        against: f.verdict === "fun" ? f.frustration || 0 : 0 })) : []; }).sort((a, b) => b.people - a.people);
+    const ex = xs.length ? `${A.jpLegend()}<div class="dcs">${xs.slice(0, 9).map(A.discover.card).join("")}</div>`
+      : `<p class="sr-exp-none">${tr("この遊び方で遊んだプレイヤーの醍醐味は、まだ読めていません。プレイヤーの発言にこの遊び方の体験が書かれていたときに、ここに出ます。", "No player experiences for this way of playing have been read yet.")}</p>`;
     document.getElementById("sr-panel").insertAdjacentHTML("beforebegin", `<section class="sr-xp"><div class="sec-h"><h2>${tr(`${FC[1]}：${FC[3]}`, `${FC[2]}: ${FC[4]}`)}</h2>
-      <p>${tr("世界のプレイヤーが、この遊び方で実際に遊んで書いたこと。", "What players actually did and what happened, playing this way.")}</p></div>${ex}
+      <p>${tr("世界のプレイヤーが、この遊び方で実際に遊んで書いた面白さ。", "What players found fun, playing this way.")}</p></div>${ex}
       <div class="sec-h sr-xp-list"><h2>${tr(`${MODE}作品（ストアの表記）`, "Titles that support it (store listing)")}</h2></div></section>`); }
   const st = { q: "", jp: "", kind: "", lang: "", air: "", genre: "", score: "", year: "", tag: "", sort: "last", n: PER };
   const EX = A.EXTRA || { tag: t => t };
@@ -76,7 +75,7 @@
     return ks.length ? `<span class="sr-k">${ks.map(k => `<span class="kt${st.kind === k ? " on" : ""}" data-kind="${esc(k)}">${esc(KIND[k])}</span>`).join("")}</span>` : "";
   };
   const card = w => `<article class="sr-card"><a class="sr-link" href="${A.workUrl(w.id)}" aria-label="${esc(nm(w.name))}"></a>${art(w)}
-    <div class="sr-t">${wn(w.name, 2, "h3")}${meta(w) || w.score != null ? `<span class="sr-meta">${esc(meta(w))}${score(w)}</span>` : ""}<span class="sr-dev">${A.jpTag(w)} ${A.devLine(w)}</span>${kinds(w)}
+    <div class="sr-t">${wn(w.name, 2, "h3")}${meta(w) || w.score != null ? `<span class="sr-meta">${esc(meta(w))}${score(w)}</span>` : ""}<span class="sr-dev">${A.jpTag(w)}</span>${kinds(w)}
     </div></article>`;
 
   function render() {

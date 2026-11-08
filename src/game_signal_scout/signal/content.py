@@ -774,7 +774,7 @@ def finds_page(ctx: Ctx) -> dict:
         m = meta.get(int(a))
         if not m:
             continue
-        items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner")}, **_judge(m), "modes": (ctx.briefs.get(int(a)) or {}).get("modes") or [], "finds": b.get("finds") or [], "singles": b.get("singles") or [],
+        items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner", "header", "shots")}, **_judge(m), "modes": (ctx.briefs.get(int(a)) or {}).get("modes") or [], "finds": b.get("finds") or [], "singles": b.get("singles") or [],
                       "stages": b.get("stages") or {}, "min_people": b.get("min_people"), "read_people": b.get("read_people"),
                       "experiences": b.get("experiences"), "window_days": b.get("window_days"), "since": (b.get("since") or "")[:10],
                       "generated_at": b["generated_at"].isoformat() if hasattr(b.get("generated_at"), "isoformat") else str(b.get("generated_at") or "")})
@@ -838,11 +838,14 @@ def search(ctx: Ctx, pg: dict) -> dict:
     for x in works:
         x.update(_extra_brief(ctx, int(x["id"][1:])))
     # 遊び方のページ（solo・coop・versus・pad）で、その遊び方で遊んだプレイヤーの体験を先に見せる（#2 6723386003。属性の一覧だけにしない）
-    fx = {w["id"]: [{k: f.get(k) for k in ("title", "fits", "verdict", "people", "style", "input", "caution", "fun", "frustration", "mixed")} for f in w["finds"]]
-                    + [{"title": f"{e['did']} → {e['happened']}", "verdict": e["verdict"], "people": 1, "style": e.get("style"), "input": e.get("input"),
-                        "caution": e.get("caution"), "single": True} for e in w.get("singles") or []]
+    fx = {w["id"]: [{**{k: f.get(k) for k in ("title", "fits", "appeal", "appeal_kind", "verdict", "people", "style", "input", "caution", "fun", "frustration", "mixed")},
+                     "ev": (f.get("examples") or [{}])[0]} for f in w["finds"]]
+                    + [{"title": f"{e['did']} → {e['happened']}", "appeal": e.get("appeal") or "", "appeal_kind": e.get("appeal_kind"), "verdict": e["verdict"], "people": 1,
+                        "style": e.get("style"), "input": e.get("input"), "caution": e.get("caution"), "single": True, "ev": {"did": e["did"], "happened": e["happened"]}}
+                       for e in w.get("singles") or []]
           for w in (pg.get("finds") or {}).get("items") or []}
-    return {"days": len(ctx.pdays), "first": ctx.pdays[0].isoformat(), "latest": ctx.latest.isoformat(), "works": works, "finds": fx}
+    fart = {w["id"]: {k: w.get(k) for k in ("header", "banner", "shots")} for w in (pg.get("finds") or {}).get("items") or []}
+    return {"days": len(ctx.pdays), "first": ctx.pdays[0].isoformat(), "latest": ctx.latest.isoformat(), "works": works, "finds": fx, "finds_art": fart}
 
 
 # ---------------------------------------------------------------- 作品詳細
