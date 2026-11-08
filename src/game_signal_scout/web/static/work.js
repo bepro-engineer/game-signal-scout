@@ -67,12 +67,24 @@
       <p class="wkj-dev"><b>${tr("開発元", "Developer")}</b> ${A.devLine(W, 99)}${(W.dev || []).some(d => d.ref) ? ` <small class="wkj-s">${tr("国・地域の出典: ", "Country source: ")}${W.dev.filter(d => d.ref).map(d => `<a href="${esc(d.ref)}" rel="noopener" target="_blank">${esc(d.n)} ↗</a>`).join(" ")}</small>` : ""}</p>
       ${(W.plat || []).length ? `<p class="wkj-pl"><b>${tr("機種", "Platforms")}</b> ${W.plat.map(p => esc(PLAT[p] || p)).join(tr("・", ", "))}</p>` : ""}
     </div>`;
+  // プレイヤーの発見（#2: 発見 → 作品詳細 → 判断）: この作品でプレイヤーが何をして何が起きたか。複数の人の体験と、ひとりの体験（そう明記）。読めていなければそう書く
+  const FW = (((A.P || {}).finds || {}).items || []).find(x => x.id === W.id);
+  const VJ = { fun: ["面白い", "Fun"], frustration: ["不満", "Frustrating"], mixed: ["賛否", "Mixed"] };
+  const CJ = { time: ["時間がかかる", "Time-consuming"], price: ["価格・課金", "Price"], performance: ["動作が重い", "Performance"], bugs: ["不具合", "Bugs"], difficulty: ["難しさ", "Difficulty"], online: ["接続・対戦相手", "Online"] };
+  const fc = f => A.FACETS.filter(x => x[5](f)).map(x => `<span class="wkf-fc">${esc(tr(x[1], x[2]))}</span>`).join("");
+  const tag = f => `<span class="wkf-v wkf-v-${esc(f.verdict)}">${esc(tr(...VJ[f.verdict]))}</span>${f.caution ? `<span class="wkf-c">${tr("注意: ", "Note: ")}${esc(tr(...CJ[f.caution]))}</span>` : ""}${fc(f)}`;
+  const finds = FW ? `<section class="wk-finds"><h2>${tr("プレイヤーがしたこと・起きたこと", "What players did and what happened")}</h2>
+      ${FW.finds.length ? `<ul class="wkf">${FW.finds.map(f => `<li>${tag(f)}<b>${esc(f.title)}</b>${f.fits ? `<small>${tr("向いている人: ", "Suits: ")}${esc(f.fits)}</small>` : ""}
+        <small>${tr(`${f.people}人が同じ体験を書いた`, `${f.people} players wrote the same`)}${f.people < 3 ? tr("・まだ少数の声", " · still few") : ""}${(f.verdict === "fun" ? f.frustration : f.verdict === "frustration" ? f.fun : 0) ? tr(`・反対の声 ${f.verdict === "fun" ? f.frustration : f.fun}人`, " · some disagreed") : ""}</small></li>`).join("")}</ul>` : ""}
+      ${FW.singles.length ? `<p class="wkf-one">${tr("ひとりの体験（まだほかの人の声と重なっていません）", "Single players' experiences")}</p><ul class="wkf wkf-s">${FW.singles.map(e => `<li>${tag(e)}${esc(e.did)} → ${esc(e.happened)}</li>`).join("")}</ul>` : ""}
+      <p class="wkf-src">${tr(`${esc(FW.since)}からの 7 日に書いた ${FW.read_people || 0}人の発言を AI が読み、具体的な体験 ${FW.experiences || 0}件を取り出しました。原文は載せていません。`, `AI read posts by ${FW.read_people || 0} players over 7 days and found ${FW.experiences || 0} concrete experiences.`)}</p></section>`
+    : `<section class="wk-finds"><h2>${tr("プレイヤーがしたこと・起きたこと", "What players did and what happened")}</h2><p class="wkf-src">${tr("この作品のプレイヤーの発言は、まだ AI が読んでいません。", "Players' posts on this title have not been read yet.")}</p></section>`;
   const head = `${back}
     ${W.banner ? `<div class="wk-banner"><img src="${esc(W.banner)}" alt="" referrerpolicy="no-referrer"></div>` : ""}
     <section class="wk-head${W.banner ? "" : " nob"}"><div class="art">${W.cover ? `<img src="${esc(W.cover)}" alt="${esc(name)}" referrerpolicy="no-referrer">` : ""}</div>
       <div class="wk-ht"><h1>${esc(name)}</h1>${other && other !== name ? `<p class="wk-en">${esc(other)}</p>` : ""}
         ${meta ? `<p class="wk-meta">${esc(meta)}</p>` : ""}${sub ? `<p class="wk-sub">${esc(sub)}</p>` : ""}</div>
-      ${judge}${STORY}<dl class="wk-rows">
+      ${judge}${finds}${STORY}<dl class="wk-rows">
         ${W.genres.length || (W.extra && W.extra.tags.length) ? row(tr("ジャンル・タグ", "Genres & tags"), `<div class="wk-cls">${W.genres.length ? `<p class="wk-g">${W.genres.map(g => `<span>${esc(GENRE[g] || g)}</span>`).join("")}</p>` : ""}<!--tags--></div>`) : ""}
         ${links ? row(tr("公式・配信", "Official & streaming"), `<p class="wk-l">${links}</p>`) : ""}
         ${W.pages.length ? row(tr("載っているページ", "Also on"), `<p class="wk-l wk-pg">${W.pages.map(p => `<a href="${PAGE[p][1]}">${PAGE[p][0]} →</a>`).join("")}</p>`) : ""}</dl>
