@@ -81,7 +81,10 @@ def read_statements(ask, title: str, rows: list[dict]) -> dict[str, dict | None]
     for i in range(0, len(rows), READ_BATCH):
         b = rows[i:i + READ_BATCH]
         lines = "\n".join(f"[{j}] ({r.get('lang') or '?'}) {str(r['text'])[:TEXT_CHARS]}" for j, r in enumerate(b))
-        arr = _json_array(ask(READ_PROMPT.format(title=title, lines=lines)))
+        try:
+            arr = _json_array(ask(READ_PROMPT.format(title=title, lines=lines)))
+        except Exception:  # noqa: BLE001 — 共有の LLM の一時的な失敗: この束だけ次の回に読み直す（読めた束は残す）
+            arr = []
         if not arr:
             continue
         got = {int(x["id"]): x.get("exp") for x in arr if isinstance(x, dict) and str(x.get("id", "")).isdigit()}

@@ -81,3 +81,15 @@ def test_untranslated_or_abstract_text_is_not_used():
     g = insight.group(lambda p: json.dumps({"groups": [{"title": "コンテンツの量や、探索の充実度を評価する。", "ids": [0, 1]},
                                                        {"title": "斬馬刀でボスに挑むと、ほぼ一方的に押し切れる", "ids": [0, 1]}]}), "T", exps)
     assert [x["title"] for x in g] == ["斬馬刀でボスに挑むと、ほぼ一方的に押し切れる"]
+
+
+def test_one_failed_batch_does_not_lose_the_others():
+    rows = [post(i, f"a{i}", 1) for i in range(12)]
+    calls = []
+    def ask(p):
+        calls.append(1)
+        if len(calls) == 1:
+            raise OSError("500")
+        return json.dumps({"items": [{"id": j, "exp": {"did": "大剣で溜め攻撃を連発した", "happened": "ボスを倒せた", "verdict": "fun", "topic": "t"}} for j in range(6)]})
+    got = insight.read_statements(ask, "T", rows)
+    assert sorted(got) == [f"p{i}" for i in range(6, 12)]
