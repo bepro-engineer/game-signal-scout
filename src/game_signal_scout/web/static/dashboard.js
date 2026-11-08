@@ -33,7 +33,10 @@
   const SEEN = new Set(G.featured.length ? [G.featured[0].id] : []);
   const fresh = xs => { const out = xs.filter(x => !SEEN.has(x.id)); out.forEach(x => SEEN.add(x.id)); return out; };
   const CKF = fresh(G.checks);
-  const FEAT = [...G.featured.slice(0, 1), ...fresh(G.featured.slice(1))];
+  // 作品の列は、狭い幅では入る列の数だけ見せる（gaze.css）。見えない作品を下の段から除くとどこにも出なくなるので、
+  // 列に実際に見えている作品だけを「出した」に数える（描いた後に markShown）
+  const FEAT = [...G.featured.slice(0, 1), ...G.featured.slice(1).filter(x => !SEEN.has(x.id))];
+  const markShown = () => document.querySelectorAll("#lead .g-row > li").forEach((li, i) => { if (li.getClientRects().length && FEAT[i]) SEEN.add(FEAT[i].id); });
 
   /* ---------- 今日の兆し ---------- */
   // 先頭の組（G.lead。ADR 0052）: 見出し・本文・引用と作品の列の先頭は、サーバーが 1 つの発見から作った組だけを使う（言語ごとに別の文を選ばない）。
@@ -63,6 +66,7 @@
     <div class="g-foot"><span>${tr(`話題になった${G.works_today}作品から${FEAT.length}作品（人数の順ではありません。下の段に出る作品は除いています）。`, `${FEAT.length} of the ${G.works_today} titles talked about (not in order of people). `)}${G.movement ? tr(`作品それぞれの普段と比べて目立って動いた作品は${G.movement.q1.changes}作品でした。`, `${G.movement.q1.changes} titles moved notably from their usual level.`) : ""}</span>
       <a href="#trend">${tr("「いつもより話題が増えた作品」で確かめる ↓", "See “Titles talked about more than usual” ↓")}</a></div>`;
 
+  markShown();
   { const t = $("lede-t"), b = document.querySelector(".lede-more");
     if (t && b) { const fit = () => { if (b.getAttribute("aria-expanded") === "true") return; b.hidden = !(t.scrollHeight > t.clientHeight + 2); };
       fit(); if (document.fonts) document.fonts.ready.then(fit); window.addEventListener("resize", fit);
