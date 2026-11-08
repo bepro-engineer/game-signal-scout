@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 
@@ -21,6 +22,8 @@ KIND = "finds"
 READ_BATCH = 6
 TEXT_CHARS = 500
 VERDICTS = ("fun", "frustration", "mixed")
+KANA = re.compile(r"[\u3040-\u30ff]")
+HANZI_ONLY = re.compile(r"[遇到们这个吗么还没为说时会对过]")   # 日本語では使わない簡体字・中国語の語
 
 READ_PROMPT = """ゲーム「{title}」のプレイヤーの発言を 1 件ずつ読んでください。発言が「自分が実際に遊んで、何をして、何が起きたか」を具体的に書いているときだけ、それを取り出します。
 感想だけ・ニュース・質問・宣伝・抽象的な評価だけのものは null にします。発言にないことは書かないでください。
@@ -79,6 +82,8 @@ def group(ask, title: str, exps: list[tuple[str, dict]]) -> list[dict]:
     out = []
     for g in _json_array(ask(GROUP_PROMPT.format(title=title, items=items))):
         if not isinstance(g, dict) or not str(g.get("title") or "").strip():
+            continue
+        if not KANA.search(str(g["title"])) or HANZI_ONLY.search(str(g["title"])):   # 日本語でない文（中国語の混ざり）は出さない
             continue
         ids = sorted({int(i) for i in g.get("ids") or [] if str(i).isdigit() and int(i) < len(exps)})
         if ids:

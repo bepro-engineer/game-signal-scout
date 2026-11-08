@@ -35,3 +35,10 @@ def test_group_ignores_numbers_that_were_not_in_the_list():
     exps = [("p1", {"did": "a", "happened": "b", "topic": "t", "verdict": "fun"}), ("p2", {"did": "a", "happened": "b", "topic": "t", "verdict": "fun"})]
     g = insight.group(lambda p: json.dumps([{"title": "同じ体験", "ids": [0, 1, 7]}, {"title": "", "ids": [0]}]), "T", exps)
     assert g == [{"title": "同じ体験", "members": ["p1", "p2"]}]
+
+
+def test_titles_that_are_not_japanese_are_dropped():
+    exps = [("p1", {"did": "a", "happened": "b", "topic": "t", "verdict": "fun"}), ("p2", {"did": "a", "happened": "b", "topic": "t", "verdict": "fun"})]
+    g = insight.group(lambda p: json.dumps([{"title": "第二季遇到作弊者と不満", "ids": [0, 1]}, {"title": "Squad play is fun", "ids": [0, 1]},
+                                            {"title": "分隊で拠点を奪うと逆転できる", "ids": [0, 1]}]), "T", exps)
+    assert [x["title"] for x in g] == ["分隊で拠点を奪うと逆転できる"]
