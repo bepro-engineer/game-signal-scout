@@ -37,7 +37,10 @@ def all_insights(conn) -> dict[str, dict]:
 
 
 def newest_generated_at(conn):
-    return conn.execute("SELECT max(generated_at) FROM game_insight").fetchone()[0]
+    """発見の表の版: 行の数・作品ごとの材料の hash と作った時刻の指紋。どの作品が足されても・作り直されても変わる
+    （いちばん新しい時刻だけでは、読み始めの時刻で記録された作品が足されても変わらなかった。2026-11-09）。"""
+    return conn.execute("SELECT count(*)::text || ':' || coalesce(md5(string_agg(appid || '|' || input_hash || '|' || generated_at::text, ',' ORDER BY appid)), '') "
+                        "FROM game_insight").fetchone()[0]
 
 
 def statements_by_author(conn, appid: str, days: int, per_window: int, since, sources: list[str]) -> list[dict]:
