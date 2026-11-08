@@ -94,3 +94,8 @@ class SourceReader(ABC):
     def report(item_id: str, payload: dict) -> tuple:
         """動作の報告（player_report の列: item_id・appid・title・at・failed・config_hash・tool_version・notes）。"""
         raise NotImplementedError
+
+    @staticmethod
+    def attributes(item_id: str, received_at, payload: dict) -> list[tuple[str, str, object]]:
+        """作品の属性（game_attribute の行: appid・項目・値）。項目は ja（日本語の ui・subtitles・audio）・developers・developer_countries など。"""
+        raise NotImplementedError

@@ -286,4 +286,5 @@ def test_every_enabled_source_has_a_terms_record_and_prohibited_ones_are_not_rea
     for n in enabled:
         for h in source_terms.excluded_hosts(n):
             assert f"//{h}" not in text, (n, h)
-    assert not any(source_terms.quote_allowed(n) for n in enabled)      # 公開の画面に原文を引用する取得元は今は 0
+    voices = set(tomllib.loads((top / "config/map_sources.toml").read_text()).get("sources") or {})
+    assert not any(source_terms.quote_allowed(n) for n in enabled if n in voices)      # 発言の原文を公開の画面に引用する取得元は今は 0

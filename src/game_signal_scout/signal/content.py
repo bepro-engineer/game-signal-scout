@@ -170,6 +170,11 @@ class Ctx:
         return {**self.meta[w], **extra}
 
 
+def _judge(m: dict) -> dict:
+    """日本人が作品を選ぶときに最初に見る属性（#2）: 日本語の UI・字幕・音声（jp。null = 未確認）、開発元と国・地域（dev）、機種（plat）。"""
+    return {k: m.get(k) for k in ("jp", "jp_at", "dev", "plat") if k in m}
+
+
 # ---------------------------------------------------------------- ダッシュボード（公開した日ごと）
 def _complete(ctx: Ctx, d: date) -> bool:
     return ctx.gobs.get(d) in ("complete", "recovered")   # recovered（再取得で埋まったと検証できた日）は比べる対象に含める
@@ -401,7 +406,7 @@ def checks(ctx: Ctx, d: date) -> list[dict]:
         first = next((y.day for y in ws.days if y.authors >= TOPIC_MIN), None)
         first_n = ws.at(first).authors if first else None
         spread = _unique([lname(lg) for lg, a in sorted((day.langs.items() if day else []), key=lambda kv: (-kv[1].authors, kv[0])) if lg not in NOT_LANGUAGE and a.authors >= TOPIC_MIN])
-        out.append({"id": m["id"], "name": m["name"], "cover": m["cover"], "cls": CLS[x["kind"]], "people": x["n"], "label": CLS_LABEL[x["kind"]],
+        out.append({"id": m["id"], "name": m["name"], "cover": m["cover"], **_judge(m), "cls": CLS[x["kind"]], "people": x["n"], "label": CLS_LABEL[x["kind"]],
                     "line": {loc: movement._fact({**x, "name": m["name"]}, loc) for loc in ("ja", "en")},
                     "after": {"ja": f"{nxt.authors}人" if nxt and nxt.observed != "none" else "", "en": f"{nxt.authors} people" if nxt and nxt.observed != "none" else ""},
                     "spread": {"ja": "・".join(x["ja"] for x in spread), "en": ", ".join(x["en"] for x in spread)},
@@ -785,7 +790,7 @@ def search(ctx: Ctx, pg: dict) -> dict:
                 if lg not in NOT_LANGUAGE:
                     langs[lg] += a.authors
         b = ctx.briefs.get(w) or {}
-        works.append({"id": f"w{w}", "name": ctx.meta[w]["name"], "keys": ctx.keys.get(w, []), "cover": ctx.meta[w]["cover"],
+        works.append({"id": f"w{w}", "name": ctx.meta[w]["name"], "keys": ctx.keys.get(w, []), "cover": ctx.meta[w]["cover"], **_judge(ctx.meta[w]),
                       "fmt": b.get("format"), "season": b.get("season"), "year": b.get("year"), "rs": b.get("status"), "genres": b.get("genres") or [],
                       "kinds": _work_kinds(ctx, w, window), "langs": [[lg, n] for lg, n in sorted(langs.items(), key=lambda kv: (-kv[1], kv[0]))],
                       "first": tdays[0].day.isoformat(), "last": tdays[-1].day.isoformat(), "days": len(tdays), "peak": max(x.authors for x in tdays), "pages": [],
@@ -800,7 +805,7 @@ def search(ctx: Ctx, pg: dict) -> dict:
             if i not in byid:          # 日ごとの変化にはまだ出ていないが、ページに載っている作品も探せるようにする
                 w = int(i[1:])
                 b = br.get(w) or {}
-                byid[i] = {"id": i, "name": ctx.meta[w]["name"], "keys": ctx.keys.get(w, []), "cover": ctx.meta[w]["cover"], "fmt": b.get("format"),
+                byid[i] = {"id": i, "name": ctx.meta[w]["name"], "keys": ctx.keys.get(w, []), "cover": ctx.meta[w]["cover"], **_judge(ctx.meta[w]), "fmt": b.get("format"),
                            "season": b.get("season"), "year": b.get("year"), "rs": b.get("status"), "genres": b.get("genres") or [], "kinds": [], "langs": [],
                            "first": None, "last": None, "days": 0, "peak": 0, "pages": [], "page_only": True}
                 works.append(byid[i])

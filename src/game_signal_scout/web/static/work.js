@@ -57,12 +57,22 @@
   const from = A.fromPage(W.id);
   const back = from ? `<a class="wk-back" id="wk-back" href="${esc(from.href)}">${tr(`← 前のページ（${(PN[from.page] || PN.search)[0]}）へ`, `← Back to ${(PN[from.page] || PN.search)[1]}`)}</a>`
     : `<a class="wk-back" href="search.html">${tr("← 作品を探す", "← Find titles")}</a>`;
+  // 日本人が最初に判断すること（#2）: 日本語で遊べるか（UI・字幕・音声を分けて）→ 開発元と国・地域 → 機種。出典と確かめた日を添える
+  const yn = v => v == null ? `<span class="jq">${tr("未確認", "Unknown")}</span>` : v ? `<span class="jy">${tr("あり", "Yes")}</span>` : `<span class="jn">${tr("なし", "No")}</span>`;
+  const J = W.jp;
+  const PLAT = { "Windows": "Windows", "Mac": "Mac", "Linux・Steam Deck": "Linux・Steam Deck" };
+  const judge = `<div class="wk-judge" id="wk-judge">
+      <p class="wkj-jp">${A.jpTag(W)}<span class="wkj-d">${tr("UI", "Interface")} ${yn(J && J.ui)}　${tr("字幕", "Subtitles")} ${yn(J && J.sub)}　${tr("音声", "Voice")} ${yn(J && J.voice)}</span>
+        <small class="wkj-s">${J ? tr(`ストアの表記（${esc(W.jp_at || "")} 確認）`, `Store listing (checked ${esc(W.jp_at || "")})`) : tr("ストアの表記を確かめられていません", "Not checked yet")}</small></p>
+      <p class="wkj-dev"><b>${tr("開発元", "Developer")}</b> ${A.devLine(W, 99)}${(W.dev || []).some(d => d.ref) ? ` <small class="wkj-s">${tr("国・地域の出典: ", "Country source: ")}${W.dev.filter(d => d.ref).map(d => `<a href="${esc(d.ref)}" rel="noopener" target="_blank">${esc(d.n)} ↗</a>`).join(" ")}</small>` : ""}</p>
+      ${(W.plat || []).length ? `<p class="wkj-pl"><b>${tr("機種", "Platforms")}</b> ${W.plat.map(p => esc(PLAT[p] || p)).join(tr("・", ", "))}</p>` : ""}
+    </div>`;
   const head = `${back}
     ${W.banner ? `<div class="wk-banner"><img src="${esc(W.banner)}" alt="" referrerpolicy="no-referrer"></div>` : ""}
     <section class="wk-head${W.banner ? "" : " nob"}"><div class="art">${W.cover ? `<img src="${esc(W.cover)}" alt="${esc(name)}" referrerpolicy="no-referrer">` : ""}</div>
       <div class="wk-ht"><h1>${esc(name)}</h1>${other && other !== name ? `<p class="wk-en">${esc(other)}</p>` : ""}
         ${meta ? `<p class="wk-meta">${esc(meta)}</p>` : ""}${sub ? `<p class="wk-sub">${esc(sub)}</p>` : ""}</div>
-      ${STORY}<dl class="wk-rows">
+      ${judge}${STORY}<dl class="wk-rows">
         ${W.genres.length || (W.extra && W.extra.tags.length) ? row(tr("ジャンル・タグ", "Genres & tags"), `<div class="wk-cls">${W.genres.length ? `<p class="wk-g">${W.genres.map(g => `<span>${esc(GENRE[g] || g)}</span>`).join("")}</p>` : ""}<!--tags--></div>`) : ""}
         ${links ? row(tr("公式・配信", "Official & streaming"), `<p class="wk-l">${links}</p>`) : ""}
         ${W.pages.length ? row(tr("載っているページ", "Also on"), `<p class="wk-l wk-pg">${W.pages.map(p => `<a href="${PAGE[p][1]}">${PAGE[p][0]} →</a>`).join("")}</p>`) : ""}</dl>

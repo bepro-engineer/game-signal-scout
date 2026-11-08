@@ -691,3 +691,39 @@ store = "unknown"
 analyze_aggregate = "unknown"
 public_quote = "unknown"
 commercial = "unknown"
+[sources.steam_attributes]
+category = "conditional"
+permission_required = "unknown"
+conditions = "Web API の規約: 1 日 10 万回まで、Valve の公認・提携を示唆しない、データはそのまま表示（steam_assets と同じ API）"
+robots = "api.steampowered.com の robots.txt は未確認"
+notes = "steam_assets と同じ API（GetItems）で、言語の対応と開発元・販売元だけを読む"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://steamcommunity.com/dev/apiterms", clause = "API の呼び出しは 1 日 10 万回まで。Valve の公認を装わない。保存するデータの告知とプライバシーポリシーが必要", checked = "2026-11-08" },
+  { url = "https://store.steampowered.com/subscriber_agreement/", clause = "§4.C 人間以外が操作するシステムでの操作の禁止、§2.A 個人の非商用の利用に限る", checked = "2026-11-08" },
+]
+[sources.steam_attributes.uses]
+collect = "conditional: steam_assets と同じ"
+store = "conditional: 言語の対応・開発元の名前だけ"
+analyze_aggregate = "対象外"
+public_quote = "対象外（言語の対応・開発元の名前を表示する。原文ではない）"
+commercial = "prohibited: SSA §2.A は非商用に限る（このサイトは非営利）"
+
+[sources.wikidata_works]
+category = "explicitly_allowed"
+permission_required = false
+conditions = "名前と連絡先を名乗る（User-Agent の方針）。1 つの相手につき 60 秒あたり 60 秒の処理まで、同時に 5 つまで、1 回の問い合わせは 60 秒まで"
+robots = "query.wikidata.org/robots.txt は /sparql を不可にしている（クローラー向け）。一方で Wikimedia の公式の文書が、この経路をプログラムから GET・POST で使うものとして案内し、利用の条件（名乗り・処理の時間の上限）を定めている。条件を守って使う（2026-11-08 の判断。#2・#3 に記録）"
+notes = "Wikidata の構造化データは CC0。作品・開発元・国の記載がなければ、その項目を作らない（推定しない）"
+checked_at = "2026-11-08"
+evidence = [
+  { url = "https://www.mediawiki.org/wiki/Wikidata_Query_Service/User_Manual", clause = "SPARQL を GET・POST で直接送れる。1 つの相手は 60 秒あたり 60 秒の処理まで、同時 5 まで、60 秒で打ち切り。User-Agent の方針に従わない相手は遮断", checked = "2026-11-08" },
+  { url = "https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy", clause = "ボットは、ボットと分かる User-Agent と連絡先を送る", checked = "2026-11-08" },
+  { url = "https://www.wikidata.org/wiki/Wikidata:Copyright", clause = "構造化データ（主名前空間など）は CC0", checked = "2026-11-08" },
+]
+[sources.wikidata_works.uses]
+collect = "allowed: 公式の文書が、プログラムからの問い合わせを条件つきで案内"
+store = "allowed: CC0"
+analyze_aggregate = "allowed: CC0"
+public_quote = "allowed: CC0（開発元の名前・国を表示し、Wikidata への参照を付ける）"
+commercial = "allowed: CC0"

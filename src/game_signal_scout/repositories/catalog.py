@@ -158,3 +158,45 @@ def upsert_assets(conn, rows: list[tuple]) -> int:
                         "ON CONFLICT (appid) DO UPDATE SET capsule_url = EXCLUDED.capsule_url, hero_url = EXCLUDED.hero_url, fetched_at = EXCLUDED.fetched_at, "
                         "source = EXCLUDED.source, item_id = EXCLUDED.item_id", rows)
         return cur.rowcount
+
+
+def attribute_rows(conn, source: str, limit: int):
+    """まだ属性にしていない項目（項目が置き換われば、属性も一緒に消えて作り直す）。"""
+    return conn.execute("SELECT s.item_id, s.received_at, s.payload FROM source_item s "
+                        "WHERE s.source = %s AND NOT EXISTS (SELECT 1 FROM game_attribute a WHERE a.source = s.source AND a.item_id = s.item_id) "
+                        "AND NOT (s.payload ? 'no_attributes') ORDER BY s.item_id LIMIT %s", (source, limit)).fetchall()
+
+
+def upsert_attributes(conn, rows: list[tuple]) -> int:
+    """(appid, key, source, item_id, value, fetched_at) を置き換える。"""
+    with conn.cursor() as cur:
+        cur.executemany("INSERT INTO game_attribute (appid, key, source, item_id, value, fetched_at) VALUES (%s,%s,%s,%s,%s::jsonb,%s) "
+                        "ON CONFLICT (appid, key, source) DO UPDATE SET value = EXCLUDED.value, item_id = EXCLUDED.item_id, fetched_at = EXCLUDED.fetched_at",
+                        [(a, k, s, i, json.dumps(v, ensure_ascii=False), t) for a, k, s, i, v, t in rows])
+        return cur.rowcount
+
+
+def attributes_of(conn, appids: list[str]) -> dict[str, dict[str, list[dict]]]:
+    """作品ごと・項目ごとの属性（取得元・値・取得の時刻）。"""
+    out: dict[str, dict[str, list[dict]]] = {}
+    for a, k, s, v, t in conn.execute("SELECT appid, key, source, value, fetched_at FROM game_attribute WHERE appid = ANY(%s) ORDER BY appid, key, fetched_at DESC",
+                                      (list(appids),)):
+        out.setdefault(a, {}).setdefault(k, []).append({"source": s, "value": v, "fetched_at": t.isoformat()})
+    return out
+
+
+def attribute_targets(conn, source: str, refresh_days: int) -> list[str]:
+    """属性を取りに行く作品: 作品の情報のある作品のうち、その取得元の属性がない・refresh_days より古いもの。"""
+    return [a for (a,) in conn.execute(
+        "SELECT g.appid FROM game_profile g WHERE NOT EXISTS (SELECT 1 FROM source_item s WHERE s.source = %s AND s.item_id = g.appid "
+        "AND s.received_at > now() - make_interval(days => %s)) ORDER BY g.appid", (source, refresh_days))]
+
+
+def platforms_of(conn, appids: list[str]) -> dict[str, list[str]]:
+    return {a: p or [] for a, p in conn.execute("SELECT appid, platforms FROM game_profile WHERE appid = ANY(%s)", (list(appids),))}
+
+
+def newest_catalog_at(conn):
+    """作品の情報・画像・属性のいちばん新しい取得の時刻（公開の作り直しの判定）。"""
+    return conn.execute("SELECT greatest((SELECT max(fetched_at) FROM game_profile), (SELECT max(fetched_at) FROM game_assets), "
+                        "(SELECT max(fetched_at) FROM game_attribute))").fetchone()[0]

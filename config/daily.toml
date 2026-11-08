@@ -5,7 +5,7 @@ jobs = ["collect", "normalize", "observe", "analyze", "insight", "digest", "publ
 max_attempts = 3              # 再試行は呼ぶ側の 1 層だけ。上限と待ちはここに 1 か所
 retry_after_minutes = 30
 max_running_hours = 6         # running のまま残った実行を abandoned で閉じる目安
-user_agent = "game-signal-scout/0.0.1 (private research; non-commercial)"
+user_agent = "game-signal-scout/0.0.1 (+https://github.com/bepro-engineer/game-signal-scout; non-commercial)"
 
 [insight]
 # プレイヤーの声の読み取り（services/insight。共有の Ollama を共有の枠 scout-llm で使う）

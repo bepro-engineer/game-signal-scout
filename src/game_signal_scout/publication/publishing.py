@@ -31,19 +31,23 @@ def code_version() -> str:
     for name in ("content.py", "themes.py"):
         h.update((Path(__file__).parent / name).read_bytes())
     from game_signal_scout import config as _cfg
-    for f in sorted((Path(__file__).parent.parent / "signal").glob("*.py")) + [_cfg.CONFIG / n for n in ("daily.toml", "pages.toml", "signal_cards.toml", "language_areas.toml")]:
+    pkg = Path(__file__).parent.parent
+    for f in sorted((pkg / "signal").glob("*.py")) + [pkg / "ops" / "work_display.py", pkg / "catalog" / "profile.py"] + [
+            _cfg.CONFIG / n for n in ("daily.toml", "pages.toml", "signal_cards.toml", "language_areas.toml")]:
         h.update(f.read_bytes())   # Anime の流用の文書（signal/）と、その設定を替えたら作り直す
     from game_signal_scout.repositories import insight as insight_repo   # noqa: F401  （AI の読み取りは材料の版に入る: input_version）
     return h.hexdigest()[:12]
 
 
 def input_version(conn, cfg: dict) -> str:
-    """材料の版: 分析の規則の版・最後に成功した正規化と分析の時刻・最新の発言の時刻・文書を作るプログラムの指紋。どれかが変われば作り直す。"""
+    """材料の版: 分析の規則の版・最後に成功した正規化と分析の時刻・最新の発言の時刻・作品の情報の最新の時刻・文書を作るプログラムの指紋。どれかが変われば作り直す。"""
     from game_signal_scout.repositories import post
     from game_signal_scout.repositories import insight
+    from game_signal_scout.repositories import catalog
     newest_insight = insight.newest_generated_at(conn)
     return "|".join(str(x) for x in (cfg["analysis"]["version"], job_repo.last_ok_finished_at(conn, "normalize"),
-                                       job_repo.last_ok_finished_at(conn, "analyze"), post.newest_at(conn), newest_insight, code_version()))
+                                       job_repo.last_ok_finished_at(conn, "analyze"), post.newest_at(conn), newest_insight,
+                                       catalog.newest_catalog_at(conn), code_version()))   # 作品の情報・画像・属性が新しくなれば作り直す
 
 
 def build_documents(conn, cfg: dict) -> tuple[dict[str, object], dict]:

@@ -10,7 +10,7 @@
   const MODE_PAGES = { solo: "ひとりで遊べる", coop: "協力プレイ", versus: "対戦", pad: "コントローラーで遊べる" };
   const PAGE = document.documentElement.dataset.page, MODE = MODE_PAGES[PAGE];
   const W = P.works.filter(w => !MODE || (w.modes || []).includes(MODE)), NPAGE = W.filter(w => w.page_only).length;
-  const st = { q: "", kind: "", lang: "", air: "", genre: "", score: "", year: "", tag: "", sort: "last", n: PER };
+  const st = { q: "", jp: "", kind: "", lang: "", air: "", genre: "", score: "", year: "", tag: "", sort: "last", n: PER };
   const EX = A.EXTRA || { tag: t => t };
   try { st.q = new URLSearchParams(location.search).get("q") || ""; } catch (e) { /* 既定で表示 */ }
   // 作品詳細から戻ったとき（前のページへ・ブラウザの戻る）は、探す条件と表示した件数を戻す
@@ -21,9 +21,12 @@
   const norm = s => String(s || "").toLowerCase().normalize("NFKC").replace(/\s+/g, "");
   const hitQ = (w, q) => !q || [w.name.ja, w.name.en, ...(w.keys || [])].some(n => norm(n).includes(q));
   const hitL = (w, l) => !l || (l === "other" ? w.langs.some(([c]) => !MAIN_L.includes(c)) : w.langs.some(([c]) => c === l));
+  // 日本語で遊べるか（#2）: any = UI・字幕・音声のどれか、sub = 字幕以上、voice = 音声。未確認は「日本語で遊べる」に入れない
+  const JPF = { any: w => ["ui", "sub", "voice"].includes(A.jpLevel(w)), sub: w => ["sub", "voice"].includes(A.jpLevel(w)), voice: w => A.jpLevel(w) === "voice" };
+  const hitJ = (w, j) => !j || (JPF[j] ? JPF[j](w) : A.jpLevel(w) === j);
   const airOf = w => (w.rs === "releasing" ? "airing" : w.rs === "not_yet_released" ? "upcoming" : w.rs);
   const filtered = () => { const q = norm(st.q);
-    const list = W.filter(w => hitQ(w, q) && (!st.kind || w.kinds.includes(st.kind)) && hitL(w, st.lang) && (!st.air || airOf(w) === st.air) && (!st.genre || w.genres.includes(st.genre))
+    const list = W.filter(w => hitQ(w, q) && hitJ(w, st.jp) && (!st.kind || w.kinds.includes(st.kind)) && hitL(w, st.lang) && (!st.air || airOf(w) === st.air) && (!st.genre || w.genres.includes(st.genre))
       && (!st.score || (w.score || 0) >= Number(st.score)) && (!st.year || String(w.year) === st.year) && (!st.tag || (w.tags || []).includes(st.tag)));
     if (st.sort === "score") return [...list].sort((a, b) => (b.score || 0) - (a.score || 0) || (b.pop || 0) - (a.pop || 0));
     if (st.sort === "pop") return [...list].sort((a, b) => (b.pop || 0) - (a.pop || 0));
@@ -41,6 +44,7 @@
   const SCORES = [["80", tr("80点以上", "80+")], ["70", tr("70点以上", "70+")], ["60", tr("60点以上", "60+")]];
   $("sr-panel").innerHTML = `<label class="sr-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input id="sr-q" type="search" autocomplete="off" placeholder="${tr("作品名で探す（日本語・英語どちらでも）", "Search by title (Japanese or English)")}" value="${esc(st.q)}" aria-label="${tr("作品名", "Title")}"></label>
+    <div class="sr-row"><span class="sr-l">${tr("日本語", "Japanese")}</span><span class="sr-chips">${chipBtn("jp", "", tr("すべて", "All"), W.length)}${[["any", tr("日本語で遊べる", "Playable in Japanese")], ["sub", tr("字幕あり", "Subtitles")], ["voice", tr("音声あり", "Voice")], ["none", tr("日本語なし", "No Japanese")], ["unknown", tr("未確認", "Unknown")]].map(([k, l]) => chipBtn("jp", k, l, cnt(w => hitJ(w, k)))).join("")}</span></div>
     <div class="sr-row"><span class="sr-l">${tr("変化の種類", "Type of change")}</span><span class="sr-chips">${chipBtn("kind", "", tr("すべて", "All"), W.length)}${Object.keys(KIND).map(k => chipBtn("kind", k, esc(KIND[k]), cnt(w => w.kinds.includes(k)))).join("")}</span></div>
     <div class="sr-row"><span class="sr-l">${tr("言語圏", "Language area")}</span><span class="sr-chips">${chipBtn("lang", "", tr("すべて", "All"))}${MAIN_L.map(l => chipBtn("lang", l, `<i style="background:${lcol(l)}"></i>${esc(ln(l))}`, cnt(w => hitL(w, l)), ` style="--lc:${lcol(l)}"`)).join("")}${chipBtn("lang", "other", tr("そのほか", "Other"), cnt(w => hitL(w, "other")))}</span></div>
     <div class="sr-row"><span class="sr-l">${tr("発売年", "Year")}</span><span class="sr-sel"><select id="sr-year" aria-label="${tr("発売年", "Year")}"><option value="">${tr("すべて", "All")}</option>${years.map(([y, n]) => `<option value="${esc(y)}">${tr(`${y}年（${n}）`, `${y} (${n})`)}</option>`).join("")}</select></span>
@@ -58,12 +62,13 @@
     return ks.length ? `<span class="sr-k">${ks.map(k => `<span class="kt${st.kind === k ? " on" : ""}" data-kind="${esc(k)}">${esc(KIND[k])}</span>`).join("")}</span>` : "";
   };
   const card = w => `<article class="sr-card"><a class="sr-link" href="${A.workUrl(w.id)}" aria-label="${esc(nm(w.name))}"></a>${art(w)}
-    <div class="sr-t">${wn(w.name, 2, "h3")}${meta(w) || w.score != null ? `<span class="sr-meta">${esc(meta(w))}${score(w)}</span>` : ""}${kinds(w)}
+    <div class="sr-t">${wn(w.name, 2, "h3")}${meta(w) || w.score != null ? `<span class="sr-meta">${esc(meta(w))}${score(w)}</span>` : ""}<span class="sr-dev">${A.jpTag(w)} ${A.devLine(w)}</span>${kinds(w)}
     </div></article>`;
 
   function render() {
     const list = filtered(), shown = list.slice(0, st.n);
-    const conds = [st.q && `「${esc(st.q)}」`, st.kind && esc(KIND[st.kind]), st.lang && (st.lang === "other" ? tr("そのほかの言語圏", "Other language areas") : esc(ln(st.lang))), st.air && esc(AIR[st.air]), st.genre && esc(GENRE[st.genre] || st.genre),
+    const JPN = { any: tr("日本語で遊べる", "Playable in Japanese"), sub: tr("日本語字幕あり", "JP subtitles"), voice: tr("日本語音声あり", "JP voice"), none: tr("日本語なし", "No Japanese"), unknown: tr("日本語は未確認", "JP unknown") };
+    const conds = [st.q && `「${esc(st.q)}」`, st.jp && JPN[st.jp], st.kind && esc(KIND[st.kind]), st.lang && (st.lang === "other" ? tr("そのほかの言語圏", "Other language areas") : esc(ln(st.lang))), st.air && esc(AIR[st.air]), st.genre && esc(GENRE[st.genre] || st.genre),
       st.score && tr(`平均評価${st.score}点以上`, `Score ${st.score}+`), st.year && tr(`${esc(st.year)}年`, esc(st.year)), st.tag && esc(EX.tag(st.tag))].filter(Boolean);
     $("sr-count").innerHTML = `<b>${num(list.length)}</b>${tr("作品", " titles")}<span>${tr(`（全${W.length}作品中。${md(P.first)}〜${md(P.latest)}に話題の変化を観測した${W.length - NPAGE}作品と、各ページにだけ載っている${NPAGE}作品）`,
       ` (of ${W.length}: ${W.length - NPAGE} with a change seen ${md(P.first)}–${md(P.latest)}, and ${NPAGE} shown only on other pages)`)}</span>

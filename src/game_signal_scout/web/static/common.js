@@ -18,7 +18,16 @@
   const works = n => tr(`${num(n)}作品`, `${num(n)} ${n === 1 ? "title" : "titles"}`);
   // 作品名: 最大 2 行で、超える分は「…」（CSS の .wn.l1・.wn.l2）。文字は正式名称のまま入れ、title で全文を出す。lines はモックと同じ（1 = 1 行・2 = 2 行）
   const wn = (name, lines = 2, tag = "b") => `<${tag} class="wn l${lines === 1 ? 1 : 2}" title="${esc(nm(name))}">${esc(nm(name))}</${tag}>`;
-  const art = (w, alt) => `<div class="art">${w && w.cover ? `<img src="${esc(w.cover)}" alt="${esc(nm(alt || (w && w.name)))}" referrerpolicy="no-referrer" loading="lazy">` : ""}</div>`;
+  // 日本語の対応（#2。日本人が最初に判断する）: 音声 > 字幕 > UI の順に、いちばん深い対応を 1 つの札で。属性がなければ「未確認」（非対応と混ぜない）
+  const jpLevel = w => !w || w.jp == null ? "unknown" : w.jp.voice ? "voice" : w.jp.sub ? "sub" : w.jp.ui ? "ui" : "none";
+  const JPL = { voice: ["日本語音声", "JP voice"], sub: ["日本語字幕", "JP subtitles"], ui: ["日本語UI", "JP interface"], none: ["日本語なし", "No Japanese"], unknown: ["日本語 未確認", "JP unknown"] };
+  const jpTag = w => { const k = jpLevel(w); return `<span class="jp jp-${k}">${esc(tr(...JPL[k]))}</span>`; };
+  const art = (w, alt) => `<div class="art">${w && w.cover ? `<img src="${esc(w.cover)}" alt="${esc(nm(alt || (w && w.name)))}" referrerpolicy="no-referrer" loading="lazy">` : ""}${w && "jp" in w ? jpTag(w) : ""}</div>`;
+  // 開発元と国・地域（出典の記載のとおり。記載がなければ「国・地域は未確認」）
+  // 多いときは max 社まで（残りは「ほか N 社」。作品詳細はすべて）
+  const devLine = (w, max = 2) => { const ds = (w && w.dev) || []; if (!ds.length) return tr("開発元は未確認", "Developer unknown");
+    const one = d => `${esc(d.n)}${d.c ? `（${esc(d.c.join("・"))}）` : tr("（国・地域は未確認）", " (country unknown)")}`;
+    return ds.slice(0, max).map(one).join(tr("、", ", ")) + (ds.length > max ? tr(`ほか${ds.length - max}社`, ` +${ds.length - max} more`) : ""); };
   const workUrl = id => `work.html?id=${encodeURIComponent(id)}`;
   // 変化の判定のページで、2 番目以降に登録した Source の系列で判定された作品の出典（人数はその Source の中の数。ADR 0050）
   const srcNote = w => w.src_label ? `<span class="rv-air">${esc(tr("出典：", "Source: ") + tr(...w.src_label))}</span>` : "";
@@ -283,7 +292,7 @@
       else { add(step); row.querySelector("button")?.focus(); } });
     add(first);
   };
-  window.ASS = Object.assign(window.ASS || {}, { moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, workUrl, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
+  window.ASS = Object.assign(window.ASS || {}, { moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, workUrl, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
     renderNav, store, sstore, dayBar, restoreScroll, fromPage, goBack, restoring });
   renderNav();
   // まもなく発売（メニューの下の枠。Anime の「まもなく放送」に当たる。signal/upcoming.py・接続口 api/soon）:

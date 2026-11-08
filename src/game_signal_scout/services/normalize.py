@@ -5,6 +5,7 @@
 - voices: 発言 → player_post（宣伝などの印・言語・ストアのリンクの app ID・作品の同定は、どの取得元にも同じに当てる）
 - profiles: 作品の情報 → game_profile
 - reports: 動作の報告 → player_report
+- attributes: 作品の属性 → game_attribute（日本語の UI・字幕・音声、開発元、開発元の国・地域。出典・取得の時刻つき）
 - upcoming・assets・activity: これから発売・作品の画像・遊ばれている規模（取得元が共通の形で渡す）
 
 1 つの取得元の正規化の失敗で、ほかの取得元を止めない（取得元ごとに記録する。Anime と同じ）。
@@ -169,4 +170,21 @@ def normalize(conn, source: str, batch: int = 5000, settings: dict | None = None
         with conn.transaction():
             total += repo.normalize_new(conn, source, (row_of(i, p) for i, p in rows))
         conn.commit()
+    return total
+
+
+def attributes(conn, source: str, settings: dict | None = None, batch: int = 500) -> int:
+    """作品の属性 → game_attribute（取得元の形は、その取得元のクラスの attributes が直す）。"""
+    from game_signal_scout.repositories import catalog
+    rows_of = _reader(source, settings).attributes
+    total = 0
+    while rows := catalog.attribute_rows(conn, source, batch):
+        out = [(a, k, source, item_id, v, received_at) for item_id, received_at, p in rows for a, k, v in rows_of(item_id, received_at, p)]
+        with conn.transaction():
+            total += catalog.upsert_attributes(conn, out)
+            if not out:
+                break
+        conn.commit()
+        if len(rows) < batch:
+            break
     return total

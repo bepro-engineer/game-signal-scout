@@ -482,3 +482,17 @@ title_context_words = ["game", "games", "gaming", "videogame", "video game", "st
                        "アプデ", "攻略", "神ゲー", "クソゲー", "プレステ", "任天堂", "游戏", "遊戲", "게임"]
 resident = true
 poll_seconds = 0
+
+[steam_attributes]
+adapter = "game_signal_scout.sources.steam_attributes:SteamAttributes"
+normalizer = "game_signal_scout.services.normalize:attributes"
+# 役割: 作品の属性（日本語の UI・字幕・音声、開発元・販売元。IStoreBrowseService/GetItems。キー不要・50 作品ずつ）
+min_interval_hours = 20
+refresh_days = 14
+
+[wikidata_works]
+adapter = "game_signal_scout.sources.wikidata_works:WikidataWorks"
+normalizer = "game_signal_scout.services.normalize:attributes"
+# 役割: 作品の属性（開発元と開発元の国・地域。Wikidata〔CC0〕の Query Service。1 回に 100 作品）
+min_interval_hours = 20
+refresh_days = 30
