@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 
-COLS = ("source", "item_id", "at", "author", "lang", "appid", "title", "matched_by", "flags", "text")
+COLS = ("source", "item_id", "at", "author", "lang", "appid", "title", "matched_by", "flags", "text", "stance", "playtime_minutes")
 
 
 def unnormalized(conn, source: str, limit: int):
@@ -16,7 +16,7 @@ def insert(conn, rows: list[dict]) -> int:
         return 0
     with conn.cursor() as cur:
         cur.executemany(f"INSERT INTO player_post ({', '.join(COLS)}) VALUES ({', '.join(['%s'] * len(COLS))}) ON CONFLICT DO NOTHING",
-                        [tuple(json.dumps(r[c]) if c == "flags" else r[c] for c in COLS) for r in rows])
+                        [tuple(json.dumps(r[c]) if c == "flags" else r.get(c) for c in COLS) for r in rows])
         return cur.rowcount
 
 

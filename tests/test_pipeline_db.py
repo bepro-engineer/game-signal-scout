@@ -24,7 +24,7 @@ def only_protondb(monkeypatch):
     """この試験は 1 つの取得元（ProtonDB の配布データ）の段の振る舞いを見る。ほかの取得元は記述から外す（偽の読み手を全取得元に渡すため）。"""
     from game_signal_scout.sources import factory
     real = factory.load_sources_config()
-    monkeypatch.setattr(factory, "load_sources_config", lambda: {k: real[k] for k in ("protondb", "steam_reviews")})   # steam_reviews は無効（試験の部品だけ使う）
+    monkeypatch.setattr(factory, "load_sources_config", lambda: {"protondb": real["protondb"], "steam_reviews": {**real["steam_reviews"], "enabled": False}})   # steam_reviews は試験の部品だけ使う
 
 def dump_records():
     """作品 A は 6 月 1 日から遊べなくなる（7 件・機材 7 種類）。作品 C は変化なし。"""
@@ -69,8 +69,8 @@ def test_daily_run_one_cycle_and_idempotent_rerun(conn, tmp_path):
     path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", dump_records())
     code, out = runner.daily_run(TARGET, reader_factory=lambda name: reader_for(path))
     assert code == runner.EXIT_OK, out
-    assert [j["job"] for j in out["jobs"]] == ["collect", "normalize", "analyze", "publish"]
-    assert out["jobs"][3]["detail"]["status"] == "published" and out["jobs"][3]["output"] == 2
+    assert [j["job"] for j in out["jobs"]] == ["collect", "normalize", "analyze", "insight", "publish"]
+    assert out["jobs"][4]["detail"]["status"] == "published" and out["jobs"][4]["output"] == 2
     assert (count(conn, "source_item"), count(conn, "player_report")) == (37, 37)
     ev = conn.execute("SELECT side, appid, n_key FROM shift_event").fetchall()
     assert ev == [("fail", "A", 7)]
@@ -79,7 +79,7 @@ def test_daily_run_one_cycle_and_idempotent_rerun(conn, tmp_path):
     assert code == runner.EXIT_OK
     assert out["jobs"][0]["output"] == 0 and out["jobs"][1]["output"] == 0
     assert (count(conn, "source_item"), count(conn, "player_report"), count(conn, "shift_event")) == (37, 37, 1)
-    assert [r[1] for r in conn.execute("SELECT job, status FROM job_run ORDER BY id")] == ["ok"] * 8
+    assert [r[1] for r in conn.execute("SELECT job, status FROM job_run ORDER BY id")] == ["ok"] * 10
 
 
 def test_failure_midway_is_retryable_and_resumes_without_duplicates(conn, tmp_path):

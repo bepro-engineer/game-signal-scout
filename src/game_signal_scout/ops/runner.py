@@ -130,6 +130,37 @@ def job_analyze(ctx: Context) -> JobResult:
                      detail={"fail": sum(e["side"] == "fail" for e in events), "fix": sum(e["side"] == "fix" for e in events)})
 
 
+def job_insight(ctx: Context) -> JobResult:
+    """作品ごとに、最近のプレイヤーの発言を AI が読んで日本語でまとめる（services/insight。共有の LLM の枠を通す）。
+    材料（使う発言）が前回と同じ作品は作り直さない。1 回に max_per_run 作品まで（多い作品から。残りは次の回）。1 作品の失敗で止めない。"""
+    from game_signal_scout.repositories import catalog, insight as repo
+    from game_signal_scout.services import insight
+    ic = ctx.cfg.get("insight") or {}
+    if not ic.get("enabled"):
+        return JobResult(output_count=0, detail={"skipped": "disabled"})
+    days, done, failed, skipped = int(ic.get("days", 30)), [], [], 0
+    todo = repo.candidates(ctx.conn, days, int(ic.get("min_statements", 30)), int(ic.get("max_games", 40)))
+    titles = {a: p["title"] for a, p in catalog.profiles(ctx.conn, todo).items()}
+    for appid in todo:
+        if len(done) >= int(ic.get("max_per_run", 12)):
+            break
+        inputs = insight.pick(repo.statements(ctx.conn, appid, days))
+        if repo.get_hash(ctx.conn, appid) == insight.input_hash(inputs):
+            skipped += 1
+            continue
+        try:
+            x = insight.read_game(ctx.conn, appid, titles.get(appid) or appid, ic["model"], days)
+        except Exception as e:  # noqa: BLE001 — 1 作品の失敗で止めない
+            ctx.conn.rollback()
+            failed.append({"appid": appid, "error": f"{type(e).__name__}: {str(e)[:160]}"})
+            continue
+        if x:
+            repo.upsert(ctx.conn, x)
+            ctx.conn.commit()
+            done.append(appid)
+    return JobResult(input_count=len(todo), output_count=len(done), detail={"done": done, "unchanged": skipped, "failed": failed})
+
+
 def job_publish(ctx: Context) -> JobResult:
     """分析の結果から公開用の文書を作り、表 public_document に置き換える（Viewer が読む。外への公開ではない）。
     検査に通らない・作れないときは、表を前の回のままにして段を失敗にする。"""
@@ -140,7 +171,7 @@ def job_publish(ctx: Context) -> JobResult:
     return JobResult(output_count=r.get("documents"), detail=r)
 
 
-JOBS = {"collect": job_collect, "normalize": job_normalize, "analyze": job_analyze, "publish": job_publish}
+JOBS = {"collect": job_collect, "normalize": job_normalize, "analyze": job_analyze, "insight": job_insight, "publish": job_publish}
 
 
 def _run_job(ctx: Context, run_id: str, name: str, attempt: int) -> dict:

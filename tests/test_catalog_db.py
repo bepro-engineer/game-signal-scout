@@ -94,8 +94,9 @@ def test_find_page_filters_by_mode_and_japanese(run, conn):
     with TestClient(create_app(pool=pool)) as c:
         body = c.get("/games?mode=対戦").text
         assert "Counter-Strike 2" in body and "モンスターハンターワイルズ" not in body and "1 作品" in body
+        assert "<h1>対戦プレイで遊べる</h1>" in body and "遊び方</b>" not in body                      # メニューから開いた遊び方のページ。ページ内に遊び方の選択は出さない
         top = c.get("/").text
-        assert "遊び方から選ぶ" in top and "いま多くの人が遊んでいるゲーム" in top and 'src="https://shared.akamai.steamstatic.com' in top
+        assert "遊び方から選ぶ" not in top and "いま多くの人が遊んでいるゲーム" in top and 'src="https://shared.akamai.steamstatic.com' in top
         assert "https://*.steamstatic.com" in c.get("/").headers["content-security-policy"]
         detail = c.get("/games/2246340").text
         assert "自分に合うか、の材料" in detail and "日本語で遊べる" in detail and "まだ分からないこと" in detail

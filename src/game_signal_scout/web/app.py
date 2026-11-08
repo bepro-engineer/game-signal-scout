@@ -96,7 +96,7 @@ def create_app(cfg: dict | None = None, pool=None) -> FastAPI:
         text, health = read(request, public_content.get_overview)
         v = public_content.load(text)
         games = public_content.filter_catalog(v.get("catalog", []), mode, genre, bool(ja))
-        return page("games.html", v=v, games=games, q={"mode": mode, "genre": genre, "ja": bool(ja)}, health=health, nav="find")
+        return page("games.html", v=v, games=games, q={"mode": mode, "genre": genre, "ja": bool(ja)}, health=health, nav=mode if mode and not genre and not ja else "find")
 
     @app.get("/cautions", response_class=HTMLResponse)
     def show_cautions(request: Request):

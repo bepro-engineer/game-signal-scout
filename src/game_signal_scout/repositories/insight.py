@@ -1,0 +1,36 @@
+"""プレイヤーの声の読み取り（game_insight）と、その材料の発言（player_post。取得元に依らない）。"""
+from __future__ import annotations
+
+import json
+
+from game_signal_scout.repositories.post import EXCLUDE
+
+
+def statements(conn, appid: str, days: int) -> list[dict]:
+    """作品の最近の発言（宣伝などの印のあるもの・短すぎるものは除く）。"""
+    rows = conn.execute("SELECT source, item_id, at, lang, text, stance, playtime_minutes FROM player_post WHERE appid = %s "
+                        "AND at > now() - make_interval(days => %s) AND NOT flags ?| %s AND length(text) >= 40 ORDER BY at DESC",
+                        (appid, days, EXCLUDE)).fetchall()
+    return [dict(zip(("source", "item_id", "at", "lang", "text", "stance", "playtime_minutes"), r)) for r in rows]
+
+
+def candidates(conn, days: int, min_statements: int, limit: int) -> list[str]:
+    """読み取りの対象: 最近の発言が min_statements 件以上ある作品（多い順）。"""
+    return [r[0] for r in conn.execute("SELECT appid FROM player_post WHERE appid IS NOT NULL AND at > now() - make_interval(days => %s) "
+                                       "AND NOT flags ?| %s AND length(text) >= 40 GROUP BY appid HAVING count(*) >= %s ORDER BY count(*) DESC LIMIT %s",
+                                       (days, EXCLUDE, min_statements, limit))]
+
+
+def get_hash(conn, appid: str) -> str | None:
+    r = conn.execute("SELECT input_hash FROM game_insight WHERE appid = %s", (appid,)).fetchone()
+    return r[0] if r else None
+
+
+def upsert(conn, x: dict) -> None:
+    conn.execute("INSERT INTO game_insight (appid, generated_at, model, input_hash, body) VALUES (%s,%s,%s,%s,%s) ON CONFLICT (appid) DO UPDATE SET "
+                 "generated_at = EXCLUDED.generated_at, model = EXCLUDED.model, input_hash = EXCLUDED.input_hash, body = EXCLUDED.body",
+                 (x["appid"], x["generated_at"], x["model"], x["input_hash"], json.dumps(x["body"], ensure_ascii=False, default=str)))
+
+
+def all_insights(conn) -> dict[str, dict]:
+    return {a: {"generated_at": g, "model": m, **b} for a, g, m, b in conn.execute("SELECT appid, generated_at, model, body FROM game_insight")}

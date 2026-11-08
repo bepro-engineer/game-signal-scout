@@ -3,6 +3,7 @@
 
 - protondb: 報告 → player_report（遊べたか・機材構成の hash・記述）
 - bluesky: 発言 → player_post（作品の同定: Steam のストアのリンクの app ID、なければ題名の一致。services/identify）
+- steam_reviews: プレイヤーのレビュー → player_post（作品は取得元で決まる: matched_by = source。肯定・否定と、書いた時点の遊んだ時間）
 - steam_store: 作品の情報 → game_profile（画像・説明・ジャンル・遊び方・機種・日本語・発売日。取得元に依らない作品の項目）
 
 ProtonDB の報告の対応:
@@ -122,6 +123,30 @@ def steam_store(conn, source: str, settings: dict | None = None, batch: int = 50
         with conn.transaction():
             total += catalog.upsert(conn, out)
         conn.commit()
+    return total
+
+
+STEAM_LANG = {"japanese": "ja", "english": "en", "schinese": "zh", "tchinese": "zh", "koreana": "ko", "russian": "ru", "german": "de", "french": "fr",
+              "spanish": "es", "latam": "es", "brazilian": "pt", "portuguese": "pt", "polish": "pl", "turkish": "tr", "italian": "it", "ukrainian": "uk", "thai": "th"}
+
+
+def steam_reviews(conn, source: str, settings: dict | None = None, batch: int = 2000) -> int:
+    """プレイヤーのレビュー → player_post。投稿者は持たない（レビュー 1 件を 1 人として数える: author はレビューの ID の hash）。"""
+    from game_signal_scout.repositories import post as post_repo
+    total = 0
+    while rows := post_repo.unnormalized(conn, source, batch):
+        out = []
+        for item_id, occurred_at, p in rows:
+            text = (p.get("review") or "").strip()
+            out.append({"source": source, "item_id": item_id, "at": occurred_at, "author": hashlib.sha256(f"{source}:{item_id}".encode()).hexdigest()[:20],
+                        "lang": STEAM_LANG.get(p.get("language") or "", p.get("language")), "appid": p.get("appid"), "title": None, "matched_by": "source",
+                        "flags": ["received_for_free"] if p.get("received_for_free") else [], "text": text,
+                        "stance": "positive" if p.get("voted_up") else "negative", "playtime_minutes": p.get("playtime_at_review")})
+        with conn.transaction():
+            total += post_repo.insert(conn, out)
+        conn.commit()
+        if len(rows) < batch:
+            break
     return total
 
 

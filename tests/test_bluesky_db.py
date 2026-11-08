@@ -61,7 +61,7 @@ def test_two_sources_flow_to_normalized_posts_and_viewer_documents(run, conn):
           frame(11, rkey="c", text="look", link="Store", link_uri="https://store.steampowered.com/app/999/X/"),
           frame(12, rkey="d", text="weather is nice")]
     out = run(*f)
-    assert [j["job"] for j in out["jobs"]] == ["collect", "normalize", "analyze", "publish"]
+    assert [j["job"] for j in out["jobs"]] == ["collect", "normalize", "analyze", "insight", "publish"]
     assert out["jobs"][1]["detail"] == {"protondb": 4, "bluesky": 8}
     got = posts(conn)
     assert [r for r in got if r[1] == "2246340"] and all(r[2] == "title" for r in got if r[1] == "2246340")

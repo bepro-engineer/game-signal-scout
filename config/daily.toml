@@ -1,11 +1,21 @@
 # 運用の設定（ops/runner）。秘密は書かない。
 
 [daily_run]
-jobs = ["collect", "normalize", "analyze", "publish"]   # publish = Viewer が読む表 public_document の置き換え（外への公開ではない）
+jobs = ["collect", "normalize", "analyze", "insight", "publish"]   # publish = Viewer が読む表 public_document の置き換え（外への公開ではない）
 max_attempts = 3              # 再試行は呼ぶ側の 1 層だけ。上限と待ちはここに 1 か所
 retry_after_minutes = 30
 max_running_hours = 6         # running のまま残った実行を abandoned で閉じる目安
 user_agent = "game-signal-scout/0.0.1 (private research; non-commercial)"
+
+[insight]
+# プレイヤーの声の読み取り（services/insight。共有の Ollama を共有の枠 scout-llm で使う）
+# 2026-11-08: 本人が試行を止めたので無効（再開は本人の判断の後）
+enabled = false
+model = "qwen2.5:7b"
+days = 30                     # 材料にする発言の期間
+min_statements = 30           # これ以上の発言がある作品だけ読む
+max_games = 40                # 対象の作品の数（発言の多い順）
+max_per_run = 12              # 1 回の日次で読む作品の数（1 作品に数分かかる）
 
 [analysis]
 # 「遊べなくなった・直った」の検出（Issue #1 の検証P で事前に固定した規則。変えたら version を上げる）

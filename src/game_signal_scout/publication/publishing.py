@@ -30,14 +30,16 @@ def code_version() -> str:
     h = hashlib.sha256()
     for name in ("content.py", "themes.py"):
         h.update((Path(__file__).parent / name).read_bytes())
+    from game_signal_scout.repositories import insight as insight_repo   # noqa: F401  （AI の読み取りは材料の版に入る: input_version）
     return h.hexdigest()[:12]
 
 
 def input_version(conn, cfg: dict) -> str:
     """材料の版: 分析の規則の版・最後に成功した正規化と分析の時刻・最新の発言の時刻・文書を作るプログラムの指紋。どれかが変われば作り直す。"""
     from game_signal_scout.repositories import post
+    newest_insight = conn.execute("SELECT max(generated_at) FROM game_insight").fetchone()[0]
     return "|".join(str(x) for x in (cfg["analysis"]["version"], job_repo.last_ok_finished_at(conn, "normalize"),
-                                       job_repo.last_ok_finished_at(conn, "analyze"), post.newest_at(conn), code_version()))
+                                       job_repo.last_ok_finished_at(conn, "analyze"), post.newest_at(conn), newest_insight, code_version()))
 
 
 def build_documents(conn, cfg: dict) -> tuple[dict[str, object], dict]:

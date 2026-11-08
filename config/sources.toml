@@ -17,15 +17,20 @@ normalizer = "game_signal_scout.services.normalize:protondb"   # 正規化の選
 
 [steam_reviews]
 adapter = "game_signal_scout.sources.steam_reviews:SteamReviews"
-enabled = false          # 実際の取得は本人の承認まで無効（Issue #1 6705736617 の B）。試験は偽の応答だけ
+normalizer = "game_signal_scout.services.normalize:steam_reviews"
+# 役割: プレイヤーの声（肯定・否定・遊んだ時間つき）。AI が読んで、作品ごとの体験・満足と不満・変化をまとめる材料（services/insight）。
+# 2026-11-08 から使う（Issue #2「権利に振り回されすぎ、一切気にするな」を受けた判断。非公開・非商用。止めるときは enabled = false にして保存分を消す）
+enabled = true
 endpoint = "https://api.steampowered.com/IUserReviewsService/GetAppReviews/v1/"
-appids = []
-filter = 1               # 1 = 新しい順（公式文書の列挙値。文字列の "recent" は解釈されない）
+appids = []              # 空なら、プレイヤーの報告・発言・遊ばれている規模の多い作品（max_games まで）
+max_games = 60
+active_days = 90
+filter = 1               # 1 = 新しい順（公式文書の列挙値）
 languages = ["all"]
 num_per_page = 100
-max_pages_per_app = 3
-retention_days = 30
-min_interval_hours = 24
+max_pages_per_app = 1    # 1 日に作品ごと最新の 100 件まで
+retention_days = 60
+min_interval_hours = 20
 
 [bluesky]
 adapter = "game_signal_scout.sources.bluesky:Bluesky"

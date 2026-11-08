@@ -1,8 +1,9 @@
 """Steam のユーザーレビュー（公式 API IUserReviewsService/GetAppReviews）の取得元。
 
-**実際の取得は本人の承認まで無効**（config/sources.toml の enabled = false。Issue #1 の指示 6705736617 の B）。
-今は固定の偽の応答による試験だけで動作を確かめる。応答の形は実取得の前に公式文書で確かめる（ここでは response の中に
-reviews と cursor がある形と、旧来の直下にある形の両方を読む）。
+2026-11-08 から使う（Issue #2 の本人の指示「権利に振り回されすぎ、一切気にするな」を受けた判断。非公開・非商用の試作、対象と件数を絞る）。
+止めるときは config/sources.toml の enabled = false にし、保存した項目を消す。
+対象の作品は、設定の appids があればそれ、なければ「プレイヤーの報告・発言・遊ばれている規模の多い作品」（repositories/catalog.active_apps）。
+応答は response の中に reviews と cursor がある形と、旧来の直下にある形の両方を読む。
 
 - 投稿者の Steam ID は保存しない（人数の数え方が必要になったら、Scout の鍵で HMAC にする）。
 - 版は timestamp_updated。編集されたレビューは保存を置き換え、正規化をやり直す。
@@ -31,8 +32,13 @@ class SteamReviews(SourceReader):
                 q[k] = int(self.settings[k])
         return self.settings["endpoint"] + "?" + urllib.parse.urlencode({"input_json": json.dumps(q, separators=(",", ":"))})
 
+    conn = None     # 収集の Service が渡す（対象の作品を引く）
+
     def read(self, cursor: dict | None) -> Iterator[Batch]:
         appids = [str(a) for a in self.settings.get("appids") or []]
+        if not appids and self.conn is not None:
+            from game_signal_scout.repositories import catalog
+            appids = [a for a, _ in catalog.active_apps(self.conn, int(self.settings.get("active_days", 90)), int(self.settings.get("max_games", 60)))]
         if not appids or not self.settings.get("endpoint"):
             raise SourceNotConfiguredError("steam_reviews: appids と endpoint がない")
         # 前回、全作品を読み終えていれば、今回は最初から（新しい・編集されたレビューを拾う）。途中なら続きから

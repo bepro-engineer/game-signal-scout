@@ -88,7 +88,38 @@ def overview(conn, version: str, limit: int = 200) -> dict:
         for g in c["genres"]:
             genres[g] = genres.get(g, 0) + 1
     return {"version": version, "sources": sources, "jobs": jobs, "events": events, "catalog": cards, "modes": modes, "genres": genres, "missing": MISSING,
+            "signals": signal_cards(conn),
             "counts": {side: sum(e["side"] == side for e in events) for side in ("fail", "fix")}}
+
+
+def _quote(body: dict, i) -> dict | None:
+    q = (body.get("quotes") or {}).get(str(i)) or (body.get("quotes") or {}).get(i)
+    return {"text": _clip(q["text"], 160), "stance": q.get("stance"), "lang": q.get("lang"), "hours": q.get("hours")} if q else None
+
+
+def signal_cards(conn) -> list[dict]:
+    """AI の読み取り（game_insight）から作る、作品ごとの「いまプレイヤーが書いていること」。並びは発言の多い順。"""
+    from game_signal_scout.repositories import insight as insight_repo
+    from game_signal_scout.services.insight import phenomena
+    ins = insight_repo.all_insights(conn)
+    prof, act = catalog.profiles(conn, list(ins)), catalog.latest_activity(conn, list(ins))
+    out = []
+    for a, b in ins.items():
+        p = prof.get(a)
+        if not p or not b.get("headline"):
+            continue
+        st = b.get("stats") or {}
+        n = (st.get("positive") or 0) + (st.get("negative") or 0)
+        top_praise, top_complaint = (b.get("praise") or [None])[0], (b.get("complaints") or [None])[0]
+        out.append({"appid": a, "title": p["title"], "image": p["image_url"], "headline": b["headline"], "experience": b.get("experience"),
+                    "praise": top_praise and {"point": top_praise["point"], "n": len(top_praise["ids"])},
+                    "complaint": top_complaint and {"point": top_complaint["point"], "n": len(top_complaint["ids"])},
+                    "quotes": [q for q in (_quote(b, x["ids"][0]) for x in (b.get("praise") or [])[:1] + (b.get("complaints") or [])[:1]) if q],
+                    "n": st.get("n"), "positive": round((st.get("positive") or 0) / n, 2) if n else None, "days": st.get("days"),
+                    "kinds": phenomena(b, bool((act.get(a) or {}).get("rank"))), "rank": (act.get(a) or {}).get("rank"),
+                    "short": b.get("short_sessions", {}).get("point") or None, "friends": b.get("with_friends", {}).get("point") or None,
+                    "update": b.get("update_change", {}).get("point") or None})
+    return sorted(out, key=lambda c: -(c["n"] or 0))
 
 
 def catalog_cards(conn, events: list[dict]) -> list[dict]:
@@ -142,14 +173,32 @@ def game(conn, version: str, appid: str) -> dict | None:
     activity = {"day": _iso(ac["day"]), "rank": ac["rank"], "prev_rank": ac["prev_rank"], "peak_players": ac["peak_players"]} if ac else None
     return {"appid": appid, "title": title, "version": version, "profile": profile, "activity": activity,
             "compat": catalog.recent_reports(conn, [appid], COMPAT_DAYS).get(appid), "compat_days": COMPAT_DAYS,
-            "events": events, "weeks": weeks, "posts": posts, "missing": MISSING}
+            "events": events, "weeks": weeks, "posts": posts, "missing": MISSING, "insight": insight_doc(conn, appid)}
+
+
+def insight_doc(conn, appid: str) -> dict | None:
+    """作品のページの AI の読み取り（結論 → 楽しめる点・不満・合う人・合わない人・短い時間・注意・更新 → 根拠の引用）。"""
+    from game_signal_scout.repositories import insight as insight_repo
+    b = insight_repo.all_insights(conn).get(appid)
+    if not b:
+        return None
+    def items(k):
+        return [{"point": x["point"], "n": len(x["ids"]), "quotes": [q for q in (_quote(b, i) for i in x["ids"][:2]) if q]} for x in b.get(k) or []]
+    one = lambda k: ({"point": b[k]["point"], "n": len(b[k]["ids"]), "quotes": [q for q in (_quote(b, i) for i in b[k]["ids"][:2]) if q]}
+                     if (b.get(k) or {}).get("point") else None)
+    st = b.get("stats") or {}
+    return {"headline": b["headline"], "experience": b.get("experience"), "praise": items("praise"), "complaints": items("complaints"),
+            "fits": items("fits"), "not_fits": items("not_fits"), "cautions": items("cautions"), "short": one("short_sessions"),
+            "friends": one("with_friends"), "update": one("update_change"), "direction": (b.get("update_change") or {}).get("direction"),
+            "n": st.get("n"), "positive": st.get("positive"), "negative": st.get("negative"), "used": st.get("used"), "days": st.get("days"),
+            "generated_at": _iso(b.get("generated_at")), "model": b.get("model")}
 
 
 def build(conn, version: str) -> dict[str, dict]:
     docs = {"overview": overview(conn, version)}
     newest = post.newest_at(conn)
     voiced = [a["appid"] for a in post.top_apps(conn, newest - timedelta(days=VOICE_DAYS), 50) if a["appid"] not in NOT_GAMES] if newest else []
-    for appid in dict.fromkeys([c["appid"] for c in docs["overview"]["catalog"]] + [e["appid"] for e in docs["overview"]["events"]] + voiced):
+    for appid in dict.fromkeys([c["appid"] for c in docs["overview"]["signals"]] + [c["appid"] for c in docs["overview"]["catalog"]] + [e["appid"] for e in docs["overview"]["events"]] + voiced):
         g = game(conn, version, appid)
         if g is not None:
             docs[f"game/{appid}"] = g
@@ -163,7 +212,7 @@ def audit(docs: dict[str, dict]) -> list[str]:
     for c in ov.get("catalog", []):
         if extra := set(c) - CARD_KEYS:
             problems.append(f"overview: 許していない項目 {sorted(extra)}")
-    for e in ov.get("events", []) + ov.get("catalog", []):
+    for e in ov.get("events", []) + ov.get("catalog", []) + ov.get("signals", []):
         if f"game/{e['appid']}" not in docs:
             problems.append(f"overview: game/{e['appid']} がない")
     for e in ov.get("events", []):

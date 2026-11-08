@@ -39,7 +39,8 @@ def test_overview_shows_freshness_and_detected_change(client):
     assert "default-src 'none'" in r.headers["content-security-policy"] and r.headers["x-frame-options"] == "DENY"
     body = r.text
     assert 'href="/games/100"' in body and "Game 100" in body       # 最近「遊べなくなった」作品は「買う前に知っておきたいこと」に出る
-    assert "遊び方から選ぶ" in body and "買う前に知っておきたいこと" in body and "まだお届けできないこと" in body
+    assert "遊び方から選ぶ" not in body and "買う前に知っておきたいこと" in body and "まだお届けできないこと" in body   # 遊び方は左のメニュー
+    assert "一人（ソロ）で遊べる" in body and "協力プレイで遊べる" in body and "対戦プレイで遊べる" in body and "コントローラで遊べる" in body
     assert "/games/200" not in body                                 # 変化のない作品は一覧に出ない
     assert "内容を作った時刻: 20" in body
     assert "多かった内容: 更新・パッチの後から" in body

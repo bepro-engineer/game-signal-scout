@@ -12,14 +12,7 @@
 <p>いま遊ばれているゲームを、遊び方・日本語への対応・遊べる機種と、プレイヤーの声や買う前の注意でまとめています。</p>
 </section>
 
-<section class="block">
-<header class="sec-h"><h2>遊び方から選ぶ</h2><p>ひとりでじっくり遊ぶか、だれかと遊ぶか。いま遊ばれている {{ v.catalog|length }} 作品から絞り込めます。</p></header>
-<div class="modes">
-{% for m, desc in [('ひとりで遊べる', '自分のペースで進められる'), ('協力プレイ', '友だちと一緒に'), ('対戦', 'ほかのプレイヤーと競う'), ('コントローラーで遊べる', 'ソファでくつろいで')] %}
-<a class="mode" href="/games?mode={{ m|urlencode }}"><b>{{ m }}</b><span>{{ desc }}</span><em>{{ v.modes.get(m, 0) }} 作品 →</em></a>
-{% endfor %}
-</div>
-</section>
+
 
 {% if ranked %}
 <section class="block">

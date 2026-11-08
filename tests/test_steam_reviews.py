@@ -1,4 +1,4 @@
-"""Steam のレビューの取得元: 固定の偽の応答だけで確かめる（実際の API には接続しない。実取得は本人の承認まで無効）。"""
+"""Steam のレビューの取得元: 固定の偽の応答だけで確かめる（実際の API には接続しない）。"""
 from __future__ import annotations
 
 import json
@@ -30,12 +30,13 @@ class FakeHttp:
 
 def reader(http, **kw):
     cfg = factory.load_sources_config()
-    return factory.create("steam_reviews", http, {"steam_reviews": {**cfg["steam_reviews"], "appids": ["10"], **kw}})
+    return factory.create("steam_reviews", http, {"steam_reviews": {**cfg["steam_reviews"], "appids": ["10"], "max_pages_per_app": 3, **kw}})
 
 
-def test_disabled_by_default():
-    assert factory.load_sources_config()["steam_reviews"]["enabled"] is False
-    assert "steam_reviews" not in factory.sources()
+def test_enabled_for_daily_collect():
+    """2026-11-08 から日次で読む（Issue #2 の本人の指示を受けた判断。止めるときは enabled = false）。"""
+    assert factory.load_sources_config()["steam_reviews"]["enabled"] is True
+    assert "steam_reviews" in factory.sources()
 
 
 def test_pages_with_cursor_and_stops_when_cursor_repeats():
