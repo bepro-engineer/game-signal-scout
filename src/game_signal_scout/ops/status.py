@@ -26,14 +26,6 @@ def status(conn) -> dict:
     from game_signal_scout.repositories import fetch
     for s, st in fetch.states(conn).items():           # 最後の試行・成功・失敗（データがまだない取得元も出す）
         sources.setdefault(s, {"items": 0}).update(st)
-    from datetime import datetime, timezone
-    from game_signal_scout.ops.collector import heartbeat_path, residents
-    from game_signal_scout.sources.factory import load_sources_config
-    for s in residents(load_sources_config()):          # 常駐の収集器の生きている印（周期ごとに書く）
-        hb = heartbeat_path(s)
-        at = datetime.fromisoformat(hb.read_text().strip()) if hb.exists() else None
-        sources.setdefault(s, {"items": 0}).update(resident=True, heartbeat_at=at,
-                                                       heartbeat_age_seconds=round((datetime.now(timezone.utc) - at).total_seconds()) if at else None)
     version = config.load_daily_config()["analysis"]["version"]
     events = report_repo.event_counts(conn, version)
     from game_signal_scout.repositories import public_document

@@ -17,7 +17,7 @@ from game_signal_scout.repositories import fetch as fetch_repo, session
 
 
 def pollers(cfg: dict) -> list[str]:
-    return [n for n, s in cfg.items() if isinstance(s, dict) and s.get("adapter") and s.get("enabled", True) and s.get("poll") and not s.get("resident")]
+    return [n for n, s in cfg.items() if isinstance(s, dict) and s.get("adapter") and s.get("enabled", True) and s.get("poll")]
 
 
 def run(reader_factory=None) -> dict:

@@ -23,9 +23,9 @@ def load_sources_config() -> dict:
 
 
 def sources(cfg: dict | None = None) -> list[str]:
-    """日次の collect で収集する取得元（記述があり、enabled が false でなく、常駐〔resident = true。ops/collector〕でないもの）。"""
+    """日次の collect で収集する取得元（記述があり、enabled が false でないもの）。"""
     cfg = cfg if cfg is not None else load_sources_config()
-    return [name for name, sec in cfg.items() if isinstance(sec, dict) and sec.get("adapter") and sec.get("enabled", True) and not sec.get("resident")]
+    return [name for name, sec in cfg.items() if isinstance(sec, dict) and sec.get("adapter") and sec.get("enabled", True)]
 
 
 def reader_class(source: str, cfg: dict | None = None) -> type[SourceReader]:

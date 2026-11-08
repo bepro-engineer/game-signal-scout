@@ -25,9 +25,6 @@ def main(argv=None) -> int:
     ld = sub.add_parser("launchd", help="起動の定義（launchd の plist）を書く（既定 runtime/launchd）。--apply で ~/Library/LaunchAgents に書いて反映")
     ld.add_argument("--dir")
     ld.add_argument("--apply", action="store_true", help="変わった・新しい定義を bootout → bootstrap し、一覧にない定義を消す（Anime の apply と同じ）")
-    sc = sub.add_parser("source-collect", help="常駐の取得元の収集器（config/sources.toml の resident = true。launchd の collect-<取得元> が動かす）")
-    sc.add_argument("--source", required=True)
-    sc.add_argument("--once", action="store_true", help="1 周期だけ")
     sub.add_parser("poll", help="短い間隔の収集（config/sources.toml の poll = true の取得元を collect → 正規化。launchd の poll が動かす）")
     sub.add_parser("init-author-key", help="投稿者の HMAC の鍵（runtime/author_hmac.key）を初回だけ作る（あれば作らない）")
     a = ap.parse_args(argv)
@@ -42,9 +39,6 @@ def main(argv=None) -> int:
             return 0
         print(json.dumps(launchd.write(config.REPO, Path(a.dir) if a.dir else config.RUNTIME / "launchd")))
         return 0
-    if a.cmd == "source-collect":
-        from game_signal_scout.ops import collector
-        return collector.run(a.source, a.once)
     if a.cmd == "poll":
         from game_signal_scout.ops import poll
         return poll.main()

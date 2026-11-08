@@ -15,7 +15,7 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 |---|---|---|
 | 入口（Controller） | `cli.py`、`web/app.py`・`web/routers/` | コマンド（1 行の JSON）と Viewer のルート（`/`・`/spread.html` などのページ、`/api/days`・`/api/days/<日>`・`/api/pages`・`/api/search`・`/api/soon`・`/api/works/<id>`、`/healthz`） |
 | 画面（View） | `web/pages.py`・`web/templates`・`web/static` | Anime の web をそのまま流用（ページの枠は HTML、中身は JS が `/api/…` の文書から組む。日英） |
-| 運用 | `ops/` | 段（collect → normalize → observe → analyze → insight → digest → publish）の実行と記録（`job_run`）・排他・再試行、常駐（`collector`）・短い間隔の収集（`poll`）・launchd の定義 |
+| 運用 | `ops/` | 段（collect → normalize → observe → analyze → insight → digest → publish）の実行と記録（`job_run`）・排他・再試行、短い間隔の収集（`poll`）・launchd の定義 |
 | 業務（Service） | `services/`・`observations.py`・`foundation/`・`signal/`・`publication/`・`ops/dashboard_digest.py`・`web/services/` | 収集・正規化・作品の同定、観測の集計（`obs_*`）と系列、画面の文書（Anime の content を流用）、今日の兆し（共有の LLM）、公開（検査して `public_document` を置き換え） |
 | データ（Repository） | `repositories/` | SQL はここだけ（試験 `test_sql_only_in_repositories`） |
 | 取得元 | `sources/` | 取得元の契約（`SourceReader`）、記述から作る Factory、節度のある取得（`Fetcher`）、共通の読み方（`feeds.py`）と取得元ごとの読み方 |
@@ -79,12 +79,11 @@ Anime の `ops/launchd`（agent の形）と `sources/runner` を移植してい
 |------|------|------|
 | `daily-run` | 毎日 6:15 | collect → normalize → analyze → publish |
 | `web` | 常駐 | Viewer（127.0.0.1:8720） |
-| `collect-<取得元>` | 常駐（異常終了のときだけ起動し直す） | ストリームの取得元（`resident = true`）の受信。`source-collect --source <取得元>` |
 | `poll` | 10 分ごと（2026-11-08 登録） | `poll`（`poll = true` の掲示板の取得元を collect → 正規化。新着だけを返すフィードの取りこぼしを防ぐ） |
 
 - `python -m game_signal_scout launchd` は定義を `runtime/launchd` に書くだけです（見るため）。
 - `python -m game_signal_scout launchd --apply` は `~/Library/LaunchAgents` に書き、変わった・新しい定義を bootout → bootstrap し、一覧にない定義を消します。
-- 前提: `runtime/db.env` の `GSS_DB_DSN`（Game の DB）と `init-author-key`。常駐の受信の生きている印は `runtime/sources/<取得元>.heartbeat`（`status` に出る）。
+- 前提: `runtime/db.env` の `GSS_DB_DSN`（Game の DB）と `init-author-key`。
 
 ## 試験
 

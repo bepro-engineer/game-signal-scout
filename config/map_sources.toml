@@ -166,4 +166,4 @@ label = ["Famiboards", "Famiboards"]
 [sources.bluesky]
 reader = "foundation"
 production = true
-label = ["Bluesky の投稿", "Bluesky posts"]
+label = ["その他の取得元（SNS）", "Other source (social)"]

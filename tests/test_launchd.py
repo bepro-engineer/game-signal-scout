@@ -13,15 +13,13 @@ def test_write_renders_plists_and_finds_stale_ones(monkeypatch, tmp_path):
     (out / f"{launchd.PREFIX}.old-thing.plist").write_bytes(b"x")
     (out / "com.bepro.anime-signal-scout.worker.plist").write_bytes(b"y")       # 他の Scout の定義には触れない
     r = launchd.write(tmp_path, out)
-    assert set(r["written"]) == {"daily-run", "web", "collect-bluesky", "poll"} and set(r["changed"]) == set(r["written"]) and r["stale"] == ["old-thing"]
+    assert set(r["written"]) == {"daily-run", "web", "poll"} and set(r["changed"]) == set(r["written"]) and r["stale"] == ["old-thing"]
     d = plistlib.loads((out / f"{launchd.PREFIX}.daily-run.plist").read_bytes())
     assert d["Label"] == "com.bepro.game-signal-scout.daily-run" and d["StartCalendarInterval"] == {"Hour": 6, "Minute": 15}
     assert d["RunAtLoad"] is False and "KeepAlive" not in d and d["ProgramArguments"][-2:] == ["daily-run", "--retry"]
     assert "game_signal_scout" in d["ProgramArguments"][2] and "anime" not in d["ProgramArguments"][2]
     w = plistlib.loads((out / f"{launchd.PREFIX}.web.plist").read_bytes())
     assert w["KeepAlive"] is True and w["StandardOutPath"].endswith("runtime/logs/web.launchd.log")
-    c = plistlib.loads((out / f"{launchd.PREFIX}.collect-bluesky.plist").read_bytes())
-    assert c["KeepAlive"] == {"SuccessfulExit": False} and c["ProgramArguments"][-3:] == ["source-collect", "--source", "bluesky"]
     assert (out / "com.bepro.anime-signal-scout.worker.plist").read_bytes() == b"y"
     assert launchd.write(tmp_path, out)["changed"] == []                       # 同じ内容なら変わらない
 
@@ -43,10 +41,10 @@ def test_apply_bootstraps_changed_removes_stale_and_loads_missing(monkeypatch, t
     r = launchd.apply(tmp_path, agents, 501, log=lambda m: None, launchctl=lc)
     assert r["stale"] == ["old-thing"] and not (agents / f"{launchd.PREFIX}.old-thing.plist").exists()
     assert ("bootout", f"gui/501/{launchd.PREFIX}.old-thing") in calls
-    assert sorted(a[2].rsplit(".", 2)[-2] for a in calls if a[0] == "bootstrap") == ["collect-bluesky", "daily-run", "poll", "web"]
+    assert sorted(a[2].rsplit(".", 2)[-2] for a in calls if a[0] == "bootstrap") == ["daily-run", "poll", "web"]
     calls.clear()
     launchd.apply(tmp_path, agents, 501, log=lambda m: None, launchctl=lc)     # 変わっていない・載っている定義には触れない
-    assert [a[0] for a in calls] == ["print"] * 4
+    assert [a[0] for a in calls] == ["print"] * 3
     loaded.discard(f"{launchd.PREFIX}.web")
     calls.clear()
     launchd.apply(tmp_path, agents, 501, log=lambda m: None, launchctl=lc)     # 載っていない定義（ログインし直しなど）は載せる

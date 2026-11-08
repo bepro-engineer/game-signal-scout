@@ -1,7 +1,7 @@
 """起動の定義（launchd の plist）を作る（Anime の ops/launchd の render・write をそのまま移植し、仕事の一覧を Game に替えた）。
 
 - services(): daily-run（時刻で起動。config/daily.toml [launchd] hour・minute）・web（Viewer。常駐）・
-  collect-<取得元>（config/sources.toml で resident = true の取得元。命令 source-collect。ops/collector。Anime の collect-<source> と同じ）。
+  poll（10 分ごと。config/sources.toml の poll = true の取得元。取得元ごとの専用の常駐は持たない）。
 - write(): plist を書く（命令 launchd の既定の置き場所は runtime/launchd。見るだけ）。
 - apply(): Anime の apply（agent の形）を移植: ~/Library/LaunchAgents に書き、変わった・新しい定義を bootout → bootstrap、
   一覧にないこのアプリの定義を bootout して消す。変わっていない定義には触れない。常駐は 2026-11-08 に本人が承認（Issue #1）。
@@ -25,7 +25,6 @@ def _python(*args: str) -> list[str]:
 
 def services(root: Path) -> dict[str, dict]:
     from game_signal_scout.config import load_daily_config
-    from game_signal_scout.ops.collector import residents
     from game_signal_scout.sources.factory import load_sources_config
     lc = load_daily_config()["launchd"]
     logs = root / "runtime" / "logs"
@@ -38,10 +37,6 @@ def services(root: Path) -> dict[str, dict]:
     }
     # 短い間隔の収集（新着だけを返す掲示板のフィード。ops/poll）
     out["poll"] = {"args": _python("poll"), "log": logs / "poll.launchd.log", "interval": int(lc.get("poll_minutes", 10)) * 60, "exit_timeout": 300}
-    # 常駐の受信（Anime と同じ: 異常終了のときだけ起動し直す。使えない取得元は 0 で終わり、起動し直さない。二重起動は 75 で終わり 60 秒後に取り直す）
-    for s in residents(load_sources_config()):
-        out[f"collect-{s}"] = {"args": _python("source-collect", "--source", s), "log": logs / f"collect-{s}.launchd.log",
-                               "keepalive": {"SuccessfulExit": False}, "throttle": 60, "exit_timeout": 60}
     return out
 
 

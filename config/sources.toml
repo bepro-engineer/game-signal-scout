@@ -458,17 +458,17 @@ min_interval_hours = 0
 feeds = [{ url = "https://famiboards.com/forums/-/index.rss", lang = "en" }]
 
 [bluesky]
-# 役割: プレイヤーの声（SNS。ストリームの取得元なので常駐で受信する: resident = true）
+# 役割: プレイヤーの声（SNS。キー不要）
 adapter = "game_signal_scout.sources.bluesky:Bluesky"
 normalizer = "game_signal_scout.services.normalize:voices"
 enabled = true
-resident = true
+poll = true
 error_backoff_seconds = 30
 endpoints = ["wss://jetstream.us-east.bsky.network/xrpc/network.bsky.jetstream.subscribeEvents",
              "wss://jetstream.us-west.bsky.network/xrpc/network.bsky.jetstream.subscribeEvents"]
 subprotocol = "xrpc.v1.json"
 collections = ["app.bsky.feed.post"]
-batch_seconds = 30
+batch_seconds = 60
 idle_seconds = 20
 switch_rewind_seconds = 60
 retention_days = 30
