@@ -516,3 +516,8 @@ main.sp .note { margin: 12px 2px 0; font-size: 14px; color: var(--ink-3); }
 @media (max-width: 640px) { .mv-cards { grid-template-columns: minmax(0, 1fr); } .mv-card { grid-template-columns: 52px minmax(0, 1fr); } .mv-card > .art { width: 52px; } }
 .ck1-chips span { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }   /* 320px でも札が枠の中で折り返す */
 .rank li .tagfirst { max-width: 100%; white-space: normal; }   /* 320px で「初めて話題に」の札が順位の枠を越えた */
+/* 作品の画像（#2）: メインの幅に入る列の数だけ 1 段に並べる（1 枚 120px 以上）。入らない分は出さない（すぐ下の「いつもより話題が増えた作品」に全部ある） */
+.g-lead { container-type: inline-size; }
+@container (max-width: 990px) { .g-row { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; } .g-row > li:nth-child(n+7) { display: none; } }
+@container (max-width: 850px) { .g-row { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; } .g-row > li:nth-child(n+5) { display: none; } }
+@container (max-width: 560px) { .g-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px; } }
