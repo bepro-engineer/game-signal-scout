@@ -14,8 +14,10 @@
   const widthOf = el => Math.floor(el.getBoundingClientRect().width);
 
   /* ---------- 紹介・表示している日 ---------- */
-  $("intro").innerHTML = `<div><h2>${tr("世界のゲームのプレイヤーの声から、まだ目立っていない変化を見つける。", "Spot changes not yet in the spotlight, from the voices of game players worldwide.")}</h2>
-    <p>${tr("プレイヤーの反応を毎日観測し、作品への関心の高まりや言語圏を越えた広がりをお届けします。", "We observe player reactions every day and show rising interest and spread across language areas.")}</p></div>`;
+  // 入口（#2: 次に遊びたいゲームを発見する）: 遊ぶ目的から探し始める。選ぶと、その目的に当てはまる体験を複数のプレイヤーが書いた作品へ
+  $("intro").innerHTML = `<div class="ask"><h2>${tr("今日は、どんなゲームを探す？", "What kind of game are you looking for today?")}</h2>
+    <p>${tr("世界のプレイヤーが実際に遊んで書いた体験から、次に遊びたいゲームを見つけます。", "Find your next game from what players around the world actually did and wrote.")}</p>
+    <div class="ask-i">${A.INTENTS.map(([k, ja, en, dja, den]) => `<a class="ask-b ask-${k}" href="finds.html?intent=${k}"><b>${tr(ja, en)}</b><small>${tr(dja, den)}</small></a>`).join("")}</div></div>`;
   A.dayBar($("intro"), "afterend");   // 表示している日は紹介のブロックの下に右寄せ（2026-10-15 のユーザーの指示）
 
   /* ---------- 今日の兆し ---------- */

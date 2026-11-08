@@ -29,6 +29,11 @@
     const one = d => `${esc(d.n)}${d.c ? `（${esc(d.c.join("・"))}）` : tr("（国・地域は未確認）", " (country unknown)")}`;
     return ds.slice(0, max).map(one).join(tr("、", ", ")) + (ds.length > max ? tr(`ほか${ds.length - max}社`, ` +${ds.length - max} more`) : ""); };
   const workUrl = id => `work.html?id=${encodeURIComponent(id)}`;
+  // 遊ぶ目的（#2 の入口。services/insight の intent と同じ鍵）
+  const INTENTS = [["deep", "じっくり没頭したい", "Get absorbed", "探索・物語・育成", "Exploration, story, progression"],
+    ["short", "短時間で楽しみたい", "Have fun in a short time", "1 回が短くても満足", "Satisfying in short sessions"],
+    ["novel", "新しい体験がしたい", "Try something new", "独創的な仕組み・意外な遊び方", "Original mechanics, surprising play"],
+    ["friends", "友達と遊びたい", "Play with friends", "協力・対戦・一緒に", "Co-op, versus, together"]];
   // 変化の判定のページで、2 番目以降に登録した Source の系列で判定された作品の出典（人数はその Source の中の数。ADR 0050）
   const srcNote = w => w.src_label ? `<span class="rv-air">${esc(tr("出典：", "Source: ") + tr(...w.src_label))}</span>` : "";
   // 言語（色は言語にだけ使う）
@@ -292,7 +297,7 @@
       else { add(step); row.querySelector("button")?.focus(); } });
     add(first);
   };
-  window.ASS = Object.assign(window.ASS || {}, { moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, workUrl, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
+  window.ASS = Object.assign(window.ASS || {}, { moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, workUrl, INTENTS, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
     renderNav, store, sstore, dayBar, restoreScroll, fromPage, goBack, restoring });
   renderNav();
   // まもなく発売（メニューの下の枠。Anime の「まもなく放送」に当たる。signal/upcoming.py・接続口 api/soon）:

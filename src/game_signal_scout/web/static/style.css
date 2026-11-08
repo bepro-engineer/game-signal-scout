@@ -261,3 +261,10 @@ details.how[open] summary { border-bottom: 1px solid var(--line); }
 .wkj-d .jy { font-weight: 700; color: #c2456f; } .wkj-d .jn { color: #777; } .wkj-d .jq { color: #999; }
 .wkj-s { color: #888; margin-left: 6px; }
 .sr-dev { display: block; font-size: 12px; color: #666; line-height: 1.4; overflow-wrap: anywhere; }
+/* トップの入口（#2）: 遊ぶ目的から探す */
+.ask h2 { margin: 0 0 4px; } .ask p { margin: 0 0 10px; color: #555; }
+.ask-i { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ask-b { display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: #fff; color: inherit; text-decoration: none; box-shadow: 0 1px 6px rgba(40,30,80,.10); border-top: 4px solid #8f86d9; }
+.ask-b b { font-size: 16px; } .ask-b small { color: #666; font-size: 12px; }
+.ask-b:hover { box-shadow: 0 2px 12px rgba(40,30,80,.18); }
+@media (max-width: 900px) { .ask-i { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
