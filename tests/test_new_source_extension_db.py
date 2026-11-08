@@ -248,3 +248,14 @@ def test_common_normalizer_applies_the_same_rules_to_every_source(conn):
             "SELECT item_id, appid, matched_by, flags, lang FROM player_post WHERE source=%s", (src,))}
     assert got["src_a"] == got["src_b"]                                          # 取得元が違っても同じ結果
     assert got["src_a"]["l"][:2] == ("2246340", "steam_link") and got["src_a"]["p"][2] is True and got["src_a"]["j"][3] == "ja"
+
+
+def test_non_fetch_contract_matches_anime_defaults():
+    """取得しない用途の契約（Anime と同じ名前・既定）: 引用してよい項目は既定ですべて、原投稿の URL は https だけ、記述のない取得元は None（#3 G1）。"""
+    from game_signal_scout.sources import factory
+    from game_signal_scout.sources.contract import SourceReader
+    for m in ("quotable", "permalink", "internal_id_markers", "voice", "profile", "report"):
+        assert hasattr(SourceReader, m)
+    assert factory.reader_for("never_described") is None
+    assert factory.permalink("never_described", "1", "http://x") is None and factory.permalink("never_described", "1", "https://x") == "https://x"
+    assert factory.permalink("never_described", "123") is None          # ID を URL の代わりに返さない

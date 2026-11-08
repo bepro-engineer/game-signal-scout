@@ -54,6 +54,7 @@ class SourceCorruptError(RuntimeError):
 
 class SourceReader(ABC):
     name: str = ""
+    internal_id_markers: tuple[str, ...] = ()   # 公開の文書に出してはいけない、投稿者・投稿の内部の識別子の印（Anime と同じ。公開前の検査が集める）
 
     def __init__(self, settings: dict, http):
         self.settings, self.http = settings, http
@@ -61,6 +62,17 @@ class SourceReader(ABC):
     @abstractmethod
     def read(self, cursor: dict | None) -> Iterator[Batch]:
         """cursor（前回の続きの位置。初回は None）から読み、束を順に返す。"""
+
+    # ---- 取得しない用途の契約（Anime の sources/contract と同じ名前・同じ既定。取得元の決まりがあれば上書きする）
+
+    def quotable(self, conn, item_ids: list[str]) -> set[str]:
+        """公開の画面に抜粋とリンクを出してよい項目の ID（既定: すべて。投稿者・内容のラベルのある取得元はここで判定する）。"""
+        return set(item_ids)
+
+    def permalink(self, item: dict) -> str | None:
+        """項目の公開の URL（item は item_id・url。既定: 保存した url のうち https のもの。ID を URL とみなさない）。"""
+        url = item.get("url")
+        return url if url and str(url).startswith("https://") else None
 
     # ---- 取得元の形を、共通の形へ直す（Adapter の責務。共通の正規化〔services/normalize〕が、記述の normalizer の種類に応じて呼ぶ）
     # 取得元の形がすでに共通の形なら、既定のまま（何もしない）。取得元の名前で分ける処理は、ここ（各取得元のクラス）にだけ書く。

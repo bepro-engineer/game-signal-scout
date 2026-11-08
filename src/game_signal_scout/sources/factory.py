@@ -45,15 +45,38 @@ def create(source: str, http, cfg: dict | None = None) -> SourceReader:
 
 
 
-# ---- Anime の factory の、取得しない用途の部品（画面の引用の URL・内部の識別子の印）
-def reader_for(source):
-    return None
+# ---- 取得しない用途の部品（Anime の sources/factory と同じ: 画面の引用の可否・URL・内部の識別子の印）
+_READERS: dict[str, SourceReader | None] = {}
 
 
-def permalink(source, item_id: str, url: str | None = None) -> str | None:
-    """発言の公開の URL（https のものだけ。取得元が渡した url。作れない取得元は None = 引用に link を付けない）。ID を URL の代わりに返さない。"""
+def reader_for(source: str | None) -> SourceReader | None:
+    """取得しない用途の取得元（1 process に 1 つ）。記述のない取得元は None（呼ぶ側は既定の扱い）。"""
+    if not source:
+        return None
+    if source not in _READERS:
+        try:
+            _READERS[source] = create(source, None)
+        except Exception:  # noqa: BLE001 — 記述・設定のない取得元
+            _READERS[source] = None
+    return _READERS[source]
+
+
+def permalink(source: str | None, item_id: str, url: str | None = None) -> str | None:
+    """発言の公開の URL（取得元の permalink。取得元がなければ保存した url のうち https のもの）。ID を URL の代わりに返さない。"""
+    reader = reader_for(source)
+    if reader:
+        return reader.permalink({"item_id": item_id, "url": url})
     return url if url and str(url).startswith("https://") else None
 
 
 def internal_id_markers() -> tuple:
-    return ()
+    """記述のあるすべての取得元の、公開してはいけない内部の識別子の印（クラスの属性。取得元を作らない）。"""
+    cfg = load_sources_config()
+    out = []
+    for name, sec in cfg.items():
+        if isinstance(sec, dict) and sec.get("adapter"):
+            try:
+                out += list(reader_class(name, cfg).internal_id_markers)
+            except (ImportError, AttributeError, ValueError):
+                continue
+    return tuple(dict.fromkeys(out))
