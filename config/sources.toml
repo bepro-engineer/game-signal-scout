@@ -427,3 +427,48 @@ game_only = true
 poll = true
 min_interval_hours = 0
 feeds = [{ url = "https://www.gtplanet.net/forum/forums/-/index.rss", lang = "en" }]
+
+[spaziogames]
+adapter = "game_signal_scout.sources.feeds:FeedForum"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（SpazioGames の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
+game_only = true
+poll = true
+min_interval_hours = 0
+feeds = [{ url = "https://forum.spaziogames.it/forums/-/index.rss", lang = "it" }]
+
+[tomshw_it]
+adapter = "game_signal_scout.sources.feeds:FeedForum"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（Tom's Hardware Italia の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
+game_only = true
+poll = true
+min_interval_hours = 0
+feeds = [{ url = "https://forum.tomshw.it/forums/-/index.rss", lang = "it" }]
+
+[cdaction]
+adapter = "game_signal_scout.sources.feeds:FeedForum"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（CD-Action の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
+game_only = true
+poll = true
+min_interval_hours = 0
+feeds = [{ url = "https://forum.cdaction.pl/discover/all.xml/", lang = "pl" }]
+
+[pcgames_de]
+adapter = "game_signal_scout.sources.feeds:FeedForum"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（PC Games の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
+game_only = true
+poll = true
+min_interval_hours = 0
+feeds = [{ url = "https://forum.pcgames.de/forums/-/index.rss", lang = "de" }]
+
+[famiboards]
+adapter = "game_signal_scout.sources.feeds:FeedForum"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（Famiboardsの新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
+game_only = true
+poll = true
+min_interval_hours = 0
+feeds = [{ url = "https://famiboards.com/forums/-/index.rss", lang = "en" }]

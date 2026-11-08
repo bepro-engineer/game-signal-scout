@@ -138,3 +138,28 @@ label = ["ElOtroLado", "ElOtroLado"]
 reader = "foundation"
 production = true
 label = ["GTPlanet", "GTPlanet"]
+
+[sources.spaziogames]
+reader = "foundation"
+production = true
+label = ["SpazioGames の掲示板", "SpazioGames forum"]
+
+[sources.tomshw_it]
+reader = "foundation"
+production = true
+label = ["Tom's Hardware Italia の掲示板", "Tom's Hardware Italia forum"]
+
+[sources.cdaction]
+reader = "foundation"
+production = true
+label = ["CD-Action の掲示板", "CD-Action forum"]
+
+[sources.pcgames_de]
+reader = "foundation"
+production = true
+label = ["PC Games の掲示板", "PC Games forum"]
+
+[sources.famiboards]
+reader = "foundation"
+production = true
+label = ["Famiboards", "Famiboards"]
