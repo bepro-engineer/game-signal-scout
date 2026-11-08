@@ -20,14 +20,25 @@
   const wn = (name, lines = 2, tag = "b") => `<${tag} class="wn l${lines === 1 ? 1 : 2}" title="${esc(nm(name))}">${esc(nm(name))}</${tag}>`;
   // 日本語の対応（#2。日本人が最初に判断する）: 音声 > 字幕 > UI の順に、いちばん深い対応を 1 つの札で。属性がなければ「未確認」（非対応と混ぜない）
   const jpLevel = w => !w || w.jp == null ? "unknown" : w.jp.voice ? "voice" : w.jp.sub ? "sub" : w.jp.ui ? "ui" : "none";
-  // 日本語の対応（#2）: 遊びやすさの順に 4 段階。声＝登場人物が日本語でしゃべる／字＝台詞が日本語の字幕（声は外国語）／文＝メニューや説明の文字だけ／－＝なし。
-  // 見分けは強調の色（紫）1 系統の濃淡と記号。意味は凡例（jpLegend）を、印の出る段に常に出す。出典は販売元のストアの対応言語の表
-  const JPL = { voice: ["声", "V", "声も日本語", "Japanese voice"], sub: ["字", "S", "字幕まで日本語", "Japanese subtitles"], ui: ["文", "T", "メニューだけ日本語", "Japanese menus only"],
-    none: ["－", "–", "日本語なし", "No Japanese"], unknown: ["？", "?", "日本語は未確認", "Japanese unknown"] };
-  const jpTag = w => { const k = jpLevel(w), x = JPL[k]; return `<span class="jp jp-${k}" title="${esc(tr(x[2], x[3]))}"><i>${esc(tr(x[0], x[1]))}</i><span>${esc(tr(x[2], x[3]))}</span></span>`; };
-  const jpLegend = () => `<div class="jp-legend"><b>${tr("日本語の対応", "Japanese support")}</b>${["voice", "sub", "ui", "none"].map(k => { const x = JPL[k];
-    return `<span class="jp jp-${k}"><i>${esc(tr(x[0], x[1]))}</i><span>${esc(tr({ voice: "声も日本語（吹き替え）", sub: "字幕まで日本語（声は外国語）", ui: "メニューだけ日本語", none: "日本語なし" }[k], x[3]))}</span></span>`; }).join("")}
+  // 日本語の対応（#2）: 遊びやすさの順に 4 段階。記号は使わず、印そのものに言葉で書く（音声も日本語＝吹き替え／字幕が日本語＝声は外国語／メニューだけ日本語／日本語なし）。
+  // 色は強調の紫 1 系統の濃淡で段階の目安だけ。出典は販売元のストアの対応言語の表（凡例の下に書く）
+  const JPL = { voice: ["音声も日本語", "Japanese voice"], sub: ["字幕が日本語", "Japanese subtitles"], ui: ["メニューだけ日本語", "Japanese menus only"],
+    none: ["日本語なし", "No Japanese"], unknown: ["日本語は未確認", "Japanese unknown"] };
+  const jpTag = w => { const k = jpLevel(w); return `<span class="jp jp-${k}">${esc(tr(...JPL[k]))}</span>`; };
+  const jpLegend = () => `<div class="jp-legend"><b>${tr("日本語の対応", "Japanese support")}</b>
+    <span><span class="jp jp-voice">${tr("音声も日本語", "Japanese voice")}</span>${tr("登場人物が日本語でしゃべる", "characters speak Japanese")}</span>
+    <span><span class="jp jp-sub">${tr("字幕が日本語", "Japanese subtitles")}</span>${tr("声は外国語、せりふは日本語の字幕", "foreign voice, Japanese subtitles")}</span>
+    <span><span class="jp jp-ui">${tr("メニューだけ日本語", "Japanese menus only")}</span>${tr("せりふは日本語にならない", "dialogue not in Japanese")}</span>
     <small>${tr("販売元がストアに載せている対応言語の表より", "From the publisher's store listing")}</small></div>`;
+  // 凡例は必ず付ける（#2）: 日本語の印が出る領域（本文・左の列）ごとに、最初の印より前に凡例がなければ、その印を含む段の前に入れる。
+  // 後から足される印（「もっと見る」など）は、同じ領域の先頭の凡例が受け持つ
+  const ensureJpLegend = () => document.querySelectorAll("main, .sidecol").forEach(root => {
+    const first = [...root.querySelectorAll(".jp")].find(j => !j.closest(".jp-legend")); if (!first) return;
+    const lg = root.querySelector(".jp-legend");
+    if (lg && (lg.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING)) return;
+    if (lg) lg.remove();
+    let sec = first; while (sec.parentElement && sec.parentElement !== root) sec = sec.parentElement;
+    sec.insertAdjacentHTML("beforebegin", jpLegend()); });
   // 醍醐味の種類（services/insight の appeal_kind と同じ鍵）。体験から言えたときだけ付く
   const APPEAL = { conquer: ["強敵を自力で乗り越える手応え", "Overcoming tough challenges yourself"], explore: ["探して、見つける喜び", "The joy of exploring and finding"],
     story: ["物語と世界に浸る", "Getting lost in the story and world"], grow: ["育てて、作り上げる楽しさ", "Building and growing things"],
@@ -327,7 +338,7 @@
       <div class="dh-in"><span class="dh-k">${tr("いま、プレイヤーが夢中になっていること", "What players are into right now")}</span>
         <h1>${esc(x.appeal)}</h1><p class="dh-g">${tr(`<b>${esc(nm(x.w.name))}</b> を遊んだプレイヤーの体験から`, `From players of <b>${esc(nm(x.w.name))}</b>`)}</p>
         <p class="dh-ev">${evLine(x.ev)}</p>
-        <div class="dh-m"><span class="dh-p">${pplWrote(x.people)}</span>${jpTag(x.w)}<a class="dbtn" href="${workUrl(x.w.id)}">${tr("この作品の体験を見る", "See this title")}</a></div></div></section>`;
+        <div class="dh-m"><span class="dh-p">${pplWrote(x.people)}</span><a class="dbtn" href="${workUrl(x.w.id)}">${tr("この作品の体験を見る", "See this title")}</a></div></div></section>`;
   const dKinds = (items, href) => { const ks = Object.keys(APPEAL).map(k => ({ k, xs: items.filter(x => x.kind === k) })).filter(x => x.xs.length).sort((a, b) => b.xs.length - a.xs.length);
     return ks.length ? `<div class="dk">${ks.map(({ k, xs }, i) => `<a class="dk-t" href="${href(k)}"><img src="${esc(shot(xs[0].w, i + 1))}" alt="" referrerpolicy="no-referrer" loading="lazy">
       <div><b>${esc(tr(...APPEAL[k]))}</b><small>${[...new Set(xs.map(x => nm(x.w.name)))].slice(0, 2).map(esc).join(tr("・", ", "))}${tr(`　体験 ${num(xs.length)}件`, ` · ${num(xs.length)}`)}</small></div></a>`).join("")}</div>` : ""; };
@@ -337,7 +348,7 @@
           ${x.against ? `<span class="dc-w">${tr(`反対の声 ${num(x.against)}人`, `${num(x.against)} disagreed`)}</span>` : ""}
           ${x.caution ? `<span class="dc-w">${tr("注意: ", "Note: ")}${esc(tr(...CJ[x.caution]))}</span>` : ""}${jpTag(x.w)}</div></div></a>`;
   const discover = { items: appealItems, hero: dHero, kinds: dKinds, card: dCard, VJ, CJ, pplWrote, evLine };
-  window.ASS = Object.assign(window.ASS || {}, { moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, devName, discover, workUrl, FACETS, facetHit, jpLegend, APPEAL, shot, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
+  window.ASS = Object.assign(window.ASS || {}, { moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, devName, discover, ensureJpLegend, workUrl, FACETS, facetHit, jpLegend, APPEAL, shot, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
     renderNav, store, sstore, dayBar, restoreScroll, fromPage, goBack, restoring });
   renderNav();
   // まもなく発売（メニューの下の枠。Anime の「まもなく放送」に当たる。signal/upcoming.py・接続口 api/soon）:

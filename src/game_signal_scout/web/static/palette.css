@@ -283,18 +283,17 @@ main.g #lead .dg-cites { margin: 8px 0 18px; }
 /* Game: メニューの項目（一人（ソロ）で遊べる・コントローラで遊べる）を 1 行に収める（本人の指示: メニューは折り返さない） */
 .side a { font-size: 14px; padding: 10px 8px; gap: 8px; white-space: nowrap; }
 
-/* 日本語の対応（#2。4 段階）: 強調の紫 1 系統の濃淡と記号。意味は凡例（.jp-legend）を印の出る段に常に出す */
-.jp { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; color: var(--ink-2); vertical-align: middle; }
-.jp i { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 6px; font-style: normal; font-size: 12px; font-weight: 800; line-height: 1; }
-.jp-voice i { background: var(--accent); color: #fff; }
-.jp-sub i { background: #B4B0F0; color: #24206B; }
-.jp-ui i { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px #D5D2F7; }
-.jp-none i, .jp-unknown i { background: #E6E8EE; color: var(--ink-3); }
-.jp-none, .jp-unknown { color: var(--ink-3); }
-.art .jp { position: absolute; left: 6px; bottom: 6px; } .art .jp > span { display: none; } .art .jp i { box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+/* 日本語の対応（#2。4 段階）: 印そのものに言葉。紫 1 系統の濃淡は段階の目安 */
+.jp { display: inline-block; padding: 1px 8px; border-radius: 6px; font-weight: 700; font-size: 12px; line-height: 1.7; white-space: nowrap; vertical-align: middle; }
+.jp-voice { background: var(--accent); color: #fff; }
+.jp-sub { background: #C9C6F3; color: #26216E; }
+.jp-ui { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px #D5D2F7; }
+.jp-none, .jp-unknown { background: #E9EAEE; color: var(--ink-3); }
+.art .jp { position: absolute; left: 6px; bottom: 6px; max-width: calc(100% - 12px); overflow: hidden; text-overflow: ellipsis; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
 .wk-head .art .jp { display: none; }
 .jp-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 14px; padding: 10px 14px; background: var(--card); border-radius: 12px; box-shadow: 0 0 0 1px var(--line); font-size: 13px; }
 .jp-legend b { color: var(--ink); } .jp-legend small { color: var(--ink-3); }
+.jp-legend > span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
 
 /* 醍醐味の部品（#2）: 色はゲームの絵に任せる。文字を載せる所だけ絵を黒の半透明で落とす。強調は紫 1 色。グラデーションの色・光る効果は使わない。
    人間工学: 視線は 絵 → 醍醐味の一文 → 根拠 → 次の一歩／本文 15〜16px・行間 1.7／押せる所は 44px 以上 */
