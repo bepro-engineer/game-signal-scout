@@ -2,7 +2,7 @@
 
 PC・家庭用ゲームのプレイヤーの声（レビュー・掲示板・SNS など多くの取得元）から、ほかでは見えにくい変化（アップデートの影響・不満・評価の変化・言語圏を越えた広がり）を見つけ、限られた休日に遊ぶゲームを選ぶ材料にする試作です。価値の検証と経緯は [Issue #1](https://github.com/bepro-engineer/game-signal-scout/issues/1) が正本です。
 
-**外への公開はしていません。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（127.0.0.1:8720、自分の機械だけ）、毎日 6:15 の daily-run（`launchd --apply`）。声の取得元は、どれも同じ形の常駐の収集器（取得元ごとの `collect-<取得元>`。Anime と同じ）で読みます。
+**インターネットへの公開は準備中です（Issue #6）。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（ポート 8720。家の中と Tailscale の機械から見られる）、毎日 6:15 の daily-run（`launchd --apply`）。声の取得元は、どれも同じ形の常駐の収集器（取得元ごとの `collect-<取得元>`。Anime と同じ）で読みます。
 
 
 > **取得元はすべて同列の交換可能な入力で、どれもなくてまったく困らない（外しても残りの取得元だけで動く）。特定の取得元を中心に置かない・目立たせない・個別に名前を挙げて取り上げない**（オーナーの厳命。[CLAUDE.md](CLAUDE.md)）。
@@ -68,7 +68,7 @@ python -m game_signal_scout web         # http://127.0.0.1:8720/
 - **まもなく発売**（メニューの下）: Steam の人気の近日発売。発売日が近い作品と、注目の近日発売。
 - 画面に出す日は、Game が観測を始めた日から（`config/daily.toml` `[publish] start_day`）。
 - 狭い幅（320・390px）から PC（1280px 以上）まで、親の枠を越える要素・横スクロールがないことを DOM で確かめています（Issue #2）。画面は [docs/screenshots](docs/screenshots)。
-- 開き方: Mac mini で `http://127.0.0.1:8720/`。ほかの Mac からは `ssh -N -L 8720:127.0.0.1:8720 bepro@mac-mini.tail3744fc.ts.net` を張ったまま、その Mac で `http://127.0.0.1:8720/`。
+- 開き方: 家の中の機械からは `http://192.168.11.8:8720/`、Tailscale につないだ機械（外出先のスマートフォンを含む）からは `http://100.64.63.60:8720/`（または `http://mac-mini.tail3744fc.ts.net:8720/`）。Mac mini では `http://127.0.0.1:8720/`。受ける相手は `config/daily.toml` の `[web] allow_from`（家の中と Tailscale の範囲）。
 - 表 `public_document`・`public_build` を読むだけです（Anime と同じ形）。DB に届かなければ 503 を返します。
 
 ## 常駐と起動の定義

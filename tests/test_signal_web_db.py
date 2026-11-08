@@ -115,5 +115,6 @@ def test_only_known_peers_and_no_health_through_the_public_entrance(client):
     from fastapi.testclient import TestClient
     from game_signal_scout.web.app import create_app
     app = c.app
-    other = TestClient(app, client=("192.168.11.50", 1234))
-    assert other.get("/").status_code == 403
+    assert TestClient(app, client=("192.168.11.50", 1234)).get("/").status_code == 200      # 家の中の他の機械からは見える
+    assert TestClient(app, client=("100.101.102.103", 1234)).get("/").status_code == 200    # Tailscale の機械からも見える
+    assert TestClient(app, client=("8.8.8.8", 1234)).get("/").status_code == 403            # 外のインターネットからの直の接続は受けない

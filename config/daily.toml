@@ -49,10 +49,10 @@ start_day = "2026-11-07"
 
 [web]
 analytics_script_src = ""   # Anime の画面の流用が読む（Game はアクセス解析を入れない）
-# Viewer（web/app）。公開の入口（VAIO の Apache。Cloudflare Tunnel の内側。Issue #6）から届くように家の中の口で待ち受け、
-# 受けてよい相手を allow_from に限る（この機械自身と VAIO だけ。ほかは 403）
-host = "127.0.0.1"
-allow_from = ["127.0.0.1", "::1", "192.168.11.3"]
+# Viewer（web/app）。家の中の他の機械・Tailscale の機械・公開の入口（VAIO の Apache。Cloudflare Tunnel の内側。Issue #6）から見られるように待ち受け、
+# 受けてよい相手を allow_from に限る（家の中と Tailscale の範囲。ほかは 403）
+host = "0.0.0.0"          # 公開の入口（VAIO の Apache）から届くように家の中の口でも待ち受ける。受ける相手は allow_from だけ（Issue #6）
+allow_from = ["127.0.0.1/32", "::1/128", "192.168.11.0/24", "100.64.0.0/10"]   # この機械・家の中のネットワーク・Tailscale の機械（公開の入口 VAIO を含む）
 port = 8720
 pool_min_size = 1
 pool_max_size = 4

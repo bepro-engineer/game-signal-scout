@@ -53,7 +53,7 @@ def main(argv=None) -> int:
         from game_signal_scout import config
         wc = config.load_daily_config()["web"]
         uvicorn.run("game_signal_scout.web.app:create_app", factory=True, host=a.host or wc["host"], port=a.port or int(wc["port"]),
-                    server_header=False)
+                    server_header=False, proxy_headers=False)   # 相手は実際の接続元で判定する（転送の見出しで相手を変えない。Issue #6 の allow_from）
         return 0
     if a.cmd == "daily-run":
         from game_signal_scout.ops.runner import EXIT_RETRY, daily_run

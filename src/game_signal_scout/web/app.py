@@ -67,14 +67,28 @@ def create_app(cfg: dict | None = None, serve_static: bool = True, pool=None) ->
     if serve_static:
         app.mount("/static", StaticFiles(directory=str(page_views.STATIC)), name="static")
 
-    # 受けてよい相手（Issue #6）: この機械自身と、公開の入口（VAIO の Apache。Cloudflare Tunnel の内側）だけ。
+    # 受けてよい相手（Issue #6）: この機械・家の中のネットワーク・Tailscale の機械（家の中の他の Mac やスマートフォンから見る）と、
+    # 公開の入口（VAIO の Apache。Cloudflare Tunnel の内側。外のインターネットはこの入口を通る）。
     # 公開の入口から届いた要求（X-Forwarded-For つき）には、稼働の確認の口を出さない（管理・運用の情報を外に出さない）
-    allow = set((cfg["web"].get("allow_from") or ["127.0.0.1", "::1"]))
+    import ipaddress
+    nets, names = [], set()
+    for x in (cfg["web"].get("allow_from") or ["127.0.0.1/32", "::1/128"]):
+        try:
+            nets.append(ipaddress.ip_network(x, strict=False))
+        except ValueError:
+            names.add(x)                     # アドレスでない相手の名前（試験の TestClient など）
+
+    def known(peer: str) -> bool:
+        try:
+            ip = ipaddress.ip_address(peer)
+        except ValueError:
+            return peer in names
+        return any(ip in n for n in nets if n.version == ip.version)
 
     @app.middleware("http")
     async def only_known_peers(request: Request, call_next):
         peer = request.client.host if request.client else ""
-        if peer not in allow:
+        if not known(peer):
             return Response(status_code=403)
         if request.headers.get("x-forwarded-for") and request.url.path.startswith("/healthz"):
             return Response(status_code=404)
