@@ -28,14 +28,14 @@ HANZI_ONLY = re.compile(r"[遇到们这个吗么还没为说时会对过]")   # 
 READ_PROMPT = """ゲーム「{title}」のプレイヤーの発言を 1 件ずつ読んでください。発言が「自分が実際に遊んで、何をして、何が起きたか」を具体的に書いているときだけ、それを取り出します。
 感想だけ・ニュース・質問・宣伝・抽象的な評価だけのものは null にします。発言にないことは書かないでください。
 各発言について次の JSON を返します: {{"id": 番号, "exp": null または {{"did": "プレイヤーがしたこと（日本語 30 字以内）", "happened": "その結果起きたこと（日本語 40 字以内）", "verdict": "fun（面白い・良かった）/ frustration（不満・困った）/ mixed", "topic": "体験の話題を表す短い日本語（15 字以内）"}}}}
-JSON の配列だけを返してください（前置き不要）。
+次の形の JSON だけを返してください（前置き不要）: {{"items": [各発言の JSON, ...]}}
 
 発言:
 {lines}"""
 
 GROUP_PROMPT = """ゲーム「{title}」のプレイヤーの体験の一覧です。同じ具体的な体験（同じことをして、同じことが起きた）を書いているものをまとめてください。
 言い換えでも中身が同じならまとめ、中身が違えば分けます。まとまらないものは入れなくてよいです。番号は一覧にあるものだけを使います。
-JSON の配列だけを返してください（前置き不要）: [{{"title": "まとめた体験を 1 文で（「〜すると〜」の形。日本語 50 字以内。一覧にないことを足さない）", "ids": [番号, ...]}}]
+次の形の JSON だけを返してください（前置き不要）: {{"groups": [{{"title": "まとめた体験を 1 文で（「〜すると〜」の形。日本語 50 字以内。一覧にないことを足さない）", "ids": [番号, ...]}}]}}
 
 一覧:
 {items}"""
@@ -125,7 +125,7 @@ def read_game(conn, appid: str, title: str, model: str, cfg: dict, prev_body: di
         return None
     if ask is None:
         from game_signal_scout import llm
-        ask = lambda p: llm.chat(model, "", p, options={"temperature": 0.1, "num_ctx": 8192}, timeout=float(cfg.get("timeout_seconds", 1800))).content
+        ask = lambda p: llm.chat(model, "", p, format="json", think=False, options={"temperature": 0.1, "num_ctx": 8192, "num_predict": 2048}, timeout=float(cfg.get("timeout_seconds", 1800))).content
     reads = {k: v for k, v in ((prev_body or {}).get("reads") or {}).items() if k in {r["item_id"] for r in rows}}
     todo = [r for r in rows if r["item_id"] not in reads][: int(cfg.get("max_reads_per_run", 60))]
     reads.update(read_statements(ask, title, todo))
