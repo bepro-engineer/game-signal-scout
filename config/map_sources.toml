@@ -123,3 +123,8 @@ label = ["Pantip のゲームの話題", "Pantip game topics"]
 reader = "foundation"
 production = true
 label = ["はてなブックマークのコメント", "Hatena Bookmark comments"]
+
+[sources.studio_forums]
+reader = "foundation"
+production = true
+label = ["作品の公式の掲示板", "Official studio forums"]
