@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}このサイトについて{% endblock %}
+{% block mainclass %}about{% endblock %}
+{% block main %}
+<section class="intro"><div><h1>このサイトについて</h1>
+<p>Steam のゲームを Linux（Proton。Steam Deck を含む）で遊んだプレイヤーの報告から、ある時期を境に「遊べない」という声が急に増えた・減ったゲームを見つけ、プレイヤーが何を書いていたかをまとめる試作です。</p></div></section>
+
+<section class="block card prose">
+<h2>見つけ方</h2>
+<ul>
+<li>14 日の間に、別々の機材構成から 5 件以上の報告があり、「遊べない」という報告の割合が、その前の 60 日より 30 ポイント以上変わったものを「遊べなくなった」「直った」として出します（規則の版 <code>{{ v.version }}</code>）。</li>
+<li>「書かれていたこと」は、根拠になった報告の文中の言葉で数えています（例: NVIDIA・起動直後に落ちる・更新の後から）。2 件以上の報告に出たものだけを、件数と一緒に出します。言葉の一致なので誤りを含み、原因とは限りません。</li>
+<li>報告の原文は訳さず、そのまま載せています（項目名だけ日本語にしています）。</li>
+</ul>
+<h2>情報源と更新</h2>
+<ul>
+<li>ProtonDB の公開配布データ（ODbL 1.0 / DbCL 1.0）。配布は月に 1 回程度で、最新の報告の日は下の表のとおりです。毎朝 6:15 に取り込みを試みます。</li>
+<li>Bluesky の公開の投稿（ゲームの話題の言葉か Steam のストアのリンクがあるもの）。投稿者は特定できない形に置き換え、削除された投稿は消します。ゲームへの結び付けの正しさはまだ測っていないので、参考として分けて表示します。</li>
+</ul>
+<h2>分からないこと</h2>
+<ul>
+<li>Windows で遊ぶ人に同じことが起きているかは分かりません（報告は Linux のものです）。</li>
+<li>報告が少ないゲームでは、数件で割合が大きく動きます。</li>
+<li>Valve・ProtonDB・各ゲームの開発元とは関係ありません。</li>
+</ul>
+</section>
+
+<section class="block card">
+<h2>データの状態</h2>
+<table>
+<thead><tr><th>情報源</th><th class="num">件数</th><th>最新</th><th>最後に取得できた時刻</th><th>最後の失敗</th></tr></thead>
+<tbody>
+{% for name, src in v.sources.items() %}
+<tr><td>{{ {'protondb': 'ProtonDB の報告', 'bluesky': 'Bluesky の発言'}.get(name, name) }}</td><td class="num">{{ "{:,}".format(src["items"]) }}</td><td>{{ src.newest_occurred_at|day }}</td>
+<td>{{ src.last_ok_at|ts }}</td><td>{% if src.last_error_type %}<span class="bad">{{ src.last_error_type }}</span>{% else %}—{% endif %}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<p class="jobs">{% for job, j in v.jobs.items() %}<span class="job {{ 'ok' if j.status == 'ok' else 'bad' }}">{{ {'collect': '取得', 'normalize': '整理', 'analyze': '分析'}.get(job, job) }}: {{ j.status or '—' }}{% if j.finished_at %}（{{ j.finished_at|ts }}）{% endif %}</span>{% endfor %}</p>
+</section>
+{% endblock %}

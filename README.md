@@ -10,8 +10,8 @@ Anime Signal Scout の基本モデルから、Game に必要な部分だけを�
 
 | 層 | 場所 | 内容 |
 |---|---|---|
-| 入口（Controller） | `cli.py`、`web/app.py` | コマンドと 1 行の JSON の出力。Viewer のルート（`/` 変化の一覧、`/games/<appid>` 作品、`/api/…` 文書の JSON、`/healthz`） |
-| 画面（View） | `web/templates`、`web/static` | サーバー側で HTML にする（JavaScript なし）。根拠の記述は escape する |
+| 入口（Controller） | `cli.py`、`web/app.py` | コマンドと 1 行の JSON の出力。Viewer のルート（`/` 変化の一覧、`/games/<appid>` 作品、`/about` このサイトについて、`/api/…` 文書の JSON、`/healthz`） |
+| 画面（View） | `web/templates`、`web/static` | サーバー側で HTML にする（JavaScript なし）。根拠の記述は escape する。見た目は Anime の明るい UI（白いカード・意味の色・段の見出しの線）を踏襲し、外の文字や画像は読み込まない（Issue #2） |
 | 運用 | `ops/runner.py` | 段（collect → normalize → analyze → publish）の実行、段ごとの排他、実行の記録（`job_run`）、再試行の可否と終了コード |
 | 業務（Service） | `services/`、`publication/`、`web/public_content.py` | 収集（束ごとの保存と続きの位置）、正規化、変化の検出。公開用の文書を作って検査し、表 `public_document` に置き換える（Anime の publishing を移植）。Viewer はその文書を鍵で読むだけ |
 | データ（Repository） | `repositories/` | SQL はここだけ |

@@ -1,42 +1,174 @@
-:root { --bg: #fafaf8; --fg: #1d1d1b; --muted: #6b6b66; --line: #deded8; --link: #1f5fbf; --bad: #b3261e; --good: #1e7a3c; --bar: #c9a227; }
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #161615; --fg: #ececea; --muted: #a0a09a; --line: #34342f; --link: #7fb0ff; --bad: #ff8a80; --good: #7ad19a; --bar: #d8b53a; }
+/* Game Signal Scout の画面。Anime Signal Scout の明るい UI（mockups/dashboard-2026-10-11/DESIGN-RULES.md・static/style.css の色）を踏襲する。
+   - 明るい地・白いカード（角丸 16px・枠線なし・影は 1 種類。いちばん大事な段だけ強い影と上端の線）
+   - 色は意味を伝えるときだけ: 遊べなくなった＝ローズ・直った＝ティール・操作（リンク）＝青紫
+   - 文字は 14px 以上。余白は 8・16・24・32px。段の見出しは左に 4px の線
+   - 外の文字の読み込みはしない（CSP で外への接続を禁じている）。見出しの文字は端末にあるものを使う */
+:root {
+  color-scheme: light;
+  --bg: #f6f4fb; --card: #fff; --line: #e6e2f1; --soft: #f3f1f9;
+  --ink: #1d1a3a; --ink-2: #3c3958; --ink-3: #57536f;
+  --accent: #5246c9; --accent-soft: #ebe8fb; --brand: #d6407e;
+  --fail: #d94c88; --fail-soft: #fceef4; --fail-ink: #b8396f;
+  --fix: #238b78; --fix-soft: #e8f4f1; --fix-ink: #1b6e5f;
+  --shadow: 0 1px 2px rgba(40, 30, 80, .05), 0 8px 24px rgba(40, 30, 80, .07);
+  --shadow-lg: 0 2px 6px rgba(40, 30, 80, .06), 0 22px 50px rgba(60, 40, 120, .12);
+  --round: "M PLUS Rounded 1c", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;   /* 見出し。Anime の丸文字が端末にあれば使い、なければ太字の出せるヒラギノ角ゴ（丸ゴシックは太字がなく細く見える） */
+  --sans: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, sans-serif;
+  --r: 16px;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.6 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
-a { color: var(--link); }
-header.top { padding: 12px 16px; border-bottom: 1px solid var(--line); font-weight: 700; }
-header.top a { color: inherit; text-decoration: none; }
-.tag { margin-left: 8px; font-size: 12px; font-weight: 400; color: var(--muted); }
-main { max-width: 1000px; margin: 0 auto; padding: 16px; }
-h1 { font-size: 22px; margin: 8px 0; }
-h2 { font-size: 17px; margin: 28px 0 8px; }
-.lead, .crumb, .built, footer { color: var(--muted); }
-table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-size: 13px; color: var(--muted); font-weight: 600; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.75 var(--sans); }
+a { color: var(--accent); }
+h1, h2, h3 { font-family: var(--round); color: var(--ink); line-height: 1.45; }
+small { font-size: 14px; }
+code { font-size: 14px; background: var(--soft); padding: 0 4px; border-radius: 4px; }
+
+/* ヘッダー: 白い帯・Game の記号（コントローラと電波）・名前と一言・2 つの案内 */
+header.site { background: var(--card); box-shadow: 0 1px 0 var(--line); position: sticky; top: 0; z-index: 10; }
+.site-in { max-width: 1120px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); min-width: 0; }
+.mark { width: 44px; height: 44px; flex: none; }
+.brand-t { display: flex; flex-direction: column; min-width: 0; }
+.brand-t b { font-family: var(--round); font-size: 20px; font-weight: 800; letter-spacing: .01em; line-height: 1.3; }
+.brand-t small { color: var(--ink-3); line-height: 1.4; }
+.nav { display: flex; gap: 8px; }
+.nav a { text-decoration: none; color: var(--ink-2); font-weight: 700; font-size: 15px; padding: 8px 16px; border-radius: 999px; }
+.nav a:hover { background: var(--soft); }
+.nav a.on { background: var(--accent-soft); color: var(--accent); }
+.notice { max-width: 1120px; margin: 16px auto 0; padding: 8px 16px; border-radius: 10px; background: #fbf1dc; color: #7a5410; }
+
+main { max-width: 1120px; margin: 0 auto; padding: 32px 24px 16px; }
+.block { margin-top: 40px; }
+.crumb { margin: 0 0 16px; font-size: 15px; }
+.crumb a, a.go, a.more, .links a, summary { font-weight: 700; text-decoration: none; color: var(--accent); }
+a.go:hover, a.more:hover, .links a:hover, .crumb a:hover { text-decoration: underline; }
+
+/* ① サイトの紹介 */
+.intro { background: var(--card); border-radius: var(--r); box-shadow: var(--shadow); padding: 24px 32px; display: flex; justify-content: space-between; align-items: center; gap: 16px 32px; flex-wrap: wrap; }
+.intro > div { flex: 1 1 520px; min-width: 0; }
+.intro h1 { font-size: 28px; margin: 0 0 8px; font-weight: 800; }
+.intro p { margin: 0; color: var(--ink-3); }
+.intro.head h1 { font-size: 30px; overflow-wrap: anywhere; }
+.links { display: flex; gap: 24px; flex-wrap: wrap; }
+.state { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 16px; border-radius: 12px; background: var(--soft); }
+.state small { color: var(--ink-3); }
+
+/* 札（意味の色） */
+.badge { display: inline-block; font-size: 14px; font-weight: 700; padding: 1px 10px; border-radius: 999px; white-space: nowrap; line-height: 1.7; }
+.badge.fail { background: var(--fail-soft); color: var(--fail-ink); }
+.badge.fix { background: var(--fix-soft); color: var(--fix-ink); }
+.badge.sm { padding: 0 8px; }
+.kick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; color: var(--ink-3); font-size: 14px; }
+
+/* ② いちばん新しい変化: ページでいちばん強い段（強い影と上端の線） */
+.lead { margin-top: 32px; background: var(--card); border-radius: var(--r); padding: 28px 32px; box-shadow: inset 0 4px 0 var(--fail), var(--shadow-lg); }
+.lead.fix { box-shadow: inset 0 4px 0 var(--fix), var(--shadow-lg); }
+.lead h2 { font-size: 30px; margin: 0 0 12px; font-weight: 800; overflow-wrap: anywhere; }
+.lead h2 a { color: var(--ink); text-decoration: none; }
+.lead h2 a:hover { color: var(--accent); }
+.lede { font-size: 17px; color: var(--ink-2); margin: 12px 0; }
+
+/* 遊べない割合の変化（前 → 後） */
+.shift { display: flex; align-items: flex-end; gap: 4px 12px; flex-wrap: wrap; margin: 8px 0; font-family: var(--round); }
+.shift .from, .shift .to { display: flex; flex-direction: column; line-height: 1.15; font-weight: 800; }
+.shift small { font-family: var(--sans); font-weight: 400; color: var(--ink-3); margin-bottom: 4px; }
+.shift .from { font-size: 22px; color: var(--ink-3); }
+.shift .to { font-size: 34px; }
+.shift.fail .to { color: var(--fail-ink); }
+.shift.fix .to { color: var(--fix-ink); }
+.shift .arrow { font-size: 22px; color: var(--ink-3); padding-bottom: 2px; }
+.shift .unit { font-family: var(--sans); font-size: 14px; color: var(--ink-3); padding-bottom: 4px; }
+.lead .shift .to { font-size: 44px; }
+
+/* 書かれていたこと（札） */
+.chips { margin: 12px 0 4px; }
+.chips-h { margin: 0 0 6px; font-size: 14px; color: var(--ink-3); }
+.chip { display: inline-flex; align-items: baseline; gap: 6px; margin: 0 8px 8px 0; padding: 4px 12px; border-radius: 999px; background: var(--soft); color: var(--ink-2); font-size: 14px; font-weight: 700; }
+.chip em { font-style: normal; font-weight: 400; color: var(--ink-3); }
+.chip.tip { background: var(--accent-soft); color: var(--accent); }
+.hint { font-size: 14px; color: var(--ink-3); margin: 4px 0; }
+
+/* 段の見出し: 左に 4px の線・見出し 24px・一言 16px（Anime と同じ）。線の色は段の意味 */
+.sec-h { border-left: 4px solid var(--brand); padding: 0 0 0 16px; margin: 0 0 20px; }
+.sec-h.fail { border-left-color: var(--fail); } .sec-h.fix { border-left-color: var(--fix); } .sec-h.ref { border-left-color: var(--line); }
+.sec-h h2 { font-size: 24px; margin: 0; font-weight: 800; }
+.sec-h p { margin: 2px 0 0; color: var(--ink-3); }
+
+/* ③④ カード */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; align-items: start; }   /* カードの高さは中身のまま（Anime の規則） */
+.grid.small { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.card { background: var(--card); border-radius: var(--r); box-shadow: var(--shadow); padding: 20px 24px; min-width: 0; }
+.card.fail { box-shadow: inset 4px 0 0 var(--fail), var(--shadow); }
+.card.fix { box-shadow: inset 4px 0 0 var(--fix), var(--shadow); }
+.card h3 { font-size: 20px; margin: 0 0 4px; overflow-wrap: anywhere; }
+.card h3 a { color: var(--ink); text-decoration: none; }
+.card h3 a:hover { color: var(--accent); }
+.card p { margin: 8px 0 0; }
+.grid.small .shift .to { font-size: 28px; }
+.card.wide { padding: 24px 32px; }
+.empty { color: var(--ink-3); }
+
+/* それより前・参考の一覧 */
+details.older summary { cursor: pointer; padding: 8px 0; list-style: none; }
+details.older summary::-webkit-details-marker { display: none; }
+.rows { list-style: none; margin: 8px 0 0; padding: 8px 24px; background: var(--card); border-radius: var(--r); box-shadow: var(--shadow); }
+.rows li { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.rows li:last-child { border-bottom: 0; }
+.rows a { font-weight: 700; text-decoration: none; overflow-wrap: anywhere; min-width: 0; }
+.rows .when { color: var(--ink-3); font-size: 14px; }
+.rows .pair { margin-left: auto; color: var(--ink-3); font-size: 15px; white-space: nowrap; }
+.rows .pair b { color: var(--ink); }
+
+/* 作品のページ: 週の棒グラフ（割合）・報告の原文 */
+.chart { display: flex; align-items: stretch; gap: 4px; height: 200px; padding: 16px 16px 8px; background: var(--card); border-radius: var(--r); box-shadow: var(--shadow); }
+.chart .col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.chart .plot { flex: 1; width: 100%; display: flex; justify-content: center; align-items: flex-end; border-bottom: 1px solid var(--line);
+  background: linear-gradient(to top, transparent calc(50% - 1px), var(--line) calc(50% - 1px), var(--line) 50%, transparent 50%); }   /* 50% の目安の線 */
+.chart .bar { width: 100%; max-width: 28px; background: #c9c5dc; border-radius: 4px 4px 0 0; }
+.chart .col.hi .bar { background: var(--fail); }
+.chart .col.zero .bar { height: 2px !important; background: var(--line); }
+.chart .n { font-size: 14px; color: var(--ink-3); line-height: 1.6; }
+.chart .d { font-size: 14px; color: var(--ink-3); white-space: nowrap; height: 1.6em; line-height: 1.6; }
+table { width: 100%; border-collapse: collapse; background: var(--card); }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 15px; }
+th { font-size: 14px; color: var(--ink-3); font-weight: 700; }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
-section { overflow-x: auto; }
-.side { display: inline-block; padding: 0 6px; border-radius: 4px; font-size: 12px; white-space: nowrap; }
-.side.fail { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
-.side.fix { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
-.bad { color: var(--bad); }
-.jobs { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; }
-.job { border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
-.job.ok { color: var(--good); } .job.bad { color: var(--bad); }
-.bar { display: inline-block; height: 10px; background: var(--bar); vertical-align: middle; max-width: 60%; }
-.weeks td:last-child { width: 40%; }
-.reports { list-style: none; padding: 0; }
-.reports li { border-bottom: 1px solid var(--line); padding: 8px 0; }
-.when, .proton { font-size: 13px; color: var(--muted); }
-.note { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 2px; }
-footer { max-width: 1000px; margin: 24px auto; padding: 0 16px; font-size: 12px; }
-code { font-size: 13px; }
-.card { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin: 10px 0; }
-.card h3, .card h2 { font-size: 16px; margin: 0 0 6px; }
-.card p { margin: 6px 0; }
-.themes { font-size: 13px; color: var(--muted); }
-.theme { display: inline-block; margin: 2px 4px 2px 0; padding: 0 8px; border-radius: 10px; border: 1px solid var(--line); color: var(--fg); white-space: nowrap; }
-.hint { font-size: 12px; color: var(--muted); }
-details summary { cursor: pointer; color: var(--link); margin: 6px 0; }
-@media (max-width: 600px) { main { padding: 12px 16px; } .events th:nth-child(3), .events td:nth-child(3) { display: none; } h1 { font-size: 19px; } }
+.reports { list-style: none; padding: 0; margin: 8px 0 0; }
+.reports li { border-top: 1px solid var(--line); padding: 12px 0; }
+.meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 4px; }
+.when, .proton { font-size: 14px; color: var(--ink-3); }
+.note { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2); font-size: 15px; line-height: 1.7; }
+section.block > .reports { background: var(--card); border-radius: var(--r); box-shadow: var(--shadow); padding: 0 24px; }
+
+/* このサイトについて */
+.prose h2 { font-size: 20px; margin: 24px 0 8px; } .prose h2:first-child { margin-top: 0; }
+.prose ul { margin: 0; padding-left: 20px; color: var(--ink-2); }
+.card > h2 { font-size: 20px; margin: 0 0 12px; }
+.jobs { display: flex; flex-wrap: wrap; gap: 8px; font-size: 14px; margin: 12px 0 0; }
+.job { background: var(--soft); border-radius: 999px; padding: 2px 12px; }
+.job.ok { color: var(--fix-ink); } .job.bad, .bad { color: var(--fail-ink); }
+.about .card { overflow-x: auto; }
+
+footer.site { max-width: 1120px; margin: 40px auto 24px; padding: 16px 24px 0; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 14px; }
+footer.site p { margin: 4px 0; }
+
+/* 狭い画面: 縦に並べ替える（文字を小さくして押し込まない） */
+@media (max-width: 640px) {
+  .site-in { padding: 10px 16px; }
+  .brand-t small { display: none; }
+  .nav a { padding: 6px 12px; font-size: 14px; }
+  main { padding: 20px 16px 8px; }
+  .intro, .lead, .card, .card.wide { padding: 20px; }
+  .intro h1 { font-size: 24px; } .intro.head h1, .lead h2 { font-size: 24px; }
+  .lead .shift .to { font-size: 36px; }
+  .block { margin-top: 32px; }
+  .grid, .grid.small { grid-template-columns: 1fr; }
+  .rows { padding: 4px 16px; }
+  .rows .pair { margin-left: 0; }
+  .chart { height: 160px; gap: 2px; padding: 12px 8px 8px; }
+  .chart .n { display: none; }
+  .chart .d:not(.edge) { visibility: hidden; }
+  .chart .d.edge { overflow: visible; }
+  footer.site { padding: 16px 16px 0; }
+}

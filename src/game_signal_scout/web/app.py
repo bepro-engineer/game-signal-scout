@@ -34,6 +34,7 @@ _ENV = Environment(loader=FileSystemLoader(str(WEB / "templates")), autoescape=s
 _ENV.filters["pct"] = lambda x: f"{x * 100:.0f}%"
 _ENV.filters["day"] = lambda s: s[:10] if s else "—"
 _ENV.filters["ts"] = lambda s: f"{s[:10]} {s[11:16]} UTC" if s else "—"
+_ENV.filters["md"] = lambda s: f"{int(s[5:7])}月{int(s[8:10])}日" if s else "—"
 
 
 def open_pool(cfg: dict):
@@ -87,12 +88,17 @@ def create_app(cfg: dict | None = None, pool=None) -> FastAPI:
     @app.get("/", response_class=HTMLResponse)
     def show_overview(request: Request):
         text, health = read(request, public_content.get_overview)
-        return page("index.html", v=public_content.load(text), health=health)
+        return page("index.html", v=public_content.load(text), health=health, nav="top")
+
+    @app.get("/about", response_class=HTMLResponse)
+    def show_about(request: Request):
+        text, health = read(request, public_content.get_overview)
+        return page("about.html", v=public_content.load(text), health=health, nav="about")
 
     @app.get("/games/{appid}", response_class=HTMLResponse)
     def show_game(appid: str, request: Request):
         text, health = read(request, public_content.get_game, appid)
-        return page("game.html", g=public_content.load(text), health=health)
+        return page("game.html", g=public_content.load(text), health=health, nav="game")
 
     @app.get("/api/overview")
     def get_overview(request: Request):

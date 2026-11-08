@@ -1,51 +1,63 @@
 {% extends "base.html" %}
+{% from "_parts.html" import badge, shift, chips %}
 {% block title %}{{ g.title or g.appid }}{% endblock %}
+{% block mainclass %}game{% endblock %}
 {% block main %}
-<p class="crumb"><a href="/">← 一覧へ</a>　内容を作った時刻: {{ health.built_at|ts }}</p>
+<p class="crumb"><a href="/">← 変化の一覧へ</a></p>
+{% set now = g.events[0] if g.events else None %}
+<section class="intro head">
+<div>
 <h1>{{ g.title or g.appid }}</h1>
-<p class="lead">Steam app ID <code>{{ g.appid }}</code>（<a href="https://store.steampowered.com/app/{{ g.appid }}/">ストア</a>・<a href="https://www.protondb.com/app/{{ g.appid }}">ProtonDB</a>）</p>
+<p class="links"><a href="https://store.steampowered.com/app/{{ g.appid }}/">Steam のストア →</a><a href="https://www.protondb.com/app/{{ g.appid }}">ProtonDB の報告 →</a></p>
+</div>
+{% if now %}<div class="state {{ now.side }}"><small>いちばん新しい変化</small>{{ badge(now.side) }}<span>{{ now.window_start|md }}ごろから</span></div>{% endif %}
+</section>
+
+{% if g.weeks %}
+<section class="block">
+<header class="sec-h"><h2>週ごとの「遊べない」報告の割合</h2><p>最新の報告から 26 週。棒の高さが割合（横の線が 50%、半分以上の週は色付き）、下の数が報告の件数です。報告が少ない週は割合が大きく揺れます。</p></header>
+<div class="chart" role="img" aria-label="週ごとの遊べない報告の割合">
+{% for w in g.weeks %}<div class="col{% if w.share >= 0.5 %} hi{% endif %}{% if not w.failed %} zero{% endif %}" title="{{ w.week|day }}の週: {{ w.reports }} 件中 {{ w.failed }} 件が遊べない（{{ w.share|pct }}）">
+<span class="plot"><span class="bar" style="height: {{ (w.share * 100)|round(0) }}%"></span></span><span class="n">{{ w.reports }}</span><span class="d{% if loop.first or loop.last %} edge{% endif %}">{% if loop.first or loop.last or loop.index0 % 4 == 0 %}{{ w.week|md }}{% endif %}</span></div>{% endfor %}
+</div>
+<details class="older"><summary>表で見る ↓</summary>
+<table class="weeks">
+<thead><tr><th>週の始まり</th><th class="num">報告</th><th class="num">遊べない</th><th class="num">割合</th></tr></thead>
+<tbody>{% for w in g.weeks %}<tr><td>{{ w.week|day }}</td><td class="num">{{ w.reports }}</td><td class="num">{{ w.failed }}</td><td class="num">{{ w.share|pct }}</td></tr>{% endfor %}</tbody>
+</table>
+</details>
+</section>
+{% endif %}
 
 {% for e in g.events %}
-<section class="event card">
-<h2><span class="side {{ e.side }}">{{ '遊べなくなった' if e.side == 'fail' else '直った' }}</span> {{ e.window_start|day }} から</h2>
-<p>{{ e.summary }}</p>
-{% if e.themes %}<p class="themes">根拠の報告 {{ e.n_key }} 件に書かれていた内容：{% for t in e.themes %}<span class="theme">{{ t.label }} {{ t.n }}/{{ e.n_key }} 件</span>{% endfor %}</p>
-<p class="hint">内容は報告の文中の語で数えています（誤りを含みます）。原因とは限りません。</p>{% endif %}
-<details{% if loop.first %} open{% endif %}>
-<summary>根拠の報告 {{ e.reports|length }} 件（原文。英語が中心）</summary>
+<section class="block">
+<article class="card wide {{ e.side }}">
+<p class="kick">{{ badge(e.side) }}<span>{{ e.window_start|md }}ごろから</span></p>
+{{ shift(e) }}
+<p class="lede">{{ e.summary }}</p>
+{{ chips(e) }}
+{% if e.themes %}<p class="hint">書かれていたことは、報告の文中の言葉で数えています（誤りを含みます）。原因とは限りません。</p>{% endif %}
+<details class="older"{% if loop.first %} open{% endif %}>
+<summary>プレイヤーの報告 {{ e.reports|length }} 件（原文。英語が中心） ↓</summary>
 <ul class="reports">
 {% for r in e.reports %}
-<li><span class="when">{{ r.at|day }}</span> <span class="side {{ 'fail' if r.failed else 'fix' }}">{{ '遊べない' if r.failed else '遊べる' }}</span>
-{% if r.proton %}<span class="proton">{{ r.proton }}</span>{% endif %}
+<li><p class="meta"><span class="when">{{ r.at|day }}</span><span class="badge {{ 'fail' if r.failed else 'fix' }} sm">{{ '遊べない' if r.failed else '遊べる' }}</span>{% if r.proton %}<span class="proton">{{ r.proton }}</span>{% endif %}</p>
 <div class="note">{{ r.notes or '（記述なし）' }}</div></li>
 {% endfor %}
 </ul>
 </details>
+</article>
 </section>
 {% else %}
-<p>この作品には、ProtonDB の報告から検出した変化はありません。</p>
+<p class="empty">このゲームには、ProtonDB の報告から見つかった変化はありません。</p>
 {% endfor %}
-
-{% if g.weeks %}<section>
-<h2>週ごとの報告（最新の報告から 26 週）</h2>
-<table class="weeks">
-<thead><tr><th>週の始まり</th><th class="num">報告</th><th class="num">遊べない</th><th>遊べない割合</th></tr></thead>
-<tbody>
-{% for w in g.weeks %}
-<tr><td>{{ w.week|day }}</td><td class="num">{{ w.reports }}</td><td class="num">{{ w.failed }}</td>
-<td><span class="bar" style="width: {{ (w.share * 100)|round(0) }}%"></span> {{ w.share|pct }}</td></tr>
-{% endfor %}
-</tbody>
-</table>
-</section>{% endif %}
 
 {% if g.posts %}
-<section>
-<h2>参考：最近の Bluesky の発言（未検証）</h2>
-<p class="lead">{{ g.posts.since|day }} から、投稿者 {{ g.posts.authors }} 人・発言 {{ g.posts.posts }} 件。この作品への結び付けの正しさはまだ測っていません。</p>
+<section class="block">
+<header class="sec-h ref"><h2>参考：最近の Bluesky の発言</h2><p>{{ g.posts.since|day }} から、{{ g.posts.authors }} 人・{{ g.posts.posts }} 件。このゲームへの結び付けが正しいかは、まだ確かめていません。</p></header>
 <ul class="reports">
 {% for p in g.posts.recent %}
-<li><span class="when">{{ p.at|ts }}</span> <span class="proton">{{ p.lang or '—' }}・{{ 'ストアのリンク' if p.matched_by == 'steam_link' else '題名の一致' }}</span>
+<li><p class="meta"><span class="when">{{ p.at|ts }}</span><span class="proton">{{ p.lang or '—' }}・{{ 'ストアのリンク' if p.matched_by == 'steam_link' else '題名の一致' }}</span></p>
 <div class="note">{{ p.text }}</div></li>
 {% endfor %}
 </ul>

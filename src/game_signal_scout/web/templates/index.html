@@ -1,76 +1,85 @@
 {% extends "base.html" %}
-{% block title %}変化の一覧{% endblock %}
+{% from "_parts.html" import badge, shift, chips %}
+{% block title %}Linux で遊べなくなった・直ったゲーム{% endblock %}
+{% block mainclass %}top{% endblock %}
 {% block main %}
-<h1>Linux で遊べなくなった・直ったゲーム</h1>
-<p class="lead">Steam のゲームを Linux（Proton。Steam Deck を含む）で遊んだプレイヤーの報告（ProtonDB）から、ある時期を境に「遊べない」という報告の割合が大きく変わった作品を見つけて、何が書かれているかを数えています。
-件数と根拠の報告をそのまま示し、原因は言い切りません。</p>
-
 {% set recent = v.events|selectattr("recent")|list %}
 {% set older = v.events|rejectattr("recent")|list %}
-<section>
-<h2>最近の変化（最新の報告から 60 日。{{ recent|length }} 件）</h2>
-{% for e in recent %}
-<article class="card">
-<h3><span class="side {{ e.side }}">{{ '遊べなくなった' if e.side == 'fail' else '直った' }}</span> <a href="/games/{{ e.appid }}">{{ e.title or e.appid }}</a></h3>
-<p>{{ e.summary }}</p>
-{% if e.themes %}<p class="themes">根拠の報告 {{ e.n_key }} 件に書かれていた内容：{% for t in e.themes %}<span class="theme">{{ t.label }} {{ t.n }}/{{ e.n_key }} 件</span>{% endfor %}</p>{% endif %}
+{% set fails = recent|selectattr("side", "equalto", "fail")|list %}
+{% set fixes = recent|selectattr("side", "equalto", "fix")|list %}
+{% set lead = fails[0] if fails else (recent[0] if recent else None) %}
+
+<section class="intro">
+<div>
+<h1>Linux で遊べなくなった・直ったゲーム</h1>
+<p>Steam のゲームを Linux や Steam Deck で遊んだプレイヤーの報告から、ある時期を境に「遊べない」という声が急に増えた・減ったゲームを見つけて、何が書かれていたかをまとめています。</p>
+</div>
+<a class="more" href="/about">このサイトについて →</a>
+</section>
+
+{% if lead %}
+<section class="lead {{ lead.side }}">
+<p class="kick">{{ badge(lead.side) }}<span>いちばん新しい{{ '「遊べなくなった」' if lead.side == 'fail' else '変化' }}</span></p>
+<h2><a href="/games/{{ lead.appid }}">{{ lead.title or lead.appid }}</a></h2>
+{{ shift(lead) }}
+<p class="lede">{{ lead.summary }}</p>
+{{ chips(lead) }}
+<p><a class="go" href="/games/{{ lead.appid }}">報告の原文と推移を見る →</a></p>
+</section>
+{% endif %}
+
+<section class="block">
+<header class="sec-h fail"><h2>最近遊べなくなったゲーム</h2><p>最新の報告から 60 日の間に、「遊べない」という報告の割合が 30 ポイント以上増えたゲーム（{{ fails|length }} 件）</p></header>
+{% set rest = fails[1:] if lead and lead.side == 'fail' else fails %}
+{% if rest %}<div class="grid">
+{% for e in rest %}
+<article class="card {{ e.side }}">
+<p class="kick">{{ badge(e.side) }}<span>{{ e.window_start|md }}ごろから</span></p>
+<h3><a href="/games/{{ e.appid }}">{{ e.title or e.appid }}</a></h3>
+{{ shift(e) }}
+{{ chips(e) }}
+<p><a class="go" href="/games/{{ e.appid }}">詳しく見る →</a></p>
 </article>
-{% else %}
-<p>最近 60 日の変化はありません。</p>
 {% endfor %}
+</div>{% elif not fails %}<p class="empty">この 60 日に、遊べなくなったゲームは見つかっていません。</p>{% endif %}
+</section>
+
+<section class="block">
+<header class="sec-h fix"><h2>最近直ったゲーム</h2><p>同じ期間に、「遊べない」という報告の割合が 30 ポイント以上減ったゲーム（{{ fixes|length }} 件）</p></header>
+{% if fixes %}<div class="grid small">
+{% for e in fixes %}
+<article class="card {{ e.side }}">
+<p class="kick">{{ badge(e.side) }}<span>{{ e.window_start|md }}ごろから</span></p>
+<h3><a href="/games/{{ e.appid }}">{{ e.title or e.appid }}</a></h3>
+{{ shift(e) }}
+{{ chips(e) }}
+</article>
+{% endfor %}
+</div>{% else %}<p class="empty">この 60 日に、直ったゲームは見つかっていません。</p>{% endif %}
 </section>
 
 {% if older %}
-<section>
-<details>
-<summary>それより前の変化（{{ older|length }} 件）</summary>
-<table class="events">
-<thead><tr><th>種類</th><th>作品</th><th>時期</th><th>遊べない割合（前 → 後）</th></tr></thead>
-<tbody>
+<section class="block">
+<details class="older">
+<summary>それより前の変化を見る（{{ older|length }} 件） ↓</summary>
+<ul class="rows">
 {% for e in older %}
-<tr><td><span class="side {{ e.side }}">{{ '遊べなくなった' if e.side == 'fail' else '直った' }}</span></td>
-<td><a href="/games/{{ e.appid }}">{{ e.title or e.appid }}</a></td><td>{{ e.window_start|day }}</td>
-<td>{{ e.share_prev|pct }} → <strong>{{ e.share_window|pct }}</strong></td></tr>
+<li>{{ badge(e.side) }}<a href="/games/{{ e.appid }}">{{ e.title or e.appid }}</a><span class="when">{{ e.window_start|day }}</span>
+<span class="pair">{{ e.share_prev|pct }} → <b>{{ e.share_window|pct }}</b></span></li>
 {% endfor %}
-</tbody>
-</table>
+</ul>
 </details>
 </section>
 {% endif %}
 
-<section>
-<h2>参考：Bluesky でよく話題になった作品（未検証）</h2>
+<section class="block">
+<header class="sec-h ref"><h2>参考：Bluesky でよく話題になったゲーム</h2><p>最新の発言から 7 日。発言とゲームの結び付けが正しいかは、まだ確かめていません（誤りを含みます）。</p></header>
 {% if v.speech %}
-<p class="lead">最新の発言から 7 日、別々の投稿者の数の順。宣伝・配信の告知・リンクだけの投稿は数えていません。作品は Steam のストアのリンクか題名の一致で結び付けていて、<strong>結び付けの正しさはまだ測っていません</strong>（誤りを含みます）。</p>
-<table>
-<thead><tr><th>作品</th><th class="num">投稿者</th><th class="num">発言</th></tr></thead>
-<tbody>
-{% for a in v.speech %}
-<tr><td><a href="/games/{{ a.appid }}">{{ a.title or a.appid }}</a></td><td class="num">{{ a.authors }}</td><td class="num">{{ a.posts }}</td></tr>
+<ul class="rows speech">
+{% for a in v.speech[:10] %}
+<li><a href="/games/{{ a.appid }}">{{ a.title or a.appid }}</a><span class="pair">{{ a.authors }} 人・{{ a.posts }} 件</span></li>
 {% endfor %}
-</tbody>
-</table>
-{% else %}
-<p>まだ発言を取得していません。</p>
-{% endif %}
-</section>
-
-<section class="state">
-<h2>データの状態</h2>
-<p class="lead">判定の規則（版 <code>{{ v.version }}</code>）：14 日の間に、異なる機材構成から 5 件以上の報告があり、「遊べない」の割合が直前 60 日より 30 ポイント以上変わったもの。</p>
-<table>
-<thead><tr><th>取得元</th><th class="num">件数</th><th>最新</th><th>最後の取得の成功</th><th>最後の失敗</th></tr></thead>
-<tbody>
-{% for name, src in v.sources.items() %}
-<tr><td>{{ {'protondb': 'ProtonDB の報告', 'bluesky': 'Bluesky の発言'}.get(name, name) }}</td><td class="num">{{ "{:,}".format(src["items"]) }}</td><td>{{ src.newest_occurred_at|day }}</td>
-<td>{{ src.last_ok_at|ts }}</td><td>{% if src.last_error_type %}<span class="bad">{{ src.last_error_type }}</span>{% else %}—{% endif %}</td></tr>
-{% else %}
-<tr><td colspan="5">まだ取得していません</td></tr>
-{% endfor %}
-</tbody>
-</table>
-<p class="jobs">{% for job, j in v.jobs.items() %}<span class="job {{ 'ok' if j.status == 'ok' else 'bad' }}">{{ job }}: {{ j.status or '—' }}{% if j.finished_at %}（{{ j.finished_at|ts }}）{% endif %}</span>{% endfor %}
-<span class="job">外への公開: なし</span></p>
-<p class="built">この画面の内容を作った時刻: {{ health.built_at|ts }}{% if health.stale %} <span class="bad">（最後の作り直しに失敗し、前の内容のまま）</span>{% endif %}</p>
+</ul>
+{% else %}<p class="empty">まだ発言を取得していません。</p>{% endif %}
 </section>
 {% endblock %}

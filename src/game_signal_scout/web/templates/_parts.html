@@ -1,0 +1,9 @@
+{# 共通の部品。札・割合の変化・内容の札（トップと作品のページで同じ形） #}
+{% macro badge(side) %}<span class="badge {{ side }}">{{ '遊べなくなった' if side == 'fail' else '直った' }}</span>{% endmacro %}
+
+{% macro shift(e) %}<p class="shift {{ e.side }}" aria-label="遊べない割合 {{ e.share_prev|pct }} から {{ e.share_window|pct }}">
+<span class="from"><small>前の 60 日</small>{{ e.share_prev|pct }}</span><span class="arrow" aria-hidden="true">→</span><span class="to"><small>続く 14 日</small>{{ e.share_window|pct }}</span>
+<span class="unit">遊べない報告の割合</span></p>{% endmacro %}
+
+{% macro chips(e) %}{% if e.themes %}<div class="chips"><p class="chips-h">報告 {{ e.n_key }} 件に書かれていたこと</p>
+{% for t in e.themes %}<span class="chip{% if t.key == 'workaround' %} tip{% endif %}">{{ t.label }}<em>{{ t.n }}/{{ e.n_key }}</em></span>{% endfor %}</div>{% endif %}{% endmacro %}

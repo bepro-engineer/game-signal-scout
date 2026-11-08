@@ -38,22 +38,29 @@ def test_overview_shows_freshness_and_detected_change(client):
     assert r.status_code == 200 and "text/html" in r.headers["content-type"]
     assert "default-src 'none'" in r.headers["content-security-policy"] and r.headers["x-frame-options"] == "DENY"
     body = r.text
-    assert "ProtonDB の報告" in body and "2026-06-07" in body      # 取得元と最新の報告の日（鮮度）
-    assert 'href="/games/100"' in body and "Game 100" in body       # 変化した作品
+    assert 'href="/games/100"' in body and "Game 100" in body       # 変化した作品（いちばん新しい「遊べなくなった」として大きく出る）
+    assert "いちばん新しい「遊べなくなった」" in body and "最近遊べなくなったゲーム" in body and "最近直ったゲーム" in body
     assert "/games/200" not in body                                 # 変化のない作品は一覧に出ない
-    assert "最近の変化（最新の報告から 60 日。1 件）" in body and "この画面の内容を作った時刻: 20" in body
+    assert "内容を作った時刻: 20" in body
     assert "6月1日ごろから、Linux（Proton）で「遊べない」という報告が増えた" in body          # 何が・いつから（日本語の 1 文）
     assert "0%（10 件）から、続く 14 日で 100%（7 件）" in body and "まだ途中（最新の報告は 6月7日）" in body   # 以前との違い・期間の途中
-    assert "更新・パッチの後から 7/7 件" in body                                              # 根拠の報告に書かれていた内容と件数
+    assert "更新・パッチの後から<em>7/7</em>" in body                                          # 根拠の報告に書かれていた内容と件数
     assert "publish:" not in body                                   # 作っている最中の段は出さない
 
 
 def test_game_page_shows_weekly_trend_and_escaped_evidence(client):
     body = client.get("/games/100").text
-    assert "Game 100" in body and "2026-06-01 から" in body and "原因とは限りません" in body
+    assert "Game 100" in body and "6月1日ごろから" in body and "原因とは限りません" in body
     assert body.count("crashes after update") == 7                  # 根拠の報告 7 件
     assert "<script>x</script>" not in body and "&lt;script&gt;" in body
     assert "100%" in body                                            # 窓の遊べない割合
+
+
+def test_about_page_shows_method_sources_and_freshness(client):
+    body = client.get("/about").text
+    assert "見つけ方" in body and "分からないこと" in body and "p-2026-11-07" in body          # 規則の版
+    assert "ProtonDB の報告" in body and "2026-06-07" in body                                   # 取得元と最新の報告の日（鮮度）
+    assert 'aria-current="page"' in body and "publish:" not in body
 
 
 def test_unknown_or_invalid_game_is_404(client):
