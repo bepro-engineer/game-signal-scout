@@ -144,11 +144,11 @@ def job_insight(ctx: Context) -> JobResult:
         return JobResult(output_count=0, detail={"skipped": "disabled"})
     days = int(ic.get("window_days", 7))
     todo = repo.candidates(ctx.conn, days, int(ic.get("min_statements", 30)), int(ic.get("max_games", 12)))
-    # 話題の作品（発言の多い順）を、日本語の対応の高い順（音声 → 字幕 → UI → 非対応 → 未確認）に読む（2026-11-09 オーナー: 日本語対応のものを中心に）
+    # 話題の作品（発言の多い順）のうち、日本語で遊べる作品（UI 以上）を先に読む。その中は話題（発言）の多い順のまま（2026-11-09 オーナー: 日本語対応で、話題性のある作品）
     from game_signal_scout.ops import work_display
     jp = {str(k): (m.get("jp") or None) for k, m in work_display.work_meta(ctx.conn, [int(a) for a in todo if a.isdigit()]).items()}
     ctx.conn.rollback()
-    rank = lambda j: 4 if not j else 0 if j.get("voice") else 1 if j.get("sub") else 2 if j.get("ui") else 3
+    rank = lambda j: 0 if j and (j.get("voice") or j.get("sub") or j.get("ui")) else 1
     todo = sorted(todo, key=lambda a: rank(jp.get(a)))   # 同じ段階の中は発言の多い順のまま（sorted は安定）
     titles = {a: p["title"] for a, p in catalog.profiles(ctx.conn, todo).items()}
     done, failed, skipped = [], [], 0

@@ -775,12 +775,14 @@ def finds_page(ctx: Ctx) -> dict:
     if not rows:
         return {"items": []}
     meta = work_display.work_meta(ctx.conn, [int(a) for a in rows])
+    talk = insight_repo.talk_counts(ctx.conn, list(rows))   # 話題性（直近 7 日の発言の数）: カードの並びに使う
+    ctx.conn.rollback()
     items = []
     for a, b in rows.items():
         m = meta.get(int(a))
         if not m:
             continue
-        items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner", "header", "shots")}, **_judge(m),
+        items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner", "header", "shots")}, **_judge(m), "talk": talk.get(a, 0),
                       "finds": [{**f, "examples": [_pub_ev(x) for x in f.get("examples") or []]} for f in b.get("finds") or []],
                       "singles": [_pub_ev(e) for e in b.get("singles") or []],
                       "read_people": b.get("read_people"), "experiences": b.get("experiences"), "window_days": b.get("window_days"),

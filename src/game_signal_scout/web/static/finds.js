@@ -1,6 +1,6 @@
 // 注目の作品（#2。2026-11-09 オーナーが見本で決めた形。旧「見つけた面白さ」）: 世界のプレイヤーが実際に遊んで書いた「何をして → 何が起きて → 何が面白かったか」。
 // 並び: 面白さの種類の札（体験のある種類だけ・件数つき。押すと絞る）→ 日本語の凡例 → カード（場面の絵 → 作品の表紙と作品名 → 面白さの一文 → したこと → 起きたこと → 人数・反対の声・日本語）
-// → その作品の買う前に知っておきたいこと（不満・注意のある体験だけ。カードの中に）。カードは日本語の対応の高い順（音声 → 字幕 → UI）、同じ段階の中は書いた人数の多い順。
+// → その作品の買う前に知っておきたいこと（AI が不満と判断した体験だけ。賛否の体験の注意の印は良い体験にも付くので使わない。カードの中に）。カードは日本語で遊べる作品を先、その中は話題（直近 7 日の発言）の多い順。
 // 人数はこちら（services/insight）で数えたもの。1 人の体験はそう書く。原文は出さない。
 (() => {
   const A = window.ASS, { tr, esc, num, nm } = A, FI = ((A.P || {}).finds || {}).items || [];
@@ -21,11 +21,13 @@
   FI.forEach(w => {
     w.finds.forEach(f => { const ev = (f.examples || [])[0] || {}, x = { w, appeal: f.appeal, kind: f.appeal_kind, verdict: f.verdict, act: ev.act, result: ev.result, people: f.people,
       against: f.verdict === "fun" ? f.frustration || 0 : 0, caution: f.caution };
-      if (f.appeal && f.verdict !== "frustration") good.push(x); if (f.verdict === "frustration" || (f.caution && f.verdict === "mixed")) warn.push(x); });
+      if (f.appeal && f.verdict !== "frustration") good.push(x); if (f.verdict === "frustration") warn.push(x); });
     w.singles.forEach(e => { const x = { w, appeal: e.appeal, kind: e.appeal_kind, verdict: e.verdict, act: e.act, result: e.result, people: 1, against: 0, caution: e.caution };
-      if (e.appeal && e.verdict !== "frustration") good.push(x); if (e.verdict === "frustration" || (e.caution && e.verdict === "mixed")) warn.push(x); });
+      if (e.appeal && e.verdict !== "frustration") good.push(x); if (e.verdict === "frustration") warn.push(x); });
   });
-  const order = (a, b) => JR[lv(a.w)] - JR[lv(b.w)] || b.people - a.people;
+  // 並び（2026-11-09 オーナー）: 日本語で遊べる作品（UI 以上）を先、その中は話題（直近 7 日の発言）の多い順。同じ作品の中は書いた人の多い順
+  const playable = w => ["voice", "sub", "ui"].includes(lv(w)) ? 0 : 1;
+  const order = (a, b) => playable(a.w) - playable(b.w) || (b.w.talk || 0) - (a.w.talk || 0) || b.people - a.people;
   good.sort(order); warn.sort(order);
   // 1 作品 1 カード（2026-11-09 オーナー）: 見出しはその作品でいちばん多くの人が書いた面白さ（種類で絞ったときはその種類のもの）。ほかの面白さは 2 つまで添える
   const WB = new Map();   // 作品ごとの 買う前に知っておきたいこと（不満・注意）

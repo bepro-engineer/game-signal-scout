@@ -21,6 +21,12 @@ def candidates(conn, days: int, min_statements: int, limit: int) -> list[str]:
                                        (days, EXCLUDE, min_statements, limit))]
 
 
+def talk_counts(conn, appids: list[str], days: int = 7) -> dict[str, int]:
+    """作品ごとの直近 days 日の発言の数（話題性。除外の印のある発言は数えない）。"""
+    return {a: n for a, n in conn.execute("SELECT appid, count(*) FROM player_post WHERE appid = ANY(%s) AND at > now() - make_interval(days => %s) "
+                                          "AND NOT flags ?| %s GROUP BY appid", (list(appids), days, EXCLUDE))}
+
+
 def get_hash(conn, appid: str) -> str | None:
     r = conn.execute("SELECT input_hash FROM game_insight WHERE appid = %s", (appid,)).fetchone()
     return r[0] if r else None
