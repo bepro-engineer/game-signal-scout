@@ -92,4 +92,4 @@ def test_one_failed_batch_does_not_lose_the_others():
             raise OSError("500")
         return json.dumps({"items": [{"id": j, "exp": {"did": "大剣で溜め攻撃を連発した", "happened": "ボスを倒せた", "verdict": "fun", "topic": "t"}} for j in range(6)]})
     got = insight.read_statements(ask, "T", rows)
-    assert sorted(got) == [f"p{i}" for i in range(6, 12)]
+    assert set(got) == {f"p{i}" for i in range(6, 12)}
