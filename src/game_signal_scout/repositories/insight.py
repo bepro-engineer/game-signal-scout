@@ -42,14 +42,18 @@ def newest_generated_at(conn):
 
 def statements_by_author(conn, appid: str, days: int, per_window: int, since) -> list[dict]:
     """発見の材料: 作品の直近 days 日の発言を、投稿者ごとに 1 件（いちばん長いもの）。直近の窓（at >= since）と前の窓から、それぞれ多くて per_window 件。
+    どの取得元からも順番に取る（取得元ごとに長い順の順位を付け、順位の順に並べる。件数の多い取得元が材料を占めない。取得元はすべて同列）。
     宣伝などの印のあるもの・短いものは除く。"""
-    rows = conn.execute("SELECT DISTINCT ON (author, cur) item_id, author, at, lang, text FROM ("
-                        "SELECT item_id, author, at, lang, text, at >= %s AS cur FROM player_post WHERE appid = %s "
-                        "AND at > now() - make_interval(days => %s) AND NOT flags ?| %s AND length(text) BETWEEN 60 AND 4000) t "
-                        "ORDER BY author, cur, length(text) DESC", (since, appid, days, EXCLUDE)).fetchall()
-    out = [dict(zip(("item_id", "author", "at", "lang", "text"), x)) for x in rows]
-    cur = sorted([x for x in out if x["at"] >= since], key=lambda x: x["item_id"])[:per_window]
-    prev = sorted([x for x in out if x["at"] < since], key=lambda x: x["item_id"])[:per_window]
+    rows = conn.execute(
+        "WITH one AS (SELECT DISTINCT ON (author, cur) item_id, source, author, at, lang, text, cur FROM ("
+        "  SELECT item_id, source, author, at, lang, text, at >= %s AS cur FROM player_post WHERE appid = %s "
+        "  AND at > now() - make_interval(days => %s) AND NOT flags ?| %s AND length(text) BETWEEN 60 AND 4000) t "
+        "  ORDER BY author, cur, length(text) DESC), "
+        "ranked AS (SELECT *, row_number() OVER (PARTITION BY cur, source ORDER BY length(text) DESC, item_id) AS rk FROM one) "
+        "SELECT item_id, author, at, lang, text, cur FROM ranked ORDER BY cur DESC, rk, source", (since, appid, days, EXCLUDE)).fetchall()
+    out = [dict(zip(("item_id", "author", "at", "lang", "text"), x[:5])) for x in rows]
+    cur = [x for x in out if x["at"] >= since][:per_window]
+    prev = [x for x in out if x["at"] < since][:per_window]
     return cur + prev
 
 

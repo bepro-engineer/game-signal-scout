@@ -93,3 +93,18 @@ def test_one_failed_batch_does_not_lose_the_others():
         return json.dumps({"items": [{"id": j, "exp": {"did": "大剣で溜め攻撃を連発した", "happened": "ボスを倒せた", "verdict": "fun", "topic": "t"}} for j in range(6)]})
     got = insight.read_statements(ask, "T", rows)
     assert set(got) == {f"p{i}" for i in range(6, 12)}
+
+
+def test_material_is_taken_from_every_source_in_turn(conn):
+    """材料は取得元を順番に取る（件数の多い取得元が占めない）。"""
+    from game_signal_scout.repositories import insight as repo
+    now = datetime.now(timezone.utc)
+    conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) SELECT s, s || g, now(), now(), '{}' "
+                 "FROM (VALUES ('big'), ('small')) v(s), generate_series(1, 5) g")
+    for s, n in (("big", 5), ("small", 2)):
+        for g in range(1, n + 1):
+            conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, appid, matched_by, flags, text) VALUES (%s, %s, %s, %s, 'en', '9', 'source', '[]', %s)",
+                         (s, f"{s}{g}", now - timedelta(days=1), f"{s}-a{g}", "x" * (100 + g)))
+    conn.commit()
+    got = repo.statements_by_author(conn, "9", 14, 3, now - timedelta(days=7))
+    assert sorted(r["item_id"][:3] for r in got) == ["big", "big", "sma"]
