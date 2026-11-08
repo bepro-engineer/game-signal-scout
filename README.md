@@ -2,7 +2,7 @@
 
 PC・家庭用ゲームのプレイヤーの声（レビュー・掲示板・SNS など多くの取得元）から、ほかでは見えにくい変化（アップデートの影響・不満・評価の変化・言語圏を越えた広がり）を見つけ、限られた休日に遊ぶゲームを選ぶ材料にする試作です。価値の検証と経緯は [Issue #1](https://github.com/bepro-engineer/game-signal-scout/issues/1) が正本です。
 
-**外への公開はしていません。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（127.0.0.1:8720、自分の機械だけ）と Bluesky の受信、毎日 6:15 の daily-run（`launchd --apply`）。10 分ごとの poll は定義だけ作り、登録はオーナーの判断待ちです。
+**外への公開はしていません。** 2026-11-08 から Mac mini で動いています（承認済み）: Game の DB は共有の PostgreSQL（VAIO）の `game_signal_scout`、常駐は Viewer（127.0.0.1:8720、自分の機械だけ）と Bluesky の受信、毎日 6:15 の daily-run（`launchd --apply`）。10 分ごとの poll（掲示板の新着）も 2026-11-08 に登録しました。
 
 ## 構成
 
@@ -77,7 +77,7 @@ Anime の `ops/launchd`（agent の形）と `sources/runner` を移植してい
 |------|------|------|
 | `daily-run` | 毎日 6:15 | collect → normalize → analyze → publish |
 | `web` | 常駐 | Viewer（127.0.0.1:8720） |
-| `poll` | 10 分ごと（**登録はオーナーの判断待ち**） | `poll`（`poll = true` の掲示板の取得元を collect → 正規化。新着だけを返すフィードの取りこぼしを防ぐ） |
+| `poll` | 10 分ごと（2026-11-08 登録） | `poll`（`poll = true` の掲示板の取得元を collect → 正規化。新着だけを返すフィードの取りこぼしを防ぐ） |
 | `collect-bluesky` | 常駐（異常終了のときだけ起動し直す） | `source-collect --source bluesky`（30 秒ずつ受信して保存。二重起動は 75 で終わり 60 秒後に取り直す。止めの合図で周期の区切りで止まる） |
 
 - `python -m game_signal_scout launchd` は定義を `runtime/launchd` に書くだけです（見るため）。
