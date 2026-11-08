@@ -54,6 +54,7 @@ def client(conn, monkeypatch, tmp_path):
     public_document.finish_build(conn, bid, "published", now, latest_day=last, documents=len(docs))
     conn.commit()
     pool = ConnectionPool(config.db_dsn(), min_size=1, max_size=2, kwargs={"autocommit": True}, configure=db.verify_identity, open=True)
+    cfg = {**cfg, "web": {**cfg["web"], "allow_from": [*cfg["web"]["allow_from"], "testclient"]}}   # 試験の相手（TestClient）
     with TestClient(create_app(cfg=cfg, pool=pool)) as c:
         yield c, last, docs
     pool.close()
@@ -102,3 +103,17 @@ def test_non_game_software_is_not_a_work(conn):
         conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', %s, now(), now(), '{}')", (a,))
         conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) VALUES (%s, 'steam_store', %s, 'x', %s, '[]', '[]', now())", (a, a, g))
     assert publishable_works(conn, [431960, 1245620]) == {1245620}
+
+
+
+def test_only_known_peers_and_no_health_through_the_public_entrance(client):
+    """受けてよい相手（Issue #6）: 知らない相手は 403。公開の入口（X-Forwarded-For つき）からは稼働の確認の口を出さない。"""
+    c, last, docs = client
+    assert c.get("/healthz").status_code == 200
+    assert c.get("/healthz", headers={"X-Forwarded-For": "203.0.113.5"}).status_code == 404
+    assert c.get("/", headers={"X-Forwarded-For": "203.0.113.5"}).status_code == 200
+    from fastapi.testclient import TestClient
+    from game_signal_scout.web.app import create_app
+    app = c.app
+    other = TestClient(app, client=("192.168.11.50", 1234))
+    assert other.get("/").status_code == 403

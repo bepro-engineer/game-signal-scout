@@ -179,3 +179,45 @@ def test_no_source_has_special_structure():
     texts = [p for p in list((root / "migrations").rglob("*.py")) + [root / "pyproject.toml", root / "config/daily.toml"]]
     found = [f"{p.name}:{n}" for p in texts for n in names if n in p.read_text().lower() and len(n) > 6]
     assert found == []
+
+
+class FailingSource(SourceReader):
+    def read(self, cursor):
+        raise ConnectionError("取得元が止まっている（試験）")
+        yield  # noqa
+
+
+class EmptySource(SourceReader):
+    def read(self, cursor):
+        yield Batch([], {"done": True})
+
+
+def test_system_works_when_any_source_is_stopped_disabled_or_empty(conn, monkeypatch):
+    """全 Issue 共通の原則（2026-11-08）: どの取得元が止まっても・無効でも・0 件でも、ほかの取得元でシステムが成り立つ
+    （収集 → 正規化 → 観測の集計 → 公開の文書まで進む。止まった取得元の失敗は、その取得元の記録に残る）。"""
+    from game_signal_scout import config
+    from game_signal_scout.ops import runner
+    from game_signal_scout.repositories import public_document
+    from game_signal_scout.sources import factory
+    conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', '2246340', now(), now(), '{}')")
+    conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) "
+                 "VALUES ('2246340', 'steam_store', '2246340', 'Monster Hunter Wilds', '[\"アクション\"]', '[]', '[]', now())")
+    conn.commit()
+    voices = "game_signal_scout.services.normalize:voices"
+    src_cfg = {"src_ok": {"adapter": "test_new_source_extension_db:FakeForum", "normalizer": voices, "game_only": True},
+               "src_down": {"adapter": "test_new_source_extension_db:FailingSource", "normalizer": voices},
+               "src_empty": {"adapter": "test_new_source_extension_db:EmptySource", "normalizer": voices},
+               "src_off": {"adapter": "test_new_source_extension_db:FailingSource", "normalizer": voices, "enabled": False}}
+    monkeypatch.setattr(factory, "load_sources_config", lambda: src_cfg)
+    real_toml = config.load_toml
+    obs = {k: {"reader": "foundation", "production": True, "history": True, "label": [k, k]} for k in ("src_ok", "src_down", "src_empty")}
+    monkeypatch.setattr(config, "load_toml", lambda name: {"sources": obs} if name == "map_sources.toml" else real_toml(name))
+    real_daily = config.load_daily_config
+    monkeypatch.setattr(config, "load_daily_config", lambda: {**real_daily(), "publish": {**real_daily().get("publish", {}), "start_day": DAY.isoformat()}})
+    code, out = runner.daily_run(DAY, only=["collect", "normalize", "observe", "publish"], reader_factory=lambda n: factory.create(n, None, src_cfg))
+    assert code == runner.EXIT_OK, out
+    collect = out["jobs"][0]["detail"]
+    assert collect["src_down"]["error_type"] and "src_off" not in collect                         # 止まった取得元は記録に残り、無効の取得元は読まない
+    assert conn.execute("SELECT last_error_type IS NOT NULL FROM source_state WHERE source='src_down'").fetchone()[0]
+    assert conn.execute("SELECT count(*) FROM player_post WHERE source='src_ok' AND appid='2246340'").fetchone()[0] == 4
+    assert public_document.get_document(conn, f"day/{DAY.isoformat()}")["dashboard"]["works_today"] == 1   # 残りの取得元で画面の文書が成り立つ

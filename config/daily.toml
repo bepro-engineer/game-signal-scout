@@ -49,8 +49,10 @@ start_day = "2026-11-07"
 
 [web]
 analytics_script_src = ""   # Anime の画面の流用が読む（Game はアクセス解析を入れない）
-# Viewer（web/app）。待ち受けは自分の機械だけ。公開はしていない
+# Viewer（web/app）。公開の入口（VAIO の Apache。Cloudflare Tunnel の内側。Issue #6）から届くように家の中の口で待ち受け、
+# 受けてよい相手を allow_from に限る（この機械自身と VAIO だけ。ほかは 403）
 host = "127.0.0.1"
+allow_from = ["127.0.0.1", "::1", "192.168.11.3"]
 port = 8720
 pool_min_size = 1
 pool_max_size = 4

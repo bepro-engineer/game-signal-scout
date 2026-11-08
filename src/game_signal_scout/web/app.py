@@ -67,6 +67,19 @@ def create_app(cfg: dict | None = None, serve_static: bool = True, pool=None) ->
     if serve_static:
         app.mount("/static", StaticFiles(directory=str(page_views.STATIC)), name="static")
 
+    # 受けてよい相手（Issue #6）: この機械自身と、公開の入口（VAIO の Apache。Cloudflare Tunnel の内側）だけ。
+    # 公開の入口から届いた要求（X-Forwarded-For つき）には、稼働の確認の口を出さない（管理・運用の情報を外に出さない）
+    allow = set((cfg["web"].get("allow_from") or ["127.0.0.1", "::1"]))
+
+    @app.middleware("http")
+    async def only_known_peers(request: Request, call_next):
+        peer = request.client.host if request.client else ""
+        if peer not in allow:
+            return Response(status_code=403)
+        if request.headers.get("x-forwarded-for") and request.url.path.startswith("/healthz"):
+            return Response(status_code=404)
+        return await call_next(request)
+
     @app.middleware("http")
     async def headers(request: Request, call_next):
         r: Response = await call_next(request)

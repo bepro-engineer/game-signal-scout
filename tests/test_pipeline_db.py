@@ -214,7 +214,7 @@ def test_one_failing_source_does_not_stop_the_others(conn, tmp_path, monkeypatch
         r.name, r.http = name, Log(name)
         return r
     code, out = runner.daily_run(TARGET, only=["collect"], reader_factory=make)
-    assert code == runner.EXIT_RETRY and out["error_type"] == "network"
+    assert code == runner.EXIT_OK                                                       # 一部の取得元の失敗では段を失敗にしない（残りで進む。全 Issue 共通の原則）
     states = {s: (ok is not None, et) for s, ok, et in conn.execute("SELECT source, last_ok_at, last_error_type FROM source_state")}
     assert states == {"protondb": (False, "network"), "mirror": (True, None)}          # 失敗した取得元の後も、次の取得元を集めた
     assert count(conn, "source_item") == 4 + 37                                          # 失敗した側は保存済みの 1 束（4 件）だけ

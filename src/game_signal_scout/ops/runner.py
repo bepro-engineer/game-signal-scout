@@ -54,7 +54,7 @@ class Context:
 
 
 def job_collect(ctx: Context) -> JobResult:
-    """取得元ごとに収集する。1 つの取得元の失敗で他の取得元を止めない（全部を試してから、最初の失敗を段の失敗として返す）。
+    """取得元ごとに収集する。1 つの取得元の失敗で他の取得元を止めない。一部の失敗では段を失敗にしない（残りで後の段へ進む）。すべて失敗したときだけ段の失敗。
     取得元の設定 min_interval_hours（既定 0）より前に成功していれば、その取得元は今回は取りに行かない（取得の間隔の管理）。
     通信の記録（Fetcher.log）は取得元ごとに source_fetch へ保存する。"""
     from game_signal_scout.services.collect import collect
@@ -99,7 +99,11 @@ def job_collect(ctx: Context) -> JobResult:
                 log.clear()
             if not (ctx.conn.closed or ctx.conn.broken):
                 ctx.conn.commit()
-    if first_error is not None:
+    # 取得元はどれもなくても困らない（CLAUDE.md・全 Issue 共通の原則）: 一部の取得元が失敗しても、残りの取得元で正規化・集計・公開へ進む。
+    # 失敗は取得元ごとに source_state・detail に残す。読みに行った取得元がすべて失敗したときだけ段を失敗にする（再試行に回す）
+    tried = [k for k, v in detail.items() if not (isinstance(v, dict) and v.get("skipped"))]
+    failed = [k for k in tried if isinstance(detail[k], dict) and detail[k].get("error_type")]
+    if first_error is not None and tried and len(failed) == len(tried):
         first_error.collect_detail = detail
         raise first_error
     return JobResult(input_count=read, output_count=total, detail=detail)
