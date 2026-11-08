@@ -118,3 +118,8 @@ label = ["ニコニコ大百科の掲示板", "Nicopedia boards"]
 reader = "foundation"
 production = true
 label = ["Pantip のゲームの話題", "Pantip game topics"]
+
+[sources.hatena_games]
+reader = "foundation"
+production = true
+label = ["はてなブックマークのコメント", "Hatena Bookmark comments"]

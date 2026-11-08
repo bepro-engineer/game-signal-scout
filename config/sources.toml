@@ -374,3 +374,15 @@ poll = true
 min_interval_hours = 0
 tags = ["เกม", "เกมคอมพิวเตอร์", "PlayStation", "Nintendo Switch", "Steam"]
 max_comment_pages = 3
+
+[hatena_games]
+adapter = "game_signal_scout.sources.feeds:HatenaComments"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（ゲームの記事へのはてなブックマークのコメント。日本語。公式のエントリー情報取得 API。キー不要。台帳の hatena_bookmark_comments）
+# 記事は各誌の RSS から見つけ、記事の時刻から 12・72 時間の時点でコメントを読む。Crawl-delay 5 を守る
+game_only = true
+poll = true
+min_interval_hours = 0
+crawl_delay = 5
+recheck_hours = [12, 72]
+feeds = ["https://www.4gamer.net/rss/index.xml", "https://automaton-media.com/feed/", "https://www.gamespark.jp/rss/index.rdf"]

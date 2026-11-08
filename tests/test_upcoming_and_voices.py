@@ -177,3 +177,27 @@ def test_digest_headline_uses_short_title_for_long_names():
     assert short_title("Probably Stolen - Cyberpunk Shopkeeper Sim") == "Probably Stolen"
     assert short_title("Monster Hunter Wilds: Ascension Expansion Pack") == "Monster Hunter Wilds"
     assert short_title("ELDEN RING NIGHTREIGN") == "ELDEN RING NIGHTREIGN"          # 短い題名はそのまま
+
+
+def test_rss1_feed_and_hatena_comments_after_12_hours():
+    import time
+    from datetime import datetime, timedelta, timezone
+    from game_signal_scout.sources.feeds import HatenaComments, parse_feed
+    old = (datetime.now(timezone.utc) - timedelta(hours=20)).isoformat()
+    rdf = ('<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/">'
+           f'<item rdf:about="https://g/a1"><title>『ELDEN RING』大型アップデート</title><link>https://g/a1</link><dc:date>{old}</dc:date></item></rdf:RDF>')
+    assert [(e["url"], e["title"]) for e in parse_feed(rdf)] == [("https://g/a1", "『ELDEN RING』大型アップデート")]
+
+    class Http:
+        calls = 0
+
+        def get_text(self, s, url):
+            return rdf
+
+        def get_json(self, s, url):
+            Http.calls += 1
+            return {"bookmarks": [{"user": "u1", "comment": "重くなった", "timestamp": "2026/11/07 21:00"}, {"user": "u2", "comment": "", "timestamp": "2026/11/07 21:01"}]}
+    r = HatenaComments({"feeds": ["https://g/rss"], "recheck_hours": [12, 72], "crawl_delay": 0}, Http())
+    b = list(r.read(None))[0]
+    assert [(i.payload["text"], i.payload["link_title"], i.occurred_at.isoformat()) for i in b.items] == [("重くなった", "『ELDEN RING』大型アップデート", "2026-11-07T21:00:00+09:00")]
+    assert list(r.read(b.cursor))[0].items == [] and Http.calls == 1              # 12 時間の回は済み。72 時間まで読み直さない

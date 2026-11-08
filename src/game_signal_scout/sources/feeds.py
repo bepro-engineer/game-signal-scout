@@ -12,13 +12,14 @@ import html
 import re
 import xml.etree.ElementTree as ET
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
 from game_signal_scout.languages_detect import detect
 from game_signal_scout.sources.contract import Batch, SourceItem, SourceReader
 
-NS = {"atom": "http://www.w3.org/2005/Atom", "dc": "http://purl.org/dc/elements/1.1/", "content": "http://purl.org/rss/1.0/modules/content/"}
+NS = {"atom": "http://www.w3.org/2005/Atom", "dc": "http://purl.org/dc/elements/1.1/", "content": "http://purl.org/rss/1.0/modules/content/",
+      "rss1": "http://purl.org/rss/1.0/"}
 
 
 def plain(raw: str | None) -> str:
@@ -47,13 +48,17 @@ def when(s: str | None) -> datetime | None:
 
 
 def parse_feed(body: str) -> list[dict]:
-    """RSS 2.0 と Atom の項目: id・時刻・投稿者・題名・本文・URL。"""
+    """RSS 2.0・RSS 1.0（RDF）・Atom の項目: id・時刻・投稿者・題名・本文・URL。"""
     root = ET.fromstring(body.encode() if isinstance(body, str) else body)
     out = []
     for it in root.iter("item"):
         g = lambda tag: (it.findtext(tag, namespaces=NS) or "")
         out.append({"id": g("guid") or g("link"), "at": when(g("pubDate") or g("dc:date")), "author": g("dc:creator") or g("author"),
                     "title": g("title"), "body": g("content:encoded") or g("description"), "url": g("link")})
+    for it in root.iter("{http://purl.org/rss/1.0/}item"):            # RSS 1.0（RDF）
+        g = lambda tag: (it.findtext(tag, namespaces=NS) or "")
+        out.append({"id": it.get("{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about") or g("rss1:link"), "at": when(g("dc:date")),
+                    "author": g("dc:creator"), "title": g("rss1:title"), "body": g("content:encoded") or g("rss1:description"), "url": g("rss1:link")})
     for it in root.iter("{http://www.w3.org/2005/Atom}entry"):
         g = lambda tag: (it.findtext(tag, namespaces=NS) or "")
         link = it.find("atom:link", NS)
@@ -173,3 +178,54 @@ class MastodonTags(SourceReader):
             if isinstance(rows, list) and rows:
                 state[key] = max((str(r["id"]) for r in rows), key=lambda x: (len(x), x))
             yield Batch(items, dict(state))
+
+
+class HatenaComments(SourceReader):
+    """はてなブックマークのコメント（公式のエントリー情報取得 API /entry/json/。キー不要。robots の Crawl-delay: 5 を守る。台帳の hatena_bookmark_comments）。
+    ゲームの記事は記述の feeds（各誌の RSS）から見つけて覚え、記事の時刻から recheck_hours（例: 12・72 時間）の時点で 1 回ずつコメントを読む。
+    1 件 = コメントのあるブックマーク 1 つ（言語 ja）。同定には記事の題名を添える（link_title）。利用者名は持たない（sha256 の先頭 16 桁）。"""
+    _last = 0.0
+
+    def _wait(self) -> None:
+        import time
+        left = float(self.settings.get("crawl_delay", 5)) - (time.monotonic() - self._last)
+        if left > 0:
+            time.sleep(left)
+        self._last = time.monotonic()
+
+    def read(self, cursor: dict | None) -> Iterator[Batch]:
+        import time
+        import urllib.parse
+        state = dict(cursor or {})
+        arts: dict = dict(state.get("articles") or {})
+        for f in self.settings.get("feeds") or []:
+            body = self.http.get_text(self.name, f)
+            try:
+                for e in parse_feed(body or "<x/>"):
+                    if e["url"] and e["url"] not in arts:
+                        arts[e["url"]] = {"title": plain(e["title"]), "at": e["at"].timestamp(), "done": 0}
+            except ET.ParseError:
+                continue
+        hours = [float(h) for h in self.settings.get("recheck_hours", [12, 72])]
+        now = time.time()
+        items: list[SourceItem] = []
+        for url, a in list(arts.items()):
+            age = (now - a["at"]) / 3600
+            if a["done"] >= len(hours) or age < hours[a["done"]]:
+                continue
+            self._wait()
+            d = self.http.get_json(self.name, "https://b.hatena.ne.jp/entry/json/?url=" + urllib.parse.quote(url, safe=""))
+            a["done"] = sum(1 for h in hours if age >= h)
+            for b in (d or {}).get("bookmarks") or []:
+                c = (b.get("comment") or "").strip()
+                at = None
+                try:
+                    at = datetime.strptime(b.get("timestamp") or "", "%Y/%m/%d %H:%M").replace(tzinfo=timezone(timedelta(hours=9)))
+                except ValueError:
+                    pass
+                if c and at:
+                    uid = hashlib.sha256(f"hatena:{b.get('user')}".encode()).hexdigest()[:16]
+                    items.append(SourceItem(self.name, hashlib.sha256(f"{url}#{b.get('user')}".encode()).hexdigest()[:24], at,
+                                            {"text": c[:2000], "link_title": a["title"], "author": uid, "lang": "ja", "url": url}, None))
+        keep = {u: a for u, a in arts.items() if now - a["at"] < 10 * 86400}     # 10 日より古い記事は忘れる
+        yield Batch(items, {"articles": keep})
