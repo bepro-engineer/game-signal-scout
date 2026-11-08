@@ -109,3 +109,17 @@ def test_material_is_taken_from_every_source_in_turn(conn):
     got = repo.statements_by_author(conn, "9", 14, 3, now - timedelta(days=7), ["big", "small"])
     assert sorted(r["item_id"][:3] for r in got) == ["big", "big", "sma"]
     assert all(r["item_id"].startswith("big") for r in repo.statements_by_author(conn, "9", 14, 3, now - timedelta(days=7), ["big"]))   # 集計に入れていない取得元は使わない
+
+
+def test_posts_of_sources_not_in_use_are_marked_and_unmarked(conn):
+    """無効・利用条件で停止の取得元の保存済みの発言は印で外し、再び使えば印を外す（消さない）。"""
+    from game_signal_scout.repositories import post as post_repo
+    now = datetime.now(timezone.utc)
+    conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('on', '1', now(), now(), '{}'), ('off', '1', now(), now(), '{}')")
+    for s in ("on", "off"):
+        conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, appid, matched_by, flags, text) VALUES (%s, '1', %s, 'a', 'en', '9', 'source', '[]', 'x')", (s, now))
+    assert post_repo.mark_not_in_use(conn, ["on"]) == 1
+    flags = dict(conn.execute("SELECT source, flags FROM player_post").fetchall())
+    assert flags["off"] == ["not_in_use"] and flags["on"] == []
+    post_repo.mark_not_in_use(conn, ["on", "off"])
+    assert dict(conn.execute("SELECT source, flags FROM player_post").fetchall())["off"] == []

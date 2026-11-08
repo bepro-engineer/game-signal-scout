@@ -45,7 +45,14 @@ def normalize_all(conn, cfg: dict | None = None) -> dict:
             errors[name] = f"{type(e).__name__}: {str(e)[:200]}"
     if errors and not out:
         raise RuntimeError(f"すべての取得元の正規化に失敗: {errors}")
-    return {"counts": out, "errors": errors}
+    # 今使っていない取得元（無効・利用条件で停止）の保存済みの発言は、どの集計・発見・画面にも使わない（印で外す。消さない）
+    from game_signal_scout import source_terms
+    from game_signal_scout.repositories import post as post_repo
+    in_use = [k for k, sc in cfg.items() if isinstance(sc, dict) and sc.get("enabled", True) and source_terms.allowed(k)]
+    with conn.transaction():
+        out_of_use = post_repo.mark_not_in_use(conn, in_use)
+    conn.commit()
+    return {"counts": out, "errors": errors, **({"marked_not_in_use": out_of_use} if out_of_use else {})}
 
 
 def reports(conn, source: str, settings: dict | None = None) -> int:

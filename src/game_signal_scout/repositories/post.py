@@ -26,7 +26,7 @@ def known_titles(conn) -> list[tuple[str, str]]:
                         "WHERE names IS NOT NULL").fetchall()
 
 
-EXCLUDE = ["affiliate", "promo", "stream", "autopost", "adult", "link_only", "many_hashtags", "piracy", "news", "terms_excluded"]   # news: ニュース・告知はプレイヤーの声として数えない（Anime と同じ。2026-11-08 Issue #3）。terms_excluded: 利用条件で禁止が明記されたサイトの発言（#3 G2）
+EXCLUDE = ["affiliate", "promo", "stream", "autopost", "adult", "link_only", "many_hashtags", "piracy", "news", "terms_excluded", "not_in_use"]   # news: ニュース・告知はプレイヤーの声として数えない（Anime と同じ。2026-11-08 Issue #3）。terms_excluded: 利用条件で禁止が明記されたサイトの発言（#3 G2）。not_in_use: 今使っていない取得元（無効・利用条件で停止）の保存済みの発言
 
 
 def top_apps(conn, since, limit: int) -> list[dict]:
@@ -92,4 +92,13 @@ def mark_terms_excluded(conn, source: str, hosts: list[str]) -> int:
             cur.execute(f"UPDATE player_post SET flags = flags - 'terms_excluded' WHERE source=%s AND flags ? 'terms_excluded' AND NOT {hit}", (source, pats, pats))
         else:
             cur.execute("UPDATE player_post SET flags = flags - 'terms_excluded' WHERE source=%s AND flags ? 'terms_excluded'", (source,))
+    return n
+
+
+def mark_not_in_use(conn, in_use: list[str]) -> int:
+    """今使っていない取得元（無効・利用条件で停止）の発言に印 not_in_use を付け、使っている取得元の発言からは外す（消さない。何度流しても同じ）。"""
+    with conn.cursor() as cur:
+        cur.execute("UPDATE player_post SET flags = flags || '[\"not_in_use\"]'::jsonb WHERE NOT (source = ANY(%s)) AND NOT flags ? 'not_in_use'", (list(in_use),))
+        n = cur.rowcount
+        cur.execute("UPDATE player_post SET flags = flags - 'not_in_use' WHERE source = ANY(%s) AND flags ? 'not_in_use'", (list(in_use),))
     return n
