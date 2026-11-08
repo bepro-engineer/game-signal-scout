@@ -143,7 +143,9 @@ def read_game(conn, appid: str, title: str, model: str, cfg: dict, prev_body: di
     days = int(cfg.get("window_days", 7))
     now = datetime.now(timezone.utc)
     since = now - timedelta(days=days)
-    rows = repo.statements_by_author(conn, appid, days * 2, int(cfg.get("max_per_window", 60)), since)
+    from game_signal_scout import observations
+    srcs = list(observations.sources())   # 集計に入れている取得元（有効で、利用条件で止まっていないもの。保留・停止の取得元の保存済みの発言は使わない）
+    rows = repo.statements_by_author(conn, appid, days * 2, int(cfg.get("max_per_window", 60)), since, srcs)
     if not rows:
         return None
     if ask is None:

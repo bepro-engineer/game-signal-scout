@@ -55,7 +55,7 @@ def test_statements_are_one_per_author_in_each_window(conn):
         conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, appid, matched_by, flags, text) VALUES ('f', %s, %s, %s, 'en', '7', 'source', '[]', %s)",
                      (i, at, au, text))
     conn.commit()
-    got = repo.statements_by_author(conn, "7", 14, 60, now - timedelta(days=7))
+    got = repo.statements_by_author(conn, "7", 14, 60, now - timedelta(days=7), ["f"])
     assert sorted(r["item_id"] for r in got) == ["i2", "i3", "i4"]
 
 
@@ -106,5 +106,6 @@ def test_material_is_taken_from_every_source_in_turn(conn):
             conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, appid, matched_by, flags, text) VALUES (%s, %s, %s, %s, 'en', '9', 'source', '[]', %s)",
                          (s, f"{s}{g}", now - timedelta(days=1), f"{s}-a{g}", "x" * (100 + g)))
     conn.commit()
-    got = repo.statements_by_author(conn, "9", 14, 3, now - timedelta(days=7))
+    got = repo.statements_by_author(conn, "9", 14, 3, now - timedelta(days=7), ["big", "small"])
     assert sorted(r["item_id"][:3] for r in got) == ["big", "big", "sma"]
+    assert all(r["item_id"].startswith("big") for r in repo.statements_by_author(conn, "9", 14, 3, now - timedelta(days=7), ["big"]))   # 集計に入れていない取得元は使わない
