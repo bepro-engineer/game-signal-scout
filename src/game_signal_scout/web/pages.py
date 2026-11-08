@@ -104,8 +104,11 @@ def info_main(name: str) -> str:
     return f'<main class="info" id="info-{name}">\n{body}\n</main>'
 
 
-def page_html(name: str) -> str:
+def page_html(name: str, plain: str = "") -> str:
+    """plain: JavaScript を動かさない読み手のための文だけの要約（web/plain.py）。<main> の最後に置く。"""
     page = PAGES[name]
     main = info_main(name) if page.info else _ENV.get_template(f"pages/{name}.html").render().rstrip("\n")
+    if plain and main.endswith("</main>"):
+        main = main[: -len("</main>")] + "\n" + str(plain) + "\n</main>"
     return _ENV.get_template("base.html").render(page=page, ver=asset_version(), main=Markup(main),
                                                  stylesheets=list(dict.fromkeys(page.stylesheets + ALWAYS_CSS)))

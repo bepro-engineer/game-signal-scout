@@ -1,17 +1,22 @@
 """ページの骨組み（HTML）。本文は画面の部品（static/*.js）が接続口から読んで描く。"""
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, HTMLResponse
 
-from game_signal_scout.web import pages
+from game_signal_scout.web import pages, plain
 
 router = APIRouter()
 
 
 def _page(name: str):
-    def show_page():
-        return HTMLResponse(pages.page_html(name))
+    def show_page(request: Request):
+        summary = ""
+        pool = getattr(request.app.state, "pool", None)
+        if pool is not None and not pages.PAGES[name].info:
+            with pool.connection() as conn:
+                summary = plain.block(conn, name, request.query_params.get("id"))
+        return HTMLResponse(pages.page_html(name, summary))
     show_page.__name__ = f"show_{name}_page"
     return show_page
 

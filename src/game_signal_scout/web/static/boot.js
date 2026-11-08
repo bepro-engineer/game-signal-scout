@@ -3,6 +3,7 @@
 (() => {
   const me = document.currentScript, need = (me.dataset.need || "").split(/\s+/).filter(Boolean), run = (me.dataset.run || "").split(/\s+/).filter(Boolean);
   const A = window.ASS, main = document.querySelector("main");
+  { const p = document.getElementById("plain"); if (p) p.remove(); }   // JavaScript を動かさない読み手のための文の要約（web/plain.py）。画面は部品が描く
   // 一時的な失敗（アプリの起動し直し・反映の間の 502/503/504・通信の失敗）は、知らせを出して自動で読み直す（#34: 本文が空のまま残った）
   const TEMP = new Set([502, 503, 504]), WAIT = [2, 4, 8, 15, 30, 30, 30, 30];   // 秒。合わせて約 2 分半
   const get = async p => {

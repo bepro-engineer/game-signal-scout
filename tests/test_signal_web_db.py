@@ -96,6 +96,19 @@ def test_work_page_shows_game_content_instead_of_synopsis(client):
     assert 'tr("ゲーム内容", "About the game")' in js
 
 
+def test_pages_carry_plain_text_for_readers_without_javascript(client):
+    """JavaScript を動かさない読み手（ページを読みに来る AI など）にも、最初の HTML に文の要約がある。ブラウザでは boot.js が消す。"""
+    c, last, docs = client
+    top = c.get("/").text
+    assert 'id="plain"' in top and "work.html?id=w2246340" in top
+    work = c.get("/work.html?id=w2246340").text
+    assert 'id="plain"' in work and "狩りに出よう。" in work
+    assert 'id="plain"' not in c.get("/work.html?id=w0").text            # 公開していない作品: 要約なしで、ページは出す
+    assert 'id="plain"' not in c.get("/about.html").text                 # 説明のページは本文がもともと HTML にある
+    from pathlib import Path
+    assert 'getElementById("plain")' in (Path(__file__).parents[1] / "src/game_signal_scout/web/static/boot.js").read_text()
+
+
 def test_non_game_software_is_not_a_work(conn):
     """ゲームでないソフト（Steam のジャンルがユーティリティなど。例: Wallpaper Engine）は作品として出さない。"""
     from game_signal_scout.ops.work import publishable_works
