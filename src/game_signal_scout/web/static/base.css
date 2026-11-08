@@ -185,3 +185,14 @@ button.dc-d.lt:not(.on) { box-shadow: inset 0 0 0 1.5px var(--accent); }
 /* 観測が一部だけの日の注記（ダッシュボードのいつもより話題が増えた作品） */
 .mv-partial { margin: 4px 0 8px; padding: 8px 12px; border-radius: 10px; background: var(--soft); font-size: 14px; line-height: 1.6; color: var(--ink-2); }
 .mv-partial.ok { background: #EEF6F3; color: var(--ink-2); }
+
+/* 320px: 言語別の作品の表が 3px 枠を越え、作品名の列が 32px に押しつぶされた（2026-11-08 Issue #2）。数の列も折り返し、画像の列を細くする */
+@media (max-width: 360px) {
+  .lw-t th, .lw-t td { padding-left: 2px !important; padding-right: 2px !important; font-size: 12px !important; }
+  .lw-t td.r, .lw-t td:last-child { white-space: normal !important; }
+  .lw-t td.im { width: 30px !important; } .lw-t td.im .art { width: 28px !important; }
+  .lw-t th:nth-child(4), .lw-t td:nth-child(4) { display: none; }   /* 前日の数は「変化」の札で読める。作品名の列に幅を回す */
+  .lw-t .tg { white-space: normal; padding: 1px 6px; font-size: 12px; }
+}
+/* 狭い画面: 長い作品名（『ウィッチャー３ ワイルドハント リマスター』など）と長い言語名は枠の中で折り返す（2026-11-08 Issue #2: 390px・320px で枠を越えた） */
+@media (max-width: 600px) { b.nb { white-space: normal; overflow-wrap: anywhere; } .tl li .l { white-space: normal; overflow-wrap: anywhere; } .tl li { min-width: 0; } }

@@ -38,3 +38,5 @@
 
 /* 状態の札（revival.css の色をそのまま。em の斜体を消す） */
 .ls .st { font-style: normal; font-weight: 700; font-size: 14px; white-space: nowrap; border-radius: 6px; padding: 0 7px; }
+/* 1180px 以下: 日ごとの言語の表（右の 430px）を説明の下の行へ。説明の列が細くなり、言語の札が枠を越えた（2026-11-08 Issue #2） */
+@media (max-width: 1180px) { .lsc { grid-template-columns: 72px minmax(0, 1fr) !important; } .lsc > .lsc-g { grid-column: 1 / -1; min-width: 0; } }

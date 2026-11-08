@@ -37,3 +37,4 @@
 .sr-empty { grid-column: 1 / -1; }
 @media (max-width: 1360px) { .sr-card { grid-template-columns: 54px minmax(0, 1fr); gap: 12px; } .sr-card > .art { width: 54px; } }
 
+.sr-sel select { max-width: 100%; min-width: 0; }   /* 320px でも選ぶ欄が枠を越えない */
