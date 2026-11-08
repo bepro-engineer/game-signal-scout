@@ -43,8 +43,8 @@ class GogReviews(SourceReader):
         from game_signal_scout.repositories import catalog
         s = self.settings
         apps = [a for a, _ in catalog.active_apps(self.conn, int(s.get("active_days", 90)), int(s.get("max_games", 60)))]
-        rows = dict(self.conn.execute("SELECT appid, coalesce(names->>'en', title) FROM game_profile WHERE appid = ANY(%s)", (apps,)).fetchall())
-        return [(a, rows[a]) for a in apps if rows.get(a)]
+        rows = catalog.names_images(self.conn, apps)
+        return [(a, rows[a][1] or rows[a][0]) for a in apps if a in rows]
 
     def product(self, title: str) -> str:
         body = self.http.get_json(self.name, CATALOG.format(q=urllib.parse.quote(title)))

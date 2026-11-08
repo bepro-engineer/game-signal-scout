@@ -10,12 +10,10 @@ class CatalogView:
 
 
 def work_profile(conn, work_id: int, level: str, as_of, view: CatalogView | None = None) -> dict:
-    r = conn.execute("SELECT title, summary, image_url, genres, modes, platforms, ja_text, ja_voice, released, store_url, about_ja, about_en "
-                     "FROM game_profile WHERE appid=%s", (str(work_id),)).fetchone()
-    if not r:
+    from game_signal_scout.repositories import catalog
+    p = catalog.profile_of(conn, str(work_id))
+    if not p:
         return {}
-    keys = ("title", "summary", "image", "genres", "modes", "platforms", "ja_text", "ja_voice", "released", "store_url", "about_ja", "about_en")
-    p = dict(zip(keys, r))
     m = re.search(r"(\d{4})", p.get("released") or "")
     # 作品詳細が読む形（Anime の profile の current）。あらすじの代わりにゲーム内容（Steam のストアの「このゲームについて」。日本語・英語の原文）
     p["current"] = {"title": p["title"], "genres": p.get("genres") or [], "year": int(m.group(1)) if m else None,

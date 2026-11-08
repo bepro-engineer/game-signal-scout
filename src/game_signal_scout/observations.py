@@ -68,11 +68,9 @@ def read_foundation(conn, source: str, day: date, prof: dict) -> DayResult:
     数える: 作品（app ID）に結び付き、宣伝などの印がない発言。投稿者は取得元の中の参照（author）。
     そろったか: その日が終わって落ち着いている（日次の既定の対象日以前）なら complete（取得元は日次で取りに行く）。"""
     from game_signal_scout.days import day_range, default_day
-    from game_signal_scout.repositories.post import EXCLUDE
-    import hashlib
+    from game_signal_scout.repositories import post
     start, end = day_range(day)
-    rows = conn.execute("SELECT item_id, author, lang, left(text, 30), at, appid, CASE WHEN length(text) >= %s THEN md5(text) END, flags ?| %s "
-                        "FROM player_post WHERE source = %s AND at >= %s AND at < %s", (SAME_TEXT_MIN_CHARS, EXCLUDE, source, start, end)).fetchall()
+    rows = post.day_rows(conn, source, start, end, SAME_TEXT_MIN_CHARS)
     conn.rollback()
     obs = []
     for uid, actor, lang, head, at, appid, same, flagged in rows:
@@ -266,6 +264,7 @@ def common_series(conn, first: date, as_of: date, srcs: dict | None = None):
 
 def work_levels(conn) -> dict[int, tuple[str, None]]:
     """Anime の work_repo.list_work_levels の Game 版: 作品（作品の情報のある app ID）はすべて 1 段（親なし）。"""
-    out = {int(a): ("work", None) for (a,) in conn.execute("SELECT appid FROM game_profile WHERE appid ~ '^[0-9]+$'")}
+    from game_signal_scout.repositories import catalog
+    out = {int(a): ("work", None) for a in catalog.all_appids(conn)}
     conn.rollback()
     return out

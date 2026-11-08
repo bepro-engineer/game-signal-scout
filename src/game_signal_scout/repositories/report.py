@@ -95,3 +95,7 @@ def reports_by_ids(conn, item_ids: list[str]) -> list[dict]:
 
 def newest_report_at(conn):
     return conn.execute("SELECT max(at) FROM player_report").fetchone()[0]
+
+
+def event_counts(conn, version: str) -> dict:
+    return dict(conn.execute("SELECT side, count(*) FROM shift_event WHERE version=%s GROUP BY side", (version,)).fetchall())

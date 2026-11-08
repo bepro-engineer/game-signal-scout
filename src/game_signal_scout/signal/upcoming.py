@@ -29,11 +29,8 @@ def release(text: str | None) -> dict:
 def people_7d(conn, appids: list[str], as_of: date) -> dict[str, int]:
     """直近 7 日（as_of まで）に、その作品について書いた人（取得元ごとに数え、いちばん多い取得元の人数。取得元をまたいで足さない）。"""
     from game_signal_scout.days import day_range
-    from game_signal_scout.repositories.post import EXCLUDE
-    start, end = day_range(as_of - timedelta(days=6))[0], day_range(as_of)[1]
-    rows = conn.execute("SELECT appid, max(n) FROM (SELECT appid, source, count(DISTINCT author) n FROM player_post WHERE appid = ANY(%s) AND at >= %s AND at < %s "
-                        "AND NOT (flags ?| %s) GROUP BY appid, source) t GROUP BY appid", (appids, start, end, EXCLUDE)).fetchall()
-    return {a: int(n) for a, n in rows}
+    from game_signal_scout.repositories import post
+    return post.people_by_appid(conn, appids, day_range(as_of - timedelta(days=6))[0], day_range(as_of)[1])
 
 
 def soon(conn, as_of: date, works: set[int], limit: int = 60) -> dict:

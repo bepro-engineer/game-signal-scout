@@ -1,0 +1,78 @@
+"""拡張の試験（Issue #3 の最重要の条件）: 架空の取得元をこの試験の中だけで足し、共通の処理（収集・正規化・作品の同定・観測の集計・公開の文書・画面）を
+1 行も変えずに、登録 → 取得 → 共通の保存 → 正規化 → 同定 → 集計 → 公開の文書 → 作品詳細の取得元の切り替え まで進むことを確かめる。
+
+足したのは、この試験の中の SourceReader の子クラス（FakeForum）と、記述（取得元の記述・観測の集計に入れる記述）だけ。外のサイトには接続しない。
+"""
+from __future__ import annotations
+
+from datetime import timedelta
+
+from game_signal_scout.days import day_range, default_day
+from game_signal_scout.sources.contract import Batch, SourceItem, SourceReader
+
+DAY = default_day()
+
+
+class FakeForum(SourceReader):
+    """架空の掲示板。作品の掲示板の投稿（作品が決まる）と、総合の板の投稿（本文の題名で同定する）を返す。"""
+
+    def read(self, cursor):
+        t = day_range(DAY)[0] + timedelta(hours=2)
+        items = [SourceItem(self.name, f"p{i}", t + timedelta(minutes=i), {"appid": "2246340", "author": f"a{i}", "lang": "de", "text": f"Patch {i} hat die Bosse verändert"})
+                 for i in range(3)]
+        items.append(SourceItem(self.name, "g1", t, {"author": "b1", "lang": "en", "text": "Monster Hunter Wilds patch broke my saves"}))
+        yield Batch(items, {"done": True})
+
+
+def test_a_new_source_flows_to_documents_without_changing_common_code(conn, monkeypatch):
+    from game_signal_scout import config
+    from game_signal_scout.ops import runner
+    from game_signal_scout.repositories import public_document
+    from game_signal_scout.sources import factory
+    conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', '2246340', now(), now(), '{}')")
+    conn.execute("INSERT INTO game_profile (appid, source, item_id, title, image_url, genres, modes, platforms, fetched_at, names) VALUES "
+                 "('2246340', 'steam_store', '2246340', 'モンスターハンターワイルズ', 'https://shared.akamai.steamstatic.com/x.jpg', '[\"アクション\"]', '[]', '[]', now(), "
+                 "'{\"en\": \"Monster Hunter Wilds\"}')")
+    conn.commit()
+    # 記述だけで足す: 取得元の記述（adapter・normalizer）と、観測の集計に入れる記述（map_sources）
+    src_cfg = {"fake_forum": {"adapter": "test_new_source_extension_db:FakeForum", "normalizer": "game_signal_scout.services.normalize:voices", "game_only": True}}
+    monkeypatch.setattr(factory, "load_sources_config", lambda: src_cfg)
+    real_toml = config.load_toml
+    monkeypatch.setattr(config, "load_toml", lambda name: {"sources": {"fake_forum": {"reader": "foundation", "production": True, "label": ["架空の掲示板", "Fake forum"]}}}
+                        if name == "map_sources.toml" else real_toml(name))
+    real_daily = config.load_daily_config
+    monkeypatch.setattr(config, "load_daily_config", lambda: {**real_daily(), "publish": {**real_daily().get("publish", {}), "start_day": DAY.isoformat()}})
+
+    code, out = runner.daily_run(DAY, only=["collect", "normalize", "observe", "publish"], reader_factory=lambda n: factory.create(n, None, src_cfg))
+    assert code == runner.EXIT_OK, out
+
+    # 共通の保存と正規化: 作品の掲示板の 3 件は取得元で、総合の板の 1 件は本文の題名（英語の題名）で同定
+    rows = conn.execute("SELECT item_id, appid, matched_by, lang FROM player_post WHERE source = 'fake_forum' ORDER BY item_id").fetchall()
+    assert rows == [("g1", "2246340", "title", "en"), ("p0", "2246340", "source", "de"), ("p1", "2246340", "source", "de"), ("p2", "2246340", "source", "de")]
+    # 観測の集計: 取得元ごと・言語ごとの人数（取得元をまたいで足さない）
+    obs = dict(conn.execute("SELECT lang, persons FROM obs_work_lang_day WHERE source = 'fake_forum' AND target_day = %s AND work_id = 2246340", (DAY,)).fetchall())
+    assert obs["*"] == 4 and obs["de"] == 3 and obs["en"] == 1
+    # 公開の文書と画面: 作品詳細の話題の動きに、この取得元の系列（切り替えの名前つき）が出る
+    work = public_document.get_document(conn, "work/w2246340")
+    assert any(st.get("label") == ["架空の掲示板", "Fake forum"] or "fake_forum" in str(st.get("key")) for st in work["streams"]), work["streams"]
+    day = public_document.get_document(conn, f"day/{DAY.isoformat()}")
+    assert day["dashboard"]["works_today"] == 1
+
+
+def test_common_code_has_no_source_name_branches():
+    """共通の処理（収集・正規化・同定・集計・公開・画面・運用）に、取得元の名前の文字列がない（取得元ごとの読み方は sources/ だけ）。"""
+    import re
+    from pathlib import Path
+    root = Path(__file__).parents[1] / "src/game_signal_scout"
+    names = re.compile(r"""['"](protondb|bluesky|steam_reviews|steam_charts|steam_upcoming|gog_reviews|nicopedia|pantip_games|blizzard_forums|hatena_games)['"]""")
+    found = [f"{p.relative_to(root)}:{i}" for p in root.rglob("*.py") if "sources" not in p.parts
+             for i, line in enumerate(p.read_text().splitlines(), 1) if names.search(line) and "def normalize(" not in line]
+    assert found == []
+
+
+def test_sql_only_in_repositories():
+    """3 層: SQL を書くのは Repository（repositories/）と接続（db.py）だけ。Controller（web・cli）・Service・取得元の読み方・画面の文書は Repository を呼ぶ。"""
+    from pathlib import Path
+    root = Path(__file__).parents[1] / "src/game_signal_scout"
+    found = [str(p.relative_to(root)) for p in root.rglob("*.py") if ".execute(" in p.read_text() and p.parts[-2] != "repositories" and p.name != "db.py"]
+    assert found == []

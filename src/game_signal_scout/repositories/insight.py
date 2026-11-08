@@ -34,3 +34,7 @@ def upsert(conn, x: dict) -> None:
 
 def all_insights(conn) -> dict[str, dict]:
     return {a: {"generated_at": g, "model": m, **b} for a, g, m, b in conn.execute("SELECT appid, generated_at, model, body FROM game_insight")}
+
+
+def newest_generated_at(conn):
+    return conn.execute("SELECT max(generated_at) FROM game_insight").fetchone()[0]

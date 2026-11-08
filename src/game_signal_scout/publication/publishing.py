@@ -40,7 +40,8 @@ def code_version() -> str:
 def input_version(conn, cfg: dict) -> str:
     """材料の版: 分析の規則の版・最後に成功した正規化と分析の時刻・最新の発言の時刻・文書を作るプログラムの指紋。どれかが変われば作り直す。"""
     from game_signal_scout.repositories import post
-    newest_insight = conn.execute("SELECT max(generated_at) FROM game_insight").fetchone()[0]
+    from game_signal_scout.repositories import insight
+    newest_insight = insight.newest_generated_at(conn)
     return "|".join(str(x) for x in (cfg["analysis"]["version"], job_repo.last_ok_finished_at(conn, "normalize"),
                                        job_repo.last_ok_finished_at(conn, "analyze"), post.newest_at(conn), newest_insight, code_version()))
 

@@ -56,8 +56,7 @@ class Nicopedia(SourceReader):
         from game_signal_scout.repositories import catalog
         s = self.settings
         apps = [a for a, _ in catalog.active_apps(self.conn, int(s.get("active_days", 90)), int(s.get("max_games", 60)))]
-        rows = {a: [t for t in (ja, en) if t] for a, ja, en in
-                self.conn.execute("SELECT appid, title, names->>'en' FROM game_profile WHERE appid = ANY(%s)", (apps,)).fetchall()}
+        rows = {a: [t for t in (ja, en) if t] for a, (ja, en, _) in catalog.names_images(self.conn, apps).items()}
         return [(a, list(dict.fromkeys(rows[a]))) for a in apps if rows.get(a)]
 
     def read(self, cursor: dict | None) -> Iterator[Batch]:

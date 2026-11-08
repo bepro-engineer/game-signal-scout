@@ -108,3 +108,33 @@ def voice_counts(conn, appids: list[str], days: int) -> dict[str, int]:
     rows = conn.execute("SELECT appid, count(DISTINCT author) FROM player_post WHERE appid = ANY(%s) AND at > now() - make_interval(days => %s) "
                         "AND NOT (flags ?| %s) GROUP BY appid", (list(appids), days, EXCLUDE)).fetchall()
     return dict(rows)
+
+
+# ---- 作品の情報を読む（Service・画面の文書が使う。SQL はここだけ）
+def names_images(conn, appids: list[str]) -> dict[str, tuple[str, str | None, str | None]]:
+    """app ID → (題名〔日本語のストアの表示〕, 英語の題名, 画像の URL)。"""
+    rows = conn.execute("SELECT appid, title, names->>'en', image_url FROM game_profile WHERE appid = ANY(%s)", (list(appids),)).fetchall()
+    return {a: (t, en, img) for a, t, en, img in rows}
+
+
+def game_appids(conn, appids: list[str], not_game: list[str]) -> set[str]:
+    """作品として見せてよい app ID（作品の情報があり、ゲームでないソフトのジャンルを持たない）。"""
+    return {a for (a,) in conn.execute("SELECT appid FROM game_profile WHERE appid = ANY(%s) AND NOT (genres ?| %s)", (list(appids), not_game))}
+
+
+def all_appids(conn) -> list[str]:
+    return [a for (a,) in conn.execute("SELECT appid FROM game_profile WHERE appid ~ '^[0-9]+$'")]
+
+
+PROFILE_KEYS = ("title", "summary", "image", "genres", "modes", "platforms", "ja_text", "ja_voice", "released", "store_url", "about_ja", "about_en", "names")
+
+
+def profile_of(conn, appid: str) -> dict | None:
+    r = conn.execute("SELECT title, summary, image_url, genres, modes, platforms, ja_text, ja_voice, released, store_url, about_ja, about_en, names "
+                     "FROM game_profile WHERE appid=%s", (appid,)).fetchone()
+    return dict(zip(PROFILE_KEYS, r)) if r else None
+
+
+def upcoming_appids(conn, limit: int) -> list[str]:
+    """最新の近日発売の一覧の上位（順位の順）。"""
+    return [a for (a,) in conn.execute("SELECT appid FROM game_upcoming WHERE day = (SELECT max(day) FROM game_upcoming) ORDER BY rank LIMIT %s", (limit,))]

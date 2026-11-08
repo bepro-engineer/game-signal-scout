@@ -106,3 +106,14 @@ def get_last_ok_fetch_of_any_source(conn):
 def list_item_texts(conn, source: str, item_ids: list[str]) -> list[tuple]:
     """項目の本文と言語 (item_id, 言語, body)（Anime と同じ形。Game は共通の発言 player_post の本文）。"""
     return conn.execute("SELECT item_id, lang, text FROM player_post WHERE source=%s AND item_id = ANY(%s)", (source, item_ids)).fetchall()
+
+
+def apps_with_items_before(conn, source: str, appids: list[str], days: int) -> set[str]:
+    """保存したいちばん古い項目が days 日より前の作品（payload の appid ごと。レビューの過去がそろったか）。"""
+    rows = conn.execute("SELECT payload->>'appid' FROM source_item WHERE source = %s AND payload->>'appid' = ANY(%s) GROUP BY 1 "
+                        "HAVING min(occurred_at) < now() - make_interval(days => %s)", (source, list(appids), days)).fetchall()
+    return {r[0] for r in rows}
+
+
+def count_known(conn, source: str, item_ids: list[str]) -> int:
+    return conn.execute("SELECT count(*) FROM source_item WHERE source = %s AND item_id = ANY(%s)", (source, list(item_ids))).fetchone()[0]

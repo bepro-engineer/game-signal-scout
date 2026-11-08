@@ -14,6 +14,7 @@ def publishable_works(conn, work_ids) -> set[int]:
     ids = sorted({int(w) for w in work_ids if w is not None})
     if not ids:
         return set()
-    out = {int(a) for (a,) in conn.execute("SELECT appid FROM game_profile WHERE appid = ANY(%s) AND NOT (genres ?| %s)", ([str(i) for i in ids], NOT_GAME))}
+    from game_signal_scout.repositories import catalog
+    out = {int(a) for a in catalog.game_appids(conn, [str(i) for i in ids], NOT_GAME)}
     conn.rollback()
     return out

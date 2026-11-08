@@ -97,3 +97,12 @@ def newest_artifact_at(conn) -> datetime | None:
     return conn.execute("SELECT max(created_at) FROM job_artifact").fetchone()[0]
 
 
+
+
+def latest_runs(conn):
+    """段ごとの最新の実行 (段, 状態, 再試行できるか, 誤りの種類, 出力の数, 終わった時刻, 詳細)。"""
+    return conn.execute("SELECT DISTINCT ON (job) job, status, retryable, error_type, output_count, finished_at, detail FROM job_run ORDER BY job, started_at DESC").fetchall()
+
+
+def last_ok_by_job(conn) -> dict:
+    return dict(conn.execute("SELECT job, max(finished_at) FROM job_run WHERE status='ok' GROUP BY job").fetchall())

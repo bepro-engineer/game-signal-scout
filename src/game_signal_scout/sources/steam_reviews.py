@@ -80,15 +80,14 @@ class SteamReviews(SourceReader):
         """max_age_days の日数分のレビューがそろっている作品（保存したいちばん古いレビューが、その日数より前）。"""
         if self.conn is None or not age:
             return set()
-        rows = self.conn.execute("SELECT payload->>'appid' FROM source_item WHERE source = %s AND payload->>'appid' = ANY(%s) GROUP BY 1 "
-                                 "HAVING min(occurred_at) < now() - make_interval(days => %s)", (self.name, appids, age)).fetchall()
-        return {r[0] for r in rows}
+        from game_signal_scout.repositories import source_item
+        return source_item.apps_with_items_before(self.conn, self.name, appids, age)
 
     def _all_known(self, ids: list[str]) -> bool:
         if self.conn is None:
             return False
-        n = self.conn.execute("SELECT count(*) FROM source_item WHERE source = %s AND item_id = ANY(%s)", (self.name, ids)).fetchone()[0]
-        return n == len(ids)
+        from game_signal_scout.repositories import source_item
+        return source_item.count_known(self.conn, self.name, ids) == len(ids)
 
     def _item(self, appid: str, r: dict) -> SourceItem:
         payload = {"appid": appid, **{k: r.get(k) for k in KEEP if k in r},
