@@ -202,14 +202,19 @@
   }
 
   /* ---------- 今チェックしておきたい作品（本番のその日のカード。並びも本番のまま。順位ではない） ---------- */
-  { const CK = G.checks;
+  // 作品は 1 度だけ出す（2026-11-09 オーナー: 同じ作品が段ごとに重複していた）。上の段（今日の兆しの作品の列）に出した作品は、下の段では出さない
+  const SEEN = new Set(G.featured.map(w => w.id));
+  const fresh = xs => { const out = xs.filter(x => !SEEN.has(x.id)); out.forEach(x => SEEN.add(x.id)); return out; };
+  { const CK = fresh(G.checks);
     const first = c => String((c.first || {})[L] || "").replace(/\s*\d+〜\d+時/, "").replace(/,\s*\d+–\d+h/, "");
     const grow = c => c.grow && c.grow[0] != null && c.grow[1] != null ? tr(`${c.grow[0]}人→${c.grow[1]}人`, `${c.grow[0]}→${c.grow[1]} people`) : "";
     const nl = c => (c.new_langs || []).map(x => x[L]).join(tr("・", ", "));
     const meta = c => [`${tr("初検知", "First seen")} ${first(c)}${grow(c) ? `・${grow(c)}` : ""}`, `${tr("その後", "After")}: ${(c.after || {})[L] || ""}`,
       ...(nl(c) ? [`${tr("新しい言語圏", "New language areas")}: ${nl(c)}`] : [])].join(" ・ ");
     const small = c => `<li class="ck2" data-cls="${esc(c.cls || "")}">${link(c)}${art(c)}<div class="ck2-t">${wn(c.name, 1)}<span class="ck2-l"><i>${esc((c.label || {})[L] || "")}</i>${esc((c.line || {})[L] || "")}</span><span class="ck2-m" title="${esc(meta(c))}">${esc(meta(c))}</span></div></li>`;
-    if (!CK.length) {
+    if (!CK.length && G.checks.length) {
+      $("others").remove();   // 動き始めた作品はすべて上の段に出した（空だと書かない）
+    } else if (!CK.length) {
       $("others").innerHTML = `<h2 class="g-h">${tr("今チェックしておきたい作品", "Worth a look now")}</h2><div class="rv-empty"><div><b>${tr("この日に動き始めた作品は見つかりませんでした", "No title started moving on this day")}</b></div></div>`;
     } else {
       const top = CK[0], rest = CK.slice(4);
@@ -236,7 +241,7 @@
 
   /* ---------- ゲームの動きをもっと見る（いつもより話題が増えた作品。web/movement.py の分析。全 Source 共通の系列と Signal 発見） ---------- */
   // 数を並べる段ではなく、作品それぞれの普段と比べて何が変わったかを伝える段（2026-10-16 のユーザーの指示）。分析の結果に応じて文と項目の数を変える
-  const MV = G.movement, TOP = G.top;
+  const MV = G.movement;
   const OS = G.obs_status || (G.complete ? "complete" : "partial");
   const obsNote = OS === "complete" || OS === "recovered" ? "" : `<p class="mv-partial">${tr(`${md(day)} は一部の時間に観測が途切れたため、人数が実際より少ない可能性があります。`, `${md(day)} was only partly observed, so counts may be low.`)}</p>`;
   // 作品自身の直近 14 日の人数（観測していない日は空き）。今日を強調し、普段（中央値）を線で示す。変化の理解に役立つときだけ置く
@@ -264,27 +269,26 @@
       ${main(x) ? `<p class="mv-main">${esc(main(x))}</p>` : ""}<p class="mv-sub">${meta}</p>${spark(x.spark, x.base)}</div></li>`; };
   const DPm = G.display || {};
   const listOf = (id, rows, first) => { const el = document.getElementById(id); if (el && rows.length) A.moreList(el, rows, first == null ? rows.length : first, DPm.rows_step || rows.length); };
+  const Q1F = MV ? fresh(MV.q1.featured) : [];   // いつもより話題が増えた作品（上の段に出した作品を除く）
   let q1 = "";
   if (!MV) {
     q1 = `<p class="mv-a">${tr("この日の分析はありません。", "No analysis for this day.")}</p>`;
   } else {
     // ブロックは見出しで何の一覧かが分かるので、前置きの文は置かない（2026-10-25 のユーザーの指示: 読者に長い文を読ませない）。ないときだけ 1 行で言う
-    const a = MV.q1;
-    q1 = `${obsNote}${a.featured.length ? `<ul class="mv-cards" id="mv-q1"></ul>` : `<p class="mv-a">${tr("この日は、いつもより話題が増えた作品はありませんでした。", "No title rose above its usual level on this day.")}</p>`}`;
+    const a = { ...MV.q1, featured: Q1F };
+    q1 = `${obsNote}${a.featured.length ? `<ul class="mv-cards" id="mv-q1"></ul>` : MV.q1.featured.length ? "" : `<p class="mv-a">${tr("この日は、いつもより話題が増えた作品はありませんでした。", "No title rose above its usual level on this day.")}</p>`}`;
   }
+  const TOP = fresh(G.top);   // 上の段に出した作品を除いた、話題の多かった作品（人数の順）
   $("more").innerHTML = `
     <div class="sec-h"><h2>${tr("ゲームの動きをもっと見る", "More on today's movement")}</h2><p>${tr("作品それぞれの普段と比べて、この日に何が変わったかを確かめられます。", "See what changed on this day compared with each title's usual level.")}</p></div>
-    <div class="mv">
-      <article class="mv-q" id="trend">
-        <h3>${tr("いつもより話題が増えた作品", "Titles talked about more than usual")}</h3>${q1}</article>
-    </div>
-    <section class="mv-list" id="rank"><h3 class="mv-lh">${tr(`${md(day)} に話題が多かった${TOP.length}作品`, `${TOP.length} most talked-about titles on ${md(day)}`)}<small>${tr("人数の順", "by people")}</small></h3>
-      <ul class="rank">${TOP.map(t => `<li class="${t.first ? "first" : ""}">${link(t)}${art(t)}<div class="rk">${wn(t.name, 1, "span")}${t.first ? `<span class="tagfirst">${tr("初めて話題に", "First seen")}</span>` : ""}<div class="bar"><span style="width:${t.n / (TOP[0] || t).n * 100}%"></span></div></div><em>${esc(A.ppl(t.n))}</em></li>`).join("")}</ul>
+    ${q1 ? `<div class="mv"><article class="mv-q" id="trend"><h3>${tr("いつもより話題が増えた作品", "Titles talked about more than usual")}</h3>${q1}</article></div>` : ""}
+    <section class="mv-list" id="rank"><h3 class="mv-lh">${tr(`ほかに ${md(day)} に話題が多かった${TOP.length}作品`, `${TOP.length} more titles talked about on ${md(day)}`)}<small>${tr("人数の順", "by people")}</small></h3>
+      <ul class="rank">${TOP.map(t => `<li class="${t.first ? "first" : ""}">${link(t)}${art(t)}<div class="rk">${wn(t.name, 1, "span")}${t.first ? `<span class="tagfirst">${tr("初めて話題に", "First seen")}</span>` : ""}<div class="bar"><span style="width:${t.n / Math.max(...TOP.map(x => x.n)) * 100}%"></span></div></div><em>${esc(A.ppl(t.n))}</em></li>`).join("")}</ul>
       <p class="mv-note">${tr("人気の順位ではなく、この日の観測の人数です。「初めて話題に」は、このサイトで初めて話題になった作品です（新作という意味ではありません）。", "Not a popularity ranking: people observed on this day. “First seen” means first talked about on this site, not a new release.")}</p></section>`;
   document.addEventListener("click", e => { if (!e.target.closest('a[href="#trend"]')) return;
     const q = $("trend"); q.classList.remove("flash"); void q.offsetWidth; q.classList.add("flash"); });
   if (MV) {   // いつもより話題が増えた作品の一覧: 初めの数件を描き、残りは「もっと見る」で開く（件数は config/pages.toml [display]。全件はデータにある。#24）
-    listOf("mv-q1", told(MV.q1.featured).map(x => card(x, subQ1(x))), DPm.moves_first);
+    listOf("mv-q1", told(Q1F).map(x => card(x, subQ1(x))), DPm.moves_first);
   }
   if (location.hash) { const t = document.getElementById(location.hash.slice(1)); if (t) setTimeout(() => t.scrollIntoView(), 0); }
 })();
