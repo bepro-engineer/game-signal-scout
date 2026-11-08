@@ -113,3 +113,8 @@ label = ["GOG のレビュー", "GOG reviews"]
 reader = "foundation"
 production = true
 label = ["ニコニコ大百科の掲示板", "Nicopedia boards"]
+
+[sources.pantip_games]
+reader = "foundation"
+production = true
+label = ["Pantip のゲームの話題", "Pantip game topics"]

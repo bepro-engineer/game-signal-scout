@@ -30,18 +30,18 @@ class Fetcher:
         body = self._get(source, url, "application/json", None)
         return json.loads(body) if body is not None else None
 
-    def get_text(self, source: str, url: str) -> str | None:
-        """HTML などの文を取る。失敗は例外にせず None（記録は self.log）。"""
-        return self._get(source, url, "text/html,application/xhtml+xml", None)
+    def get_text(self, source: str, url: str, headers: dict | None = None) -> str | None:
+        """HTML などの文を取る。失敗は例外にせず None（記録は self.log）。headers はページ自身が付ける見出し（Referer など）だけ。"""
+        return self._get(source, url, "text/html,application/xhtml+xml", None, headers)
 
     def download(self, source: str, url: str, dest: Path) -> bool:
         """ファイルに保存する（途中の失敗で壊れたファイルを残さない: .part に書いてから名前を替える）。"""
         return self._get(source, url, "application/octet-stream", Path(dest)) is not None
 
-    def _get(self, source: str, url: str, accept: str, dest: Path | None):
+    def _get(self, source: str, url: str, accept: str, dest: Path | None, headers: dict | None = None):
         host = urllib.parse.urlsplit(url).netloc
         self._wait(host)
-        req = urllib.request.Request(url, headers={"User-Agent": self.ua, "Accept": accept})
+        req = urllib.request.Request(url, headers={**(headers or {}), "User-Agent": self.ua, "Accept": accept})
         t0, status, ok, err, out, size = time.monotonic(), None, False, None, None, None
         try:
             with self._open(req, timeout=self.timeout) as r:

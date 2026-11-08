@@ -162,3 +162,11 @@ def test_nicopedia_responses_have_jst_time_and_daily_id():
             '<div class="bbs_resbody_inner" ><a href="/b/a/x/1-#3" class="dic">&gt;&gt;3</a><br>アプデで<a class="auto" href="/a/x">重く</a>なった</div>\n  </dd>')
     r = parse(page)
     assert [(x["no"], x["at"].isoformat(), x["id"], x["text"]) for x in r] == [(46236, "2026-11-07T19:57:36+09:00", "abc", "アプデで重くなった")]
+
+
+def test_pantip_comments_keep_text_but_not_member_number():
+    from game_signal_scout.sources.pantip import actor, parse_comments
+    raw = '﻿{"comments":[{"_id":"1","user":{"mid":42},"created_time":"1794121631","message":"สนุกมาก<br>","replies":[{"reply_id":"2","user":{"mid":43},"data_utime":"11/08/2026 14:07:11","message":"จริง"}]}]}'
+    rows, n = parse_comments(raw)
+    assert n == 1 and [(r["id"], r["text"], r["at"].isoformat()) for r in rows] == [("c:1", "สนุกมาก", "2026-11-08T07:07:11+00:00"), ("r:2", "จริง", "2026-11-08T07:07:11+00:00")]
+    assert "42" not in actor(42)

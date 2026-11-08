@@ -364,3 +364,13 @@ max_pages = 3
 crawl_delay = 5
 refresh_days = 7
 min_interval_hours = 6
+
+[pantip_games]
+adapter = "game_signal_scout.sources.pantip:Pantip"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（Pantip のゲームのタグの話題とコメント。タイ語。キー不要。Anime の sources/pantip を流用。台帳の pantip_chalermkrung は音楽の部屋だったのでタグで読む）
+game_only = true
+poll = true
+min_interval_hours = 0
+tags = ["เกม", "เกมคอมพิวเตอร์", "PlayStation", "Nintendo Switch", "Steam"]
+max_comment_pages = 3
