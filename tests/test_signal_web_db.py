@@ -133,3 +133,13 @@ def test_only_known_peers_and_no_health_through_the_public_entrance(client):
     assert TestClient(app, client=("192.168.11.3", 1234)).get("/").status_code == 200       # VAIO の共通の入口（/game/・公開の名前）からの中継は受ける
     assert TestClient(app, client=("192.168.11.50", 1234)).get("/").status_code == 403      # 裏の口を直接開くことはできない（利用者は VAIO の入口から）
     assert TestClient(app, client=("8.8.8.8", 1234)).get("/").status_code == 403
+
+
+def test_public_documents_do_not_quote_posts_unless_terms_allow(client):
+    """原文の引用は、利用条件（config/source_terms.toml）で public_quote が allowed と記録された取得元だけ。既定は出さない（#3 G2）。"""
+    import json as _json
+    c, last, docs = client
+    w = c.get("/api/works/w2246340").json()
+    assert all(not p.get("quotes") for s in w.get("streams") or [] for p in s.get("points") or [])
+    d = _json.dumps(c.get(f"/api/days/{last.isoformat()}").json(), ensure_ascii=False)
+    assert '"quote":' not in d

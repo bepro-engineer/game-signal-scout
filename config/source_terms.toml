@@ -1,0 +1,6 @@
+# 取得元ごとの利用条件（#3 G2。判定は src/game_signal_scout/source_terms.py の 1 か所だけ。取得元の名前で分けない）。
+# 一次資料（公式の規約・API の文書・robots.txt）の URL・条項の要旨・確認日を、取得元ごとに記録する。推測で埋めない。
+# category: explicitly_prohibited / conditional / explicitly_allowed / unconfirmed
+#   取得を止めるのは explicitly_prohibited（または uses.collect が prohibited）だけ。未確認を禁止として扱わない。
+# uses: collect・store・analyze_aggregate・public_quote・commercial（allowed / prohibited / conditional / unknown と理由）
+#   公開の画面の原文の引用は、public_quote が allowed と記録された取得元だけ（既定は出さない）。

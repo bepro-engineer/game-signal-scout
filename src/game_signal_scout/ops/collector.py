@@ -29,8 +29,9 @@ def log(event: str, **kw) -> None:
 
 
 def residents(cfg: dict) -> list[str]:
-    """常駐で収集する取得元（記述があり、enabled が false でなく、resident = true）。"""
-    return [n for n, s in cfg.items() if isinstance(s, dict) and s.get("adapter") and s.get("enabled", True) and s.get("resident")]
+    """常駐で収集する取得元（記述があり、enabled が false でなく、resident = true で、利用条件で禁止されていないもの）。"""
+    from game_signal_scout import source_terms
+    return [n for n, s in cfg.items() if isinstance(s, dict) and s.get("adapter") and s.get("enabled", True) and s.get("resident") and source_terms.allowed(n)]
 
 
 def heartbeat_path(source: str):

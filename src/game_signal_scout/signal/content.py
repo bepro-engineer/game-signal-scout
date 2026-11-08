@@ -820,7 +820,7 @@ def work_quotes(ctx: Ctx, w: int, window: list[date]) -> dict[date, list[dict]]:
     ok: set[tuple[str, str]] = set()
     for src in {r[1] for r in rows}:
         ad = factory.reader_for(src)
-        ok |= {(src, i) for i in (ad.quotable(ctx.conn, [r[2] for r in rows if r[1] == src]) if ad else {r[2] for r in rows if r[1] == src})}   # Game: 公開の発言はすべて引用してよい
+        ok |= {(src, i) for i in (ad.quotable(ctx.conn, [r[2] for r in rows if r[1] == src]) if ad else set())}   # 引用は利用条件で allowed と記録された取得元だけ（source_terms。既定は出さない。#3 G2）
     out: dict[date, list[dict]] = {}
     seen: set[tuple[date, str]] = set()
     from game_signal_scout.repositories import post as post_repo

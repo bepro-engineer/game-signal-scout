@@ -107,8 +107,9 @@ def voices_from_rows(conn, source: str, rows: list[tuple], quotable=None) -> lis
         seen.add(t)
         cand.append((uri, lang, t))
     cand = cand[:MAX_VOICES * 2]
-    ad = factory.reader_for(source)
-    ok = (quotable or (lambda uris: ad.quotable(conn, uris) if ad else set(uris)))([u for u, _, _ in cand])   # Game: 取得元の部品がなければ、公開の発言はすべて引用してよい
+    # Game: AI が読む声は、取得・集計してよい発言すべて（分析）。公開の画面に原文を引用してよいかは、公開の時に利用条件で絞る
+    # （signal/content の quotable。source_terms で allowed と記録された取得元だけ。既定は出さない。#3 G2）
+    ok = (quotable or set)([u for u, _, _ in cand])
     out = []
     for uri, lang, t in cand:
         if uri in ok:

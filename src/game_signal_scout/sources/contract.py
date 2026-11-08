@@ -66,8 +66,10 @@ class SourceReader(ABC):
     # ---- 取得しない用途の契約（Anime の sources/contract と同じ名前・同じ既定。取得元の決まりがあれば上書きする）
 
     def quotable(self, conn, item_ids: list[str]) -> set[str]:
-        """公開の画面に抜粋とリンクを出してよい項目の ID（既定: すべて。投稿者・内容のラベルのある取得元はここで判定する）。"""
-        return set(item_ids)
+        """公開の画面に抜粋とリンクを出してよい項目の ID。既定: 利用条件（config/source_terms.toml）で引用が allowed と記録された取得元だけ、
+        すべて。それ以外は出さない（Game は原文を公開しない。#3 G2）。投稿者・内容のラベルのある取得元は、ここを上書きしてさらに絞る。"""
+        from game_signal_scout import source_terms
+        return set(item_ids) if source_terms.quote_allowed(self.name) else set()
 
     def permalink(self, item: dict) -> str | None:
         """項目の公開の URL（item は item_id・url。既定: 保存した url のうち https のもの。ID を URL とみなさない）。"""
