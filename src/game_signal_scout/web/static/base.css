@@ -32,3 +32,11 @@ section { overflow-x: auto; }
 .note { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 2px; }
 footer { max-width: 1000px; margin: 24px auto; padding: 0 16px; font-size: 12px; }
 code { font-size: 13px; }
+.card { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin: 10px 0; }
+.card h3, .card h2 { font-size: 16px; margin: 0 0 6px; }
+.card p { margin: 6px 0; }
+.themes { font-size: 13px; color: var(--muted); }
+.theme { display: inline-block; margin: 2px 4px 2px 0; padding: 0 8px; border-radius: 10px; border: 1px solid var(--line); color: var(--fg); white-space: nowrap; }
+.hint { font-size: 12px; color: var(--muted); }
+details summary { cursor: pointer; color: var(--link); margin: 6px 0; }
+@media (max-width: 600px) { main { padding: 12px 16px; } .events th:nth-child(3), .events td:nth-child(3) { display: none; } h1 { font-size: 19px; } }

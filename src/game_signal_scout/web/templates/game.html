@@ -1,13 +1,48 @@
 {% extends "base.html" %}
 {% block title %}{{ g.title or g.appid }}{% endblock %}
 {% block main %}
-<p class="crumb"><a href="/">← 変化の一覧</a>　内容を作った時刻: {{ health.built_at|ts }}</p>
+<p class="crumb"><a href="/">← 一覧へ</a>　内容を作った時刻: {{ health.built_at|ts }}</p>
 <h1>{{ g.title or g.appid }}</h1>
-<p class="lead">Steam app ID <code>{{ g.appid }}</code>（<a href="https://store.steampowered.com/app/{{ g.appid }}/">ストア</a>）</p>
+<p class="lead">Steam app ID <code>{{ g.appid }}</code>（<a href="https://store.steampowered.com/app/{{ g.appid }}/">ストア</a>・<a href="https://www.protondb.com/app/{{ g.appid }}">ProtonDB</a>）</p>
+
+{% for e in g.events %}
+<section class="event card">
+<h2><span class="side {{ e.side }}">{{ '遊べなくなった' if e.side == 'fail' else '直った' }}</span> {{ e.window_start|day }} から</h2>
+<p>{{ e.summary }}</p>
+{% if e.themes %}<p class="themes">根拠の報告 {{ e.n_key }} 件に書かれていた内容：{% for t in e.themes %}<span class="theme">{{ t.label }} {{ t.n }}/{{ e.n_key }} 件</span>{% endfor %}</p>
+<p class="hint">内容は報告の文中の語で数えています（誤りを含みます）。原因とは限りません。</p>{% endif %}
+<details{% if loop.first %} open{% endif %}>
+<summary>根拠の報告 {{ e.reports|length }} 件（原文。英語が中心）</summary>
+<ul class="reports">
+{% for r in e.reports %}
+<li><span class="when">{{ r.at|day }}</span> <span class="side {{ 'fail' if r.failed else 'fix' }}">{{ '遊べない' if r.failed else '遊べる' }}</span>
+{% if r.proton %}<span class="proton">{{ r.proton }}</span>{% endif %}
+<div class="note">{{ r.notes or '（記述なし）' }}</div></li>
+{% endfor %}
+</ul>
+</details>
+</section>
+{% else %}
+<p>この作品には、ProtonDB の報告から検出した変化はありません。</p>
+{% endfor %}
+
+{% if g.weeks %}<section>
+<h2>週ごとの報告（最新の報告から 26 週）</h2>
+<table class="weeks">
+<thead><tr><th>週の始まり</th><th class="num">報告</th><th class="num">遊べない</th><th>遊べない割合</th></tr></thead>
+<tbody>
+{% for w in g.weeks %}
+<tr><td>{{ w.week|day }}</td><td class="num">{{ w.reports }}</td><td class="num">{{ w.failed }}</td>
+<td><span class="bar" style="width: {{ (w.share * 100)|round(0) }}%"></span> {{ w.share|pct }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</section>{% endif %}
 
 {% if g.posts %}
 <section>
-<h2>最近の発言（Bluesky。{{ g.posts.since|day }} から、投稿者 {{ g.posts.authors }} 人・発言 {{ g.posts.posts }} 件）</h2>
+<h2>参考：最近の Bluesky の発言（未検証）</h2>
+<p class="lead">{{ g.posts.since|day }} から、投稿者 {{ g.posts.authors }} 人・発言 {{ g.posts.posts }} 件。この作品への結び付けの正しさはまだ測っていません。</p>
 <ul class="reports">
 {% for p in g.posts.recent %}
 <li><span class="when">{{ p.at|ts }}</span> <span class="proton">{{ p.lang or '—' }}・{{ 'ストアのリンク' if p.matched_by == 'steam_link' else '題名の一致' }}</span>
@@ -16,33 +51,4 @@
 </ul>
 </section>
 {% endif %}
-
-{% if g.weeks %}<section>
-<h2>週ごとの報告（最新の報告から 26 週）</h2>
-<table class="weeks">
-<thead><tr><th>週の始まり</th><th class="num">報告</th><th class="num">遊べない</th><th class="num">機材構成</th><th>遊べない割合</th></tr></thead>
-<tbody>
-{% for w in g.weeks %}
-<tr><td>{{ w.week|day }}</td><td class="num">{{ w.reports }}</td><td class="num">{{ w.failed }}</td><td class="num">{{ w.configs }}</td>
-<td><span class="bar" style="width: {{ (w.share * 100)|round(0) }}%"></span> {{ w.share|pct }}</td></tr>
-{% endfor %}
-</tbody>
-</table>
-</section>{% endif %}
-
-{% for e in g.events %}
-<section class="event">
-<h2><span class="side {{ e.side }}">{{ '遊べなくなった' if e.side == 'fail' else '直った' }}</span> {{ e.window_start|day }} からの 14 日</h2>
-<p>遊べない割合 {{ e.share_prev|pct }}（直前 60 日、{{ e.n_prev }} 件）→ <strong>{{ e.share_window|pct }}</strong>（窓の {{ e.n_window }} 件）。根拠の報告 {{ e.n_key }} 件：</p>
-<ul class="reports">
-{% for r in e.reports %}
-<li><span class="when">{{ r.at|day }}</span> <span class="side {{ 'fail' if r.failed else 'fix' }}">{{ '遊べない' if r.failed else '遊べる' }}</span>
-{% if r.proton %}<span class="proton">{{ r.proton }}</span>{% endif %}
-<div class="note">{{ r.notes or '（記述なし）' }}</div></li>
-{% endfor %}
-</ul>
-</section>
-{% else %}
-<p>この作品には、ProtonDB の報告から検出した変化はありません。</p>
-{% endfor %}
 {% endblock %}

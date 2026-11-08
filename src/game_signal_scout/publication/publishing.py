@@ -22,11 +22,22 @@ class PublishRejectedError(Exception):
     """作った内容が公開の前の検査に通らない（表は前の回のまま）。"""
 
 
+def code_version() -> str:
+    """文書を作るプログラム（publication/content.py・themes.py）の中身の指紋。Game には Anime の「反映のときに force で作り直す」手順がないので、
+    プログラムを替えたら次の回で作り直されるように、材料の版に含める。"""
+    import hashlib
+    from pathlib import Path
+    h = hashlib.sha256()
+    for name in ("content.py", "themes.py"):
+        h.update((Path(__file__).parent / name).read_bytes())
+    return h.hexdigest()[:12]
+
+
 def input_version(conn, cfg: dict) -> str:
-    """材料の版: 分析の規則の版・最後に成功した正規化と分析の時刻・最新の発言の時刻。どれかが変われば作り直す。"""
+    """材料の版: 分析の規則の版・最後に成功した正規化と分析の時刻・最新の発言の時刻・文書を作るプログラムの指紋。どれかが変われば作り直す。"""
     from game_signal_scout.repositories import post
     return "|".join(str(x) for x in (cfg["analysis"]["version"], job_repo.last_ok_finished_at(conn, "normalize"),
-                                       job_repo.last_ok_finished_at(conn, "analyze"), post.newest_at(conn)))
+                                       job_repo.last_ok_finished_at(conn, "analyze"), post.newest_at(conn), code_version()))
 
 
 def build_documents(conn, cfg: dict) -> tuple[dict[str, object], dict]:

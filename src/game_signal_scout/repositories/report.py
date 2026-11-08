@@ -50,9 +50,20 @@ EVENT_COLS = ("side", "appid", "title", "window_start", "n_key", "n_window", "sh
 
 def recent_events(conn, version: str, limit: int) -> list[dict]:
     """検出した変化（新しい窓から）。作品名は最新の報告の題名。"""
-    rows = conn.execute(f"SELECT e.side, e.appid, {_TITLE.format('e.appid')}, e.window_start, e.n_key, e.n_window, e.share_prev, e.share_window, e.n_prev "
-                        "FROM shift_event e WHERE e.version=%s ORDER BY e.window_start DESC, e.n_key DESC LIMIT %s", (version, limit)).fetchall()
-    return [dict(zip(EVENT_COLS, r)) for r in rows]
+    rows = conn.execute(f"SELECT e.side, e.appid, {_TITLE.format('e.appid')}, e.window_start, e.n_key, e.n_window, e.share_prev, e.share_window, e.n_prev, "
+                        "e.item_ids FROM shift_event e WHERE e.version=%s ORDER BY e.window_start DESC, e.n_key DESC LIMIT %s", (version, limit)).fetchall()
+    return [dict(zip(EVENT_COLS + ("item_ids",), r)) for r in rows]
+
+
+def notes_by_ids(conn, item_ids: list[str]) -> list[str]:
+    """変化の根拠の報告の記述（内容の語を数える。publication/themes）。"""
+    return [r[0] or "" for r in conn.execute("SELECT notes FROM player_report WHERE item_id = ANY(%s)", (list(item_ids),))]
+
+
+def after(conn, appid: str, since) -> dict:
+    """窓の後（since 以降）の報告の数と失敗の数。変化がその後も続いているかを見る。"""
+    n, failed = conn.execute("SELECT count(*), count(*) FILTER (WHERE failed) FROM player_report WHERE appid=%s AND at >= %s", (appid, since)).fetchone()
+    return {"n": n, "failed": failed}
 
 
 def app_events(conn, version: str, appid: str) -> list[dict]:
