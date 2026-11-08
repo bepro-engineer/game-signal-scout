@@ -1,0 +1,245 @@
+/* ダッシュボードのモック。規則は DESIGN-RULES.md（色・文字・余白・カード・画像・グラフ・リンク） */
+:root {
+  color-scheme: light;
+  --bg: #f6f4fb; --card: #fff; --line: #e6e2f1; --soft: #f3f1f9;
+  --ink: #1d1a3a; --ink-2: #3c3958; --ink-3: #57536f;
+  --accent: #5246c9; --accent-soft: #ebe8fb; --brand: #d6407e;
+  --today: #5246c9; --other: #c9c5dc; --strong: #8a84ad;     /* グラフ: その日 / ほかの日 / ほかの日の 1 位 */
+  --ja: #d0607f; --en: #5470cf; --ot: #bdb9d2;
+  --warn: #7a5410; --warn-soft: #fbf1dc;
+  --shadow: 0 1px 2px rgba(40, 30, 80, .05), 0 8px 24px rgba(40, 30, 80, .07);
+  --shadow-lg: 0 2px 6px rgba(40, 30, 80, .06), 0 22px 50px rgba(60, 40, 120, .12);
+  --round: "M PLUS Rounded 1c", "Noto Sans JP", system-ui, sans-serif;
+  --font: "Noto Sans JP", "Hiragino Sans", system-ui, -apple-system, sans-serif;
+  --side: 210px; --s1: 8px; --s2: 16px; --s3: 24px; --s4: 32px; --r: 16px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { word-break: auto-phrase; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.75; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(1100px 600px at 90% -10%, #fde8f1 0%, transparent 60%), radial-gradient(1000px 700px at -10% 35%, #e7efff 0%, transparent 60%), #f6f4fb; }
+button { font: inherit; }
+svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+svg text { font-family: var(--font); }
+.nb { white-space: nowrap; }
+
+/* ---------- 枠組み ---------- */
+.app { display: grid; grid-template-columns: var(--side) minmax(0, 1fr); grid-template-areas: "top top" "side main"; column-gap: 28px; row-gap: var(--s2); padding: 14px 24px 48px; max-width: 1440px; margin: 0 auto; }
+.top { grid-area: top; }
+.top img { display: block; width: 100%; aspect-ratio: 2000 / 416; object-fit: cover; border-radius: 18px; }
+/* 左の列: メニューと「まもなく放送」（2026-10-17。以前のアフィリエイトの枠の空き）。列ごと追従する */
+.sidecol { grid-area: side; align-self: start; position: sticky; top: 14px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.sidecol.sn-open { position: static; }   /* 「もっと見る」で伸ばしたときは追従しない（下が画面の外で読めなくならないように） */
+@media (max-height: 900px) { .sidecol { position: static; } }   /* 縦の短い画面: カードの内側でスクロールさせず、ページと一緒に流す */
+.soon { background: var(--card); border-radius: var(--r); box-shadow: var(--shadow); padding: 12px 12px 10px; min-width: 0; }
+.soon h2 { margin: 0; font-size: 15px; font-weight: 700; color: var(--ink); }
+.soon .sn-note { margin: 2px 0 8px; font-size: 11.5px; line-height: 1.5; color: var(--ink-3); }
+.sn-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.sn-list li { position: relative; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 8px; align-items: center; min-width: 0; }
+.sn-list li[hidden] { display: none; }
+.sn-list .art { width: 36px; aspect-ratio: 3 / 4; border-radius: 6px; overflow: hidden; }
+.sn-list .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sn-t { min-width: 0; display: flex; flex-direction: column; gap: 1px; font-size: 13px; line-height: 1.4; color: var(--ink); font-weight: 700; }
+.sn-w { font-size: 12px; font-weight: 500; color: var(--ink-2); }
+.soon .sn-h { margin: 6px 0 4px; font-size: 12px; font-weight: 700; color: var(--accent); }
+.soon .sn-more { margin-top: 8px; padding: 0; border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--accent); cursor: pointer; }
+.soon .sn-none { margin: 0; font-size: 12.5px; color: var(--ink-2); }
+.side { background: var(--card); border-radius: var(--r); box-shadow: var(--shadow); padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
+.side a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; color: var(--ink-2); font-size: 15px; font-weight: 500; text-decoration: none; }
+.side a:hover { background: var(--soft); }
+.side a.on { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.uiloc { border-top: 1px solid var(--line); margin-top: 10px; padding: 12px 4px 2px; font-size: 14px; color: var(--ink-2); }
+.seg { display: flex; background: var(--soft); border-radius: 10px; padding: 3px; margin-top: 8px; }
+.seg button { flex: 1; border: 0; background: transparent; border-radius: 8px; padding: 6px 0; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.seg button.on { background: var(--card); color: var(--ink); font-weight: 700; box-shadow: var(--shadow); }
+
+main { grid-area: main; min-width: 0; display: flex; flex-direction: column; gap: 14px; }   /* ブロックの間は全ページで狭い隙間（14px）にそろえる（2026-10-15 のユーザーの指示: 縦スクロールに寄与する隙間を作らない） */
+
+/* ---------- 共通: 段の見出し・カード・リンク・ボタン ---------- */
+.card { background: var(--card); border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.card .body { padding: 20px var(--s3) var(--s3); display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.card .tag { font-size: 14px; font-weight: 700; color: var(--brand); }
+.card h3 { margin: 0; font-size: 20px; line-height: 1.5; font-weight: 700; }
+.card p { margin: 0; font-size: 16px; line-height: 1.8; color: var(--ink-2); }
+.num { display: flex; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.num b { font-family: var(--round); font-weight: 800; font-size: 28px; line-height: 1.2; }
+.num b small { font-family: var(--font); font-size: 16px; font-weight: 700; margin-left: 2px; color: var(--ink-2); }
+.num span { font-size: 15px; color: var(--ink-3); }
+.note { font-size: 14px; line-height: 1.75; color: var(--ink-3); margin: 0; }
+.caution { font-size: 14px; line-height: 1.75; color: var(--warn); background: var(--warn-soft); border-radius: 10px; padding: 10px 12px; }
+a.more, button.more { align-self: flex-start; margin-top: auto; font-size: 15px; font-weight: 700; color: var(--accent); text-decoration: none; background: none; border: 0; padding: 4px 0 0; cursor: pointer; }
+a.more:hover, button.more:hover { text-decoration: underline; }
+.chips { display: flex; flex-wrap: wrap; gap: var(--s1); align-items: center; }
+.chipbtn { border: 1.5px solid var(--accent); color: var(--accent); background: #fff; border-radius: 999px; padding: 4px 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.chipbtn[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.legend { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 14px; color: var(--ink-2); }
+.legend i { display: inline-block; width: 13px; height: 13px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+
+/* ---------- 作品の絵（画像 / 画像なし） ---------- */
+.art { position: relative; overflow: hidden; border-radius: 12px; background: var(--g, linear-gradient(135deg, #e9e4fb, #fde7f0)); }
+.art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 22%; display: block; }
+body.noimg .art img { display: none; }
+.art .ph { display: none; }
+/* 作品の画像がない（作品情報がまだ取れていない・外部の Catalog が止まっている）: 色の枠だけにせず、画像がないことを書く（#23） */
+.art:empty::after { content: "画像なし"; position: absolute; inset: 0; display: grid; place-items: center; padding: 2px; text-align: center; font-size: 10px; line-height: 1.2; word-break: break-all; color: var(--ink-3, #8a8fa3); }
+html[lang="en"] .art:empty::after { content: "No image"; }
+
+/* ---------- ① サイト紹介 ---------- */
+.intro { padding: var(--s2) var(--s3); border-radius: var(--r); background: var(--card); box-shadow: var(--shadow); border-left: 4px solid var(--brand); display: flex; justify-content: space-between; align-items: center; gap: var(--s1) var(--s3); flex-wrap: wrap; }
+.intro h2 { margin: 0; font-family: var(--round); font-weight: 800; font-size: 20px; line-height: 1.5; }
+.intro p { margin: 2px 0 0; font-size: 16px; color: var(--ink-2); }
+.intro a.more { margin: 0; align-self: center; white-space: nowrap; }
+
+/* ---------- ② 今日の兆し ---------- */
+.lead { position: relative; padding: 28px var(--s4) var(--s4); border-radius: var(--r); background: var(--card); box-shadow: var(--shadow-lg); overflow: hidden; margin-top: 0; }
+.lead::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, var(--brand), var(--accent)); }
+
+.daynav { display: flex; align-items: center; gap: 4px; }
+.daynav .rb { width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--soft); font-size: 18px; line-height: 1; color: #b9b5cc; }
+.daynav .pill { font-size: 15px; font-weight: 700; padding: 0 4px; }
+
+/* ---------- ③ ほかに見えた変化（左に大きい 1 枚、右に 2 枚） ---------- */
+
+.langbar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 6px; }
+.langbar span + span { border-left: 2px solid #fff; }
+
+/* ---------- ④ アニメの動きをもっと見る ---------- */
+
+.tagfirst { display: inline-block; font-size: 14px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 0 8px; margin-left: 4px; white-space: nowrap; }
+
+details.how { background: var(--card); border-radius: var(--r); box-shadow: var(--shadow); margin-top: 20px; }
+details.how summary { cursor: pointer; padding: 16px var(--s3); font-size: 16px; font-weight: 700; color: var(--accent); list-style: none; }
+details.how summary::-webkit-details-marker { display: none; }
+details.how[open] summary { border-bottom: 1px solid var(--line); }
+.def { margin: 0; padding: 16px var(--s3) 20px; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 36px; }
+.def li { font-size: 15px; color: var(--ink-2); line-height: 1.8; }
+.def li b { display: block; color: var(--ink); font-size: 16px; }
+
+/* ---------- ⑤ 世界の観測 ---------- */
+.world { border-radius: var(--r); padding: var(--s3); background: linear-gradient(160deg, #f1ecff 0%, #eaf3ff 55%, #fdf0f6 100%); box-shadow: var(--shadow); }
+
+.foot { font-size: 14px; color: var(--ink-3); line-height: 1.8; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 0; }
+.foot p { margin: 0 0 6px; }
+
+@media (max-width: 1360px) {
+  .lead { padding: 24px var(--s3) var(--s3); }
+}
+
+/* ================= 共通: 作品名の表示（表示のときだけ省略。元のデータは変えない） ================= */
+.wn { display: block; min-width: 0; max-width: 100%; overflow: hidden; overflow-wrap: anywhere; word-break: normal; font-weight: 700; color: var(--ink); cursor: default; border-radius: 4px; }
+.wn.l1 { white-space: nowrap; text-overflow: ellipsis; }
+.wn.l2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; }
+.wn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#tip { position: fixed; z-index: 50; display: none; max-width: min(420px, 90vw); background: #241f4a; color: #fff; font-size: 14px; line-height: 1.6; padding: 8px 12px; border-radius: 10px; box-shadow: var(--shadow-lg); pointer-events: none; }
+
+/* ② 今日の兆し: 見出し → 説明 → 代表作品 → 詳しく */
+
+/* ③ ほかに見えた変化: 横長のカードを縦に並べる。列は 画像 120px ／ 文 ／ 図 320px。高さは中身に合わせる */
+
+/* ④ アニメの動きをもっと見る */
+
+.split { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: var(--s4); align-items: center; }
+
+.past { background: var(--soft); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+.past h4 { margin: 0 0 8px; font-size: 15px; font-weight: 700; }
+.past .row { display: grid; grid-template-columns: 78px minmax(0, 1fr) 42px; gap: 2px 10px; align-items: center; font-size: 15px; margin-top: 6px; }
+.past .row .wn { grid-column: 2 / -1; font-size: 14px; font-weight: 400; color: var(--ink-3); }
+.past .bar { height: 10px; border-radius: 5px; background: #fff; position: relative; }
+.past .bar span { position: absolute; inset: 0 auto 0 0; border-radius: 5px; background: var(--strong); }
+.past .row.today { color: var(--today); font-weight: 700; }
+.past .row.today .bar span { background: var(--today); }
+.past .row em { font-style: normal; text-align: right; }
+.past .note { margin-top: 10px; }
+.rk { min-width: 0; }
+.rank { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 40px; }
+.rank li { min-width: 0; display: grid; grid-template-columns: 40px minmax(0, 1fr) 46px; gap: 12px; align-items: center; }
+.rank li .art { aspect-ratio: 3 / 4; border-radius: 6px; }
+.rank li .wn { font-size: 15px; }
+.rank li .tagfirst { margin: 2px 0 0; }
+.rank li .bar { height: 8px; border-radius: 4px; background: var(--soft); position: relative; margin-top: 4px; }
+.rank li .bar span { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--other); }
+.rank li.first .bar span { background: var(--today); }
+.rank li em { font-style: normal; font-size: 15px; font-weight: 700; text-align: right; }
+
+/* ⑤ 世界の観測: 地図と、言語の数・作品 1 つだけ */
+.world .grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--s3); align-items: start; }
+
+.box { background: rgba(255, 255, 255, .92); border-radius: 12px; padding: var(--s2) 18px; min-width: 0; }
+.box h3 { margin: 0 0 6px; font-size: 17px; line-height: 1.5; }
+.box p { margin: 0; font-size: 15px; color: var(--ink-2); line-height: 1.75; }
+
+@media (max-width: 1360px) {
+  .split, .world .grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ================= 2026-10-11 第 7 版: 段の見出し・今日の兆し・補足 ================= */
+/* 段の見出し: 左端に短い線、見出し 24px、一言 16px。どの段も同じ */
+.sec-h { margin: 0 0 var(--s2); padding-left: 14px; border-left: 4px solid var(--brand); }
+.sec-h h2 { margin: 0; font-family: var(--round); font-weight: 800; font-size: 24px; line-height: 1.4; }
+.sec-h p { margin: 2px 0 0; font-size: 16px; color: var(--ink-2); }
+
+/* ② 今日の兆し: 左 38% に発見、右 62% に代表作品 5 つ（同じ大きさ・1 列） */
+.lead-grid { display: grid; grid-template-columns: minmax(0, 38fr) minmax(0, 62fr); gap: var(--s4); align-items: center; }
+.lead-text { min-width: 0; }
+.lead h1 { margin: 14px 0 10px; font-family: var(--round); font-weight: 800; font-size: 34px; line-height: 1.4; }
+.lead .lede { margin: 0 0 16px; font-size: 18px; line-height: 1.8; color: var(--ink-2); }
+.lead-works { min-width: 0; }
+
+.poster { min-width: 0; }
+.poster .wn { margin-top: 8px; font-size: 15px; line-height: 1.45; }
+
+/* ③ ほかに見えた変化: 左に大きいカード、右に 2 枚。どのカードも高さは中身のまま（伸ばさない） */
+.others { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+
+.others .card .body { padding: 20px var(--s3) var(--s3); gap: 10px; }
+.banner { position: relative; height: 260px; }
+.banner .art { position: absolute; inset: 0; border-radius: 0; }
+.banner .art img { object-position: center 35%; }
+
+.meta { font-size: 14px; color: var(--ink-3); white-space: nowrap; }
+
+/* 作品タイル（補足カードの中で共通）: 画像 72px（3:4）＋ 作品名 2 行 ＋ 補足 1 行 */
+
+.tile { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; min-width: 0; }
+.tile .art { width: 72px; aspect-ratio: 3 / 4; border-radius: 8px; box-shadow: 0 2px 6px rgba(40, 30, 80, .12); }
+.tile .wn { font-size: 15px; line-height: 1.45; }
+.tile .meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; white-space: normal; }
+.chip { font-size: 14px; background: var(--accent-soft); color: var(--accent); font-weight: 700; border-radius: 999px; padding: 0 9px; white-space: nowrap; }
+
+@media (max-width: 1360px) {
+  .lead-grid { grid-template-columns: minmax(0, 34fr) minmax(0, 66fr); gap: var(--s3); }
+  .lead h1 { font-size: 30px; }
+  .tile { grid-template-columns: 60px minmax(0, 1fr); gap: 10px; }
+  .tile .art { width: 60px; }
+}
+.poster .art { aspect-ratio: 3 / 4; box-shadow: 0 2px 8px rgba(40, 30, 80, .12); }
+.lead-toggle { position: absolute; top: 18px; right: 24px; }
+
+/* このサイトについて */
+.about { display: flex; flex-direction: column; gap: 16px; max-width: 900px; }
+.about-s h3 { font-size: 20px; }
+.about-s h4 { margin: 14px 0 4px; font-size: 16px; }
+.about-s p { margin: 0; }
+.def2 { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.def2 li { font-size: 16px; color: var(--ink-2); line-height: 1.8; }
+.def2 li b { display: block; color: var(--ink); }
+.sn-w time { white-space: nowrap; }   /* 日付と時刻は分けずに折り返す */
+
+/* 長い一覧の「もっと見る」（全ページ共通。common.js の moreList・検索の一覧。Issue #16） */
+/* 日ごとの人数の棒（作品詳細・放送後も熱いのカードで共通。work.css から移した。#26） */
+.wk-ch { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 8px; align-items: end; }
+.wk-ch .c { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.wk-ch .tag { min-height: 22px; font-size: 13px; font-weight: 700; color: #fff; text-align: center; line-height: 1.3; }
+.wk-ch .ev .tag { background: var(--accent); border-radius: 6px; padding: 1px 6px; }
+.wk-ch .bar { width: 100%; height: 140px; display: flex; align-items: flex-end; background: #f6f5fa; border-radius: 6px; }
+.wk-ch .bar i { display: block; width: 100%; min-height: 2px; border-radius: 6px 6px 3px 3px; background: #c9c3ea; }
+.wk-ch .ev .bar i { background: var(--accent); }
+.wk-ch .pt .bar i { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.7) 0 2px, transparent 2px 5px); }
+.wk-ch .na .bar { background: none; outline: 1px dashed #cfc8ee; outline-offset: -1px; }
+.wk-ch b { font-family: var(--round); font-size: 16px; font-weight: 800; color: var(--ink); } .wk-ch small { font-size: 14px; color: var(--ink-3); }
+.more-box { display: contents; }
+/* 一覧の続き（もっと見る・閉じる）: 一覧の下に左寄せの控えめな文字のリンク（ボタンの枠・中央寄せにしない。2026-10-22 のユーザーの指示 #24）。button のまま（キーボード・aria-expanded） */
+.more-row, .sr-more { display: flex; justify-content: flex-start; margin-top: 0; }
+.more-row button, .sr-more button { font: inherit; font-size: 14px; font-weight: 600; color: var(--accent); background: none; border: 0; border-radius: 0; padding: 4px 0; cursor: pointer; text-align: left; }
+.more-row button:hover, .sr-more button:hover { text-decoration: underline; }
+.more-row button:focus-visible, .sr-more button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mv-cards:empty { display: none; }   /* 畳んだ一覧（いつもの出入り）の空の枠で余白を作らない */

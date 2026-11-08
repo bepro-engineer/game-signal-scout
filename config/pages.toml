@@ -1,0 +1,76 @@
+# 新しい価値ページ 4 つ（再燃・放送終了後・言語圏・ファン行動）の判定の閾値（docs/NEW-PAGES-DESIGN.md §2.5・§5。2026-10-05 ユーザー決定）。
+# Signal の規則（signal_cards.toml）とは別の表。独立性 [independence]・アニメとの結びつき [anchor]・急増の比 [change]・
+# 新しい言語圏 [spread] の値は signal_cards.toml を参照する（ここに複製しない）。
+
+[common]
+lookback_days = 365          # 系列の長さの上限（1 年を最大の比較範囲にする）
+series_days = 28             # カードの推移の棒の日数（各ページの作品の列の推移）
+detail_days = 90             # 作品詳細の日ごとの推移の日数（日ごとの棒・要約・言語圏。週・月・四半期の棒と転換点は全期間から。[work] ranges。#52）
+min_lang_authors = 2         # 言語圏として数える投稿者数（既存の一覧と同じ）
+page_size = 30
+
+[display]
+# 長い一覧の初めに描く件数と、「もっと見る」で足す件数（全ページ共通。common.js の moreList。描いていない行は DOM に置かない。Issue #16）
+# 行の一覧（再燃の落ち着いている作品は 1 つの区分ごと・言語圏の広がりの新しく話題になり始めた作品）と、言語×日の表を持つカードの一覧で分ける
+rows_first = 4
+rows_step = 10
+cards_first = 3
+cards_step = 5
+moves_first = 6      # 偶数（カードは PC で 2 列。最後の段に穴を空けない。rows_step も偶数）。 ダッシュボードの Q1（いつもと何が違った）・Q2（新しく話題になった作品）の初めの件数。残りは rows_step ずつ（#24）
+card_langs_first = 4  # 世界で広がるの「初めて複数の言語で」のカードで、初めに見せる言語の数。残りは「ほか N 言語を表示」（#58）
+langs_first = 7      # ダッシュボードの地図の右の言語一覧の初めの行数。残りの言語・ほかに観測した言語は「もっと見る」で全部を開く（一覧の長さで地図の下に空白を作らない。#27）
+
+[dashboard]
+# ダッシュボード（content.dashboard）の判定の閾値（2026-10-28 にコードから移した。#46 C4）
+focus_share = 0.08           # いちばん話題の作品が話題全体のこの割合以上なら「1 つの作品に集中」（画面には数を出さない）
+spike_min_people = 20        # 1 位の作品の「急増」: この人数以上で、かつ前日の spike_ratio 倍以上
+spike_ratio = 2.0
+
+[work]
+# 作品詳細（content.work_detail）の転換点と要約（2026-10-28 にコードから移した。#46 C4）
+max_points = 3               # 出す転換点の数（裏づけのあるものだけ。無理に埋めない）
+recent_days = 7              # 要約で比べる直近の観測した日数（その前の同じ日数と比べる）
+quotes_per_point = 2         # 転換点ごとの引用の数（同じ日の同じ文は 1 つ）
+turning = { surge = 2.0, emergence = 3.0, new_language = 3.0, resurgence = 2.0 }   # 転換点の種類と重み（急増・初めて話題に・新しい言語圏・再び話題に）
+# 棒の期間と粒度（#52。2026-10-31 のユーザーの決定）: 7 日・30 日は日ごと、90 日は週ごと（最新の日から 7 日ずつ 13 週 = 91 日）、1 年は月ごと。
+# 系列の日数（観測を始めた日から）がその期間を超えるときだけ出す。週・月・四半期の値は観測できた日の 1 日平均（content.periods）
+ranges = [{ key = "7", days = 7, unit = "day" }, { key = "30", days = 30, unit = "day" }, { key = "90", days = 91, unit = "week" }, { key = "365", days = 365, unit = "month" }]
+all_units = [[30, "day"], [91, "week"], [930, "month"], [2830, "quarter"]]   # 全期間の粒度: 系列の日数がこれ以下ならこの粒度、超えたら年（棒を 31 本ほどに収める）
+tag_min_rank = 60            # 作品のタグを出す外部 Catalog の順位の下限
+max_tags = 8
+
+[revival]
+quiet_min_days = 7
+quiet_max_authors = 1
+active_min_authors = 5
+revive_min_authors = 5
+cont_min_authors = 3
+cont_min_after_days = 2
+recent_days = 28
+watch_days = 28              # 話題が落ち着いている作品に載せるのは、最後に話題になった日がこの日数の内の作品（推移の期間 series_days と同じ。古くなった作品は外す。Issue #16）
+
+[post_air]
+ending_soon_days = 21       # まもなく放送が終わる作品: 終わりの予定がこの日数の内（2026-10-28 にコードから移した）
+before_days = 14
+before_min_days = 7
+settle_days = 3
+after_days = 7
+after_min_days = 5
+keep_ratio = 0.5
+baseline_min_authors = 5
+min_after_authors = 3
+after_min_total_authors = 10
+dedupe_parent = true
+
+[language_spread]
+prior_min_days = 2
+prior_max_authors = 1
+lookback_days = 90
+cont_min_authors = 1
+cont_min_after_days = 2
+recent_days = 28
+show_faded = true
+# 言語×日の表（言語圏の広がりのカード）: 新しい言語圏で話題になり始めた日を基準に、grid_before 日前から grid_days 日分（今日を越える分は前にずらす）。
+# 推移の 28 日（series_days）をそのまま列にすると、スマートフォンで 2 桁の数が入らなかった（2026-10-21 のユーザーの指示）。表の外の推移は作品詳細
+grid_days = 14
+grid_before = 3

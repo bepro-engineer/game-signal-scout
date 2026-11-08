@@ -1,0 +1,104 @@
+/* 世界で広がる作品（spread.html）専用。gaze.css（ダッシュボードと共有）の後に読み、ここだけで上書きする。
+   重要度の順: 今日の広がり（白・強い影・大きい画像）＞ 新しい言語への広がり・初めて複数の言語（淡い紫の段）＞ 前から複数の言語（枠だけの控えめな段） */
+
+/* ---- 今日の広がり ---- */
+.sp-lead { border-top: 4px solid var(--brand); }
+.hero3 { grid-template-columns: 180px minmax(0, 1fr) auto; gap: 32px; align-items: center; }
+.hero3 .h-im .art { width: 180px; }
+.hero3 .h-t { gap: 14px; }
+.hero3 .h-t h1 { font-size: 32px; }
+.h-chg { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.h-chg > span { display: inline-flex; align-items: center; gap: 8px; }
+.h-chg small { font-size: 14px; color: var(--ink-3); font-weight: 700; }
+.h-chg .h-now small { color: var(--brand); }
+.h-chg .ar { margin-right: 4px;  font-size: 22px; color: var(--ink-3); }
+.h-chg .lc { font-size: 16px; padding: 3px 14px; }
+.h-note { margin: 0; font-size: 15px; color: var(--ink-2); }
+.hero3 .more { margin-top: 0; }
+@media (max-width: 1360px) { .hero3 { grid-template-columns: 140px minmax(0, 1fr) auto; gap: 24px; } .hero3 .h-im .art { width: 140px; } .hero3 .h-t h1 { font-size: 27px; } }
+
+/* ---- 新しく と 再び の見分け（濃い点＝初めて、白抜きの太い輪＝以前にもあった） ---- */
+.tl li.again .dot { background: #fff; border: 4px solid var(--lc); box-shadow: none; }
+.tl .new.again { background: #fff; color: var(--lc); box-shadow: inset 0 0 0 1.5px var(--lc); }
+.tl-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.tl-key .k { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--ink); margin-left: 10px; }
+.tl-key .k:first-child { margin-left: 0; }
+.tl-key .k i { width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box; }
+.tl-key .k.add i { background: var(--accent); }
+.tl-key .k.again i { background: #fff; border: 4px solid var(--accent); }
+
+/* ---- 4 作品: 今日の広がりの作品は短い参照の行 ---- */
+.gr-ref { display: grid; grid-template-columns: 36px auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 6px 14px 6px 6px; border-radius: 10px; border: 1.5px dashed #d4cdee; text-decoration: none; color: var(--ink); }
+.gr-ref .art { width: 36px; aspect-ratio: 3 / 4; border-radius: 6px; }
+.gr-ref .wn { font-size: 15px; font-weight: 700; max-width: 320px; }
+.gr-ref .gr-h { font-size: 15px; color: var(--ink-2); }
+.gr-ref .to { font-size: 14px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+.gr-ref:hover { background: rgba(255,255,255,.6); }
+
+/* ---- 7 作品: これまで → 10/9 の変化の表 ---- */
+.nwt { --cols: 64px minmax(0, 1fr) 195px 28px 450px; display: flex; flex-direction: column; gap: 8px; }
+.nwt-h, .nwt-r { display: grid; grid-template-columns: var(--cols); gap: 16px; align-items: center; }
+.nwt-h { padding: 0 18px 0 14px; font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.nwt-h span:first-child { grid-column: 1 / 3; }
+.nwt-h span:nth-child(2) { grid-column: 3; } .nwt-h span:nth-child(4) { grid-column: 5; }
+.nwt-r { background: #fff; border-radius: 14px; padding: 10px 18px 10px 14px; box-shadow: 0 1px 2px rgba(40,30,80,.05), 0 4px 12px rgba(40,30,80,.05); }
+.nwt-r > .art { width: 64px; aspect-ratio: 3 / 4; border-radius: 8px; }
+.nwt-n { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.nwt-n h3.wn { margin: 0; font-size: 17px; line-height: 1.4; }
+.nwt-n .tag-air { font-size: 13px; font-weight: 400; background: none !important; padding: 0; color: var(--ink-3) !important; }
+.nwt-was { display: flex; flex-direction: column; gap: 2px; color: var(--ink-3); font-size: 14px; }
+.nwt-was .none { display: inline-flex; align-items: center; gap: 8px; }
+.nwt-was .none i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px dashed #b9b3d3; }
+.nwt-was .ug { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; } .nwt-was .ud { color: var(--ink-3); }
+.nwt-r > .ar { font-size: 20px; color: var(--ink-3); text-align: center; }
+/* 言語名・星と丸・人数の欄の幅は、全部のカードで同じ（中身の幅に合わせると、カードごとに星と丸の始まりがずれた: #36） */
+.nwt-now { display: grid; grid-template-columns: 6.8em max-content minmax(4.5em, 1fr); align-items: center; gap: 4px 10px; }
+.nwt-now .dots { flex-wrap: nowrap; gap: 2px; } .nwt-now .dots > * { flex-shrink: 0; } .nwt-now .dots s { font-size: 21px; } .nwt-now .dots i { width: 10px; height: 10px; }   /* 記号は人数の桁の数の合計（159 人で 15 個・約 200px） */
+.nwt-now b { justify-self: end; white-space: nowrap; }
+.nwt-now .ug { display: contents; }
+.nwt-now .ul { font-size: 14px; font-weight: 700; } .nwt-now .ul sup { font-size: 11px; margin-left: 1px; }
+.nwt-now .nwt-src { grid-column: 1 / -1; font-size: 12px; color: var(--ink-3); line-height: 1.5; }   /* 出典の説明（#36） */
+.nwt-now b { font-size: 15px; color: var(--ink); }
+.dots { display: inline-flex; gap: 4px; }
+.dots i { width: 13px; height: 13px; border-radius: 50%; background: var(--lc); }
+@media (max-width: 1360px) { .nwt { --cols: 64px minmax(0, 1fr) 195px 22px 445px; } .nwt-h, .nwt-r { gap: 12px; } .dots { gap: 3px; } .dots i { width: 12px; height: 12px; } }
+
+/* ---- 前から複数の言語: 今日の変化ではないので一段控えめ（地なし・枠だけ・見出しを小さく） ---- */
+main.sp #sp-cont { background: transparent; border: 1.5px solid #e2ddf2; }
+main.sp #sp-cont .sec-h h2 { font-size: 20px; color: var(--ink-2); }
+.ct-h { display: grid; grid-template-columns: 36px minmax(0, 280px) minmax(0, 1fr) 150px; gap: 14px; padding: 0 14px 4px 6px; font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.ct-h span:first-child { grid-column: 1 / 3; } .ct-h span:last-child { justify-self: end; white-space: nowrap; }
+.ct-list li { background: #fff; }
+.ct-list .lc sup { font-size: 10px; margin-left: 2px; color: var(--ink-3); }
+.ct-src { margin: 8px 4px 0; font-size: 12px; color: var(--ink-3); line-height: 1.6; }   /* 出典の説明（#36） */
+
+/* ---- 20 作品の帯: 1 段目に全体の数、2 段目に各段へのリンクとダッシュボードの地図 ---- */
+.sp-bar .all { flex: 0 0 100%; margin-right: 0; }
+/* ● = 1 人・◆ = 10 人・★ = 100 人・✪ = 1000 人。位の高いものほど大きく目立つ形（#36） */
+.dots { align-items: center; flex-wrap: wrap; }
+.dots s { text-decoration: none; color: var(--lc); font-size: 22px; line-height: 1; }
+.dots u { text-decoration: none; color: var(--lc); line-height: 1; } .dots u.m1 { font-size: 13px; } .dots u.m3 { font-size: 21px; }   /* ◆ = 10 人・✪ = 1000 人（★ = 100 人。#36） */
+.unit-key { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin: -4px 4px 10px; font-size: 15px; font-weight: 700; color: var(--ink-2); }
+.unit-key > .dots:first-of-type { margin-left: 10px; }
+.unit-key .dots + .dots { margin-left: 8px; }
+
+/* ---- 今日の兆し: その日全体の解説。淡い色の地で、下の今日の広がり（白いカード）と分ける。高さは文章のまま ---- */
+.sp-digest { background: linear-gradient(120deg, #fdf1f6 0%, #f1edfd 100%); border: 1px solid #efd9e7; border-radius: 20px; padding: 20px 32px 22px; }
+.sp-digest .dg-t { margin: 10px 0 0; font-size: 18px; line-height: 1.9; color: var(--ink); }
+.sp-digest .dg-t b { font-weight: 700; } .sp-digest .dg-t b.nb { white-space: nowrap; }
+/* 今日の広がりは具体例: 札の色を紫にして今日の兆し（ピンク）と役割を分ける */
+.sp-lead { border-top-color: var(--accent); }
+.sp-lead .g-kick b { background: var(--accent); }
+.sp-lead .g-kick .g-day { color: var(--ink-3); font-size: 14px; }
+/* 中くらいの幅（1260px 以下。人数の欄が右に入らない）: スマホと同じく人数の欄を作品名の下に回す。言語ごとの行は 1 行のまま（#36）。900px 以下は base.css */
+@media (min-width: 901px) and (max-width: 1260px) {
+  .nwt-h { display: none; }
+  .nwt-r { grid-template-columns: 64px minmax(0, 1fr); }
+  .nwt-r > .nwt-was { grid-column: 2; } .nwt-r > .ar { display: none; }
+  .nwt-r > .nwt-now { grid-column: 2; max-width: 470px; }
+}
+
+/* 言語が多いカード（#58）: 初めの数言語だけ。残りは「ほか N 言語を表示」で開く */
+.nwt-now .ug[hidden] { display: none !important; }
+.nwt-now .nwt-more { grid-column: 1 / -1; justify-self: start; font: inherit; font-size: 14px; font-weight: 600; color: var(--accent); background: none; border: 0; padding: 2px 0; cursor: pointer; }
+.nwt-now .nwt-more:hover { text-decoration: underline; } .nwt-now .nwt-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

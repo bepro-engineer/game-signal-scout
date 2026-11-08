@@ -1,0 +1,81 @@
+/* 再燃している作品（revival.html）専用。spread.css の今日の兆し・帯の見た目をそのまま使い、ここでは段と一覧だけを書く */
+main.rv #rv-revived, main.rv #rv-watch { background: #f3f0fb; border: 1px solid #e7e2f6; border-radius: 24px; padding: 22px 24px 24px; }
+main.rv #rv-revived .sec-h, main.rv #rv-watch .sec-h { padding: 0 0 12px; margin-bottom: 16px; border: 0; border-bottom: 1px solid rgba(82,70,201,.14); }
+.rv-sum .g-kick b { background: var(--brand); }
+
+/* 再燃した作品が 0 件の日: 高さは文のまま */
+.rv-empty { display: flex; align-items: center; gap: 16px; background: #fff; border-radius: 14px; padding: 16px 20px; }
+.rv-empty .ic { flex: 0 0 44px; height: 44px; border-radius: 50%; background: var(--accent-soft); display: grid; place-items: center; }
+.rv-empty .ic svg { width: 22px; height: 22px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rv-empty b { font-size: 17px; } .rv-empty p { margin: 2px 0 0; font-size: 15px; color: var(--ink-2); line-height: 1.7; }
+
+/* 見守っている作品: 1 行 1 作品（画像 ／ 作品名と放送 ／ 最後に話題 ／ 推移の棒 ／ 静かな日） */
+.rv-t { --cols: 48px minmax(0, 1fr) 150px 380px 76px; display: flex; flex-direction: column; gap: 6px; }
+.rv-h, .rv-r { display: grid; grid-template-columns: var(--cols); gap: 16px; align-items: center; }
+.rv-h { padding: 0 18px 2px 10px; font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.rv-h > span:first-child { grid-column: 1 / 3; } .rv-h > span:last-child { text-align: right; }
+.rv-r { background: #fff; border-radius: 12px; padding: 8px 18px 8px 10px; }
+.rv-r > .art { width: 48px; aspect-ratio: 3 / 4; border-radius: 6px; }
+.rv-n { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rv-n h3.wn { margin: 0; font-size: 16px; line-height: 1.4; }
+.rv-air { font-size: 13px; color: var(--ink-3); }
+.rv-last { font-size: 15px; color: var(--ink-2); white-space: nowrap; } .rv-last b { color: var(--ink); }
+.rv-q { text-align: right; font-size: 15px; color: var(--ink-2); white-space: nowrap; }
+.rv-q b { font-family: var(--round); font-size: 24px; font-weight: 800; color: var(--accent); margin-right: 2px; }
+/* 推移の棒: 10 日を同じ幅で。濃い＝最後に話題の日、薄い＝そのあと静かな日（背景も淡く塗る） */
+
+@media (max-width: 1360px) { .rv-t { --cols: 48px minmax(0, 1fr) 136px 300px 64px; } .rv-h, .rv-r { gap: 12px; } }
+/* 静かな日数の区切り */
+.rv-g { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 0; padding: 0 4px; font-size: 15px; font-weight: 700; color: var(--ink); }
+.rv-g:first-of-type { margin-top: 2px; }
+.rv-g small { font-size: 13px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 0 8px; }
+.rv-g .rv-gn { font-size: 13px; font-weight: 400; font-style: normal; color: var(--ink-3); }
+@media (max-width: 640px) { .rv-g { flex-wrap: wrap; row-gap: 0; } .rv-g > span { white-space: nowrap; } .rv-g .rv-gn { flex-basis: 100%; } }
+
+/* 観測の欠け: 一部だけ観測した日は斜線、観測なしの日は点線の枠だけ */
+
+.rv-q { display: flex; flex-direction: column; align-items: flex-end; gap: 0; line-height: 1.3; }
+.rv-q small { font-size: 13px; color: var(--ink-3); white-space: normal; text-align: right; line-height: 1.35; }
+.rv-t { --cols: 48px minmax(0, 1fr) 150px 380px 120px; }
+@media (max-width: 1360px) { .rv-t { --cols: 48px minmax(0, 1fr) 140px 270px 124px; } }
+.rv-h > span { white-space: nowrap; }
+
+/* ===== 再燃の表示検証（revival-example.html） ===== */
+
+.rvx-list { display: flex; flex-direction: column; gap: 12px; }
+.rvx { display: grid; grid-template-columns: 104px minmax(0, 1fr) 600px; gap: 22px; align-items: center; background: #fff; border-radius: 16px; padding: 16px 20px 14px 16px; box-shadow: 0 1px 2px rgba(40,30,80,.05), 0 6px 18px rgba(40,30,80,.06); }
+.rvx > .art { width: 104px; aspect-ratio: 3 / 4; border-radius: 10px; align-self: start; }
+.rvx-t { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rvx-t h3.wn { margin: 0; font-size: 19px; line-height: 1.4; }
+.rvx-steps { list-style: none; margin: 8px 0 6px; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.rvx-steps li { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); align-items: baseline; font-size: 15px; color: var(--ink-2); position: relative; padding-left: 16px; }
+.rvx-steps li::before { content: ""; position: absolute; left: 0; top: .55em; width: 9px; height: 9px; border-radius: 3px; background: var(--c); }
+.rvx-steps li > span { font-size: 14px; font-weight: 700; color: var(--ink-3); }
+.rvx-steps .v { min-width: 0; }
+.rvx-steps li { --c: #cfc8ee; } .rvx-steps li.pk { --c: var(--accent); } .rvx-steps li.qt { --c: #c9c6d6; } .rvx-steps li.rv { --c: var(--brand); } .rvx-steps li.aft { --c: #f3b6cd; }
+.rvx-steps b { color: var(--ink); margin-right: 4px; }
+.rvx-steps small { display: block; font-size: 13px; color: var(--ink-3); line-height: 1.5; }
+.rvx-steps .st { white-space: nowrap; font-style: normal; font-weight: 700; border-radius: 6px; padding: 0 7px; font-size: 14px; }
+.st.on { color: #b2306a; background: #fde7ef; } .st.off { color: var(--ink-2); background: var(--soft); } .st.tbd { color: var(--accent); background: var(--accent-soft); }
+
+.rvx-g { min-width: 0; }
+.rvx-ch { width: 100%; height: auto; display: block; }
+.rvx-ch .band-q { fill: #f0eff4; } 
+.rvx-ch .bl { font-size: 16px; font-weight: 700; } .rvx-ch .bl.q { fill: #6f6b85; } .rvx-ch .bl.a { fill: #b2306a; }
+.rvx-ch rect.pre { fill: #cfc8ee; } .rvx-ch rect.pk { fill: var(--accent); } .rvx-ch rect.qt { fill: #c9c6d6; }
+.rvx-ch rect.rv { fill: var(--brand); } .rvx-ch rect.aft { fill: #f3b6cd; }
+.rvx-ch rect.na { fill: none; stroke: #c9c6d6; stroke-dasharray: 3 3; }
+.rvx-ch .axis { stroke: #d9d4ec; }
+.rvx-ch .dt { font-size: 16px; fill: var(--ink-3); } .rvx-ch .dt.pk { fill: var(--accent); font-weight: 700; } .rvx-ch .dt.rv { fill: var(--brand); font-weight: 700; }
+@media (max-width: 1360px) { .rvx { grid-template-columns: 88px minmax(0, 1fr) 470px; gap: 18px; } .rvx > .art { width: 88px; } }
+
+/* ===== 話題が落ち着いている作品（第 3 版）: 棒グラフをやめ、作品 ／ 最後に話題 → 静かな日を○日確認 ===== */
+.rv-t { --cols: 48px minmax(0, 1fr) 210px 24px 230px !important; }
+.rv-h > span:last-child { text-align: left; }
+.rv-last { font-size: 16px; color: var(--ink-2); }
+.rv-last b { color: var(--ink); font-weight: 700; }
+.rv-r > .ar { color: var(--ink-3); font-size: 18px; text-align: center; }
+.rv-q { display: block; text-align: left; font-size: 16px; color: var(--ink-2); line-height: 1.5; }
+.rv-q b { font-family: var(--round); font-size: 22px; font-weight: 800; color: var(--accent); margin: 0 3px; }
+.rv-q .pq { font-size: 14px; color: var(--ink-3); margin-left: 3px; cursor: help; vertical-align: 6px; }
+@media (max-width: 1360px) { .rv-t { --cols: 48px minmax(0, 1fr) 196px 22px 214px !important; } }

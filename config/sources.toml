@@ -28,7 +28,8 @@ active_days = 90
 filter = 1               # 1 = 新しい順（公式文書の列挙値）
 languages = ["all"]
 num_per_page = 100
-max_pages_per_app = 1    # 1 日に作品ごと最新の 100 件まで
+max_pages_per_app = 400   # 量の多い作品の 28 日分（約 3 万件）まで遡れる上限。過去がそろった作品は保存済みに届いたら止まる
+max_age_days = 28        # 28 日前より古いレビューに届いたら、その作品を終える（観測の集計の 28 日の系列）
 retention_days = 60
 min_interval_hours = 20
 
@@ -70,6 +71,14 @@ adapter = "game_signal_scout.sources.steam_charts:SteamCharts"
 normalizer = "game_signal_scout.services.normalize:steam_charts"
 # 役割: 遊ばれている規模（Steam の最も遊ばれているゲームの上位 100。キー不要。Oshi Charts と同じ種類）。補助の材料で、満足度の根拠にしない。
 # 作品の情報（steam_store）より先に読む（上位の作品も作品の情報を揃える対象になる）
+min_interval_hours = 20
+
+[steam_upcoming]
+adapter = "game_signal_scout.sources.steam_upcoming:SteamUpcoming"
+normalizer = "game_signal_scout.services.normalize:steam_upcoming"
+# 役割: これから発売の作品（Steam の人気の近日発売の上位。キー不要）。Anime の「まもなく放送」に当たる（画面のメニューの下の枠・api/soon）。
+# 作品の情報（steam_store）より先に読む（一覧の作品も作品の情報を揃える対象になる）
+max_items = 100
 min_interval_hours = 20
 
 [steam_store]

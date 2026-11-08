@@ -65,3 +65,9 @@ def db_dsn() -> str:
         dsn = make_conninfo(dsn, dbname=test_db)
     check_dbname(conninfo_to_dict(dsn).get("dbname"))
     return dsn
+
+
+
+def load_map_sources_config() -> dict:
+    """観測の集計に入れる取得元（Anime と同じ名前の関数。config/map_sources.toml）。"""
+    return load_toml("map_sources.toml")

@@ -1,0 +1,12 @@
+# ローカルの推論エンジンと、機械で 1 つの LLM 枠（Anime の config/providers.toml と同じ形。llm.py・llm_gate.py が読む）。
+[ollama]
+engine = "ollama"
+base_url = "http://127.0.0.1:11434"
+timeout_seconds = 180
+
+[llm_gate]
+# 全 Scout・n8n と共有の枠（scout-infra の scout_llm_gate）
+enabled = true
+config = "/Users/Shared/scout-infra/llm_gate.toml"
+owner = "game"
+worker_wait_seconds = 300

@@ -29,12 +29,23 @@ def cased_words(s: str) -> tuple[str, ...]:
     return tuple(WORD.findall(unicodedata.normalize("NFKC", s or "")))
 
 
+CJK = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]")   # かな・漢字・ハングル（語を空白で区切らない言語）
+CJK_MIN = 4
+
+
 class TitleIndex:
-    def __init__(self, titles: list[tuple[str, str]], ambiguous: list[str], context_words: list[str], min_chars: int = 8):
+    def __init__(self, titles: list[tuple[str, str]], ambiguous: list[str], context_words: list[str], min_chars: int = 8, game_only: bool = False):
         self.by_words: dict[tuple[str, ...], tuple[str, str]] = {}
+        self.by_cjk: dict[str, tuple[str, str]] = {}     # 空白で区切らない言語の題名（部分の文字列で照合する）
         self.title_of = {str(a): t for a, t in titles}
+        self.game_only = game_only                       # ゲームだけの掲示板・部屋（文脈の語を求めない）
         for appid, title in titles:
             w = words(title)
+            if CJK.search(title or ""):
+                key = "".join(w)
+                if len(key) >= CJK_MIN:
+                    self.by_cjk.setdefault(key, (str(appid), title))
+                continue
             if 2 <= len(w) <= MAX_WORDS and len(" ".join(w)) >= min_chars:
                 self.by_words.setdefault(w, (str(appid), title))
         self.ambiguous = {words(t) for t in ambiguous}
@@ -51,7 +62,23 @@ class TitleIndex:
         t = normalize(text)
         return any(w in t for w in self.cjk_context)
 
+    def match_cjk(self, text: str) -> tuple[str, str] | None:
+        """空白で区切らない言語の題名: 本文（記号・空白を除いた列）に題名が含まれるか。最も長い題名を採る。"""
+        if not self.by_cjk or not CJK.search(text or ""):
+            return None
+        flat = "".join(words(text))
+        best = max((k for k in self.by_cjk if k in flat), key=len, default=None)
+        if best is None or best in {"".join(a) for a in self.ambiguous}:
+            return None
+        if not self.game_only and not self.has_context((), flat.replace(best, " ")):
+            return None
+        return self.by_cjk[best]
+
     def match(self, text: str) -> tuple[str, str] | None:
+        hit = self.match_word(text)
+        return hit or self.match_cjk(text)
+
+    def match_word(self, text: str) -> tuple[str, str] | None:
         toks, cased = words(text), cased_words(text)
         if len(toks) != len(cased):        # casefold で語の数が変わる珍しい文字列は照合しない
             return None
@@ -67,7 +94,7 @@ class TitleIndex:
         k, w, hit, i = best
         rest = toks[:i] + ("\x00",) + toks[i + k:]
         rest_text = normalize(text).replace(" ".join(w), " ")
-        if w in self.ambiguous or not self.has_context(rest, rest_text):
+        if w in self.ambiguous or (not self.game_only and not self.has_context(rest, rest_text)):
             return None
         return hit
 

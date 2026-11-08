@@ -1,0 +1,74 @@
+<!-- プライバシーポリシー。利用者に要ることだけを簡潔に書く（取得項目・通信の仕様は列挙しない。#65）。根拠: 配信は Cloudflare（Tunnel・HTTPS。deploy/apache-anime-public.conf）、Apache のアクセスログ（combined。保持は logrotate の daily・rotate 14 = 約 2 週間）、アクセス解析は Cloudflare Web Analytics（Automatic setup。Cloudflare が beacon を差し込み、CSP は beacon だけを許す。送り先は自分の origin の /cdn-cgi/rum。Cookie・localStorage を使わない。#66）、このサイトは Set-Cookie を出さない、common.js / boot.js の localStorage・sessionStorage、CSP（Google Fonts・AniList の画像）、Referrer-Policy: no-referrer -->
+<div class="lj">
+<div class="sec-h"><h2>プライバシーポリシー</h2><p class="info-date">制定 {{ESTABLISHED_JA}}・最終更新 {{UPDATED_JA}}</p></div>
+<div class="about">
+<section class="card about-s"><div class="body"><h3>このサイトを見る方の情報</h3>
+<dl class="kv">
+<dt>会員登録・入力欄</dt><dd>ありません。名前やメールアドレスなどを入力していただく場面はありません。</dd>
+<dt>Cookie</dt><dd>このサイトは使っていません。配信を担う Cloudflare が、不正なアクセスからサイトを守るために使うことがあります。</dd>
+<dt>アクセス解析</dt><dd>閲覧の状況（ページの表示回数・訪問の数など）を知ってサイトを良くするため、Cloudflare Web Analytics を使っています。Cookie などでお使いのブラウザを見分けることはせず、運営者が見るのは個人を特定しない集計だけです。データは Cloudflare のプライバシーポリシーに従って扱われます。</dd>
+<dt>広告</dt><dd>現在、広告は掲載していません。広告のための追跡も行っていません。</dd></dl></div></section>
+
+<section class="card about-s"><div class="body"><h3>アクセスの記録</h3>
+<p>サイトの運営、障害の調査、不正なアクセスへの対応のため、ウェブサーバーの標準の記録（アクセスの日時、見たページ、ブラウザの種類など）を残しています。記録は約 2 週間で自動的に消えます。この目的のほかには使わず、法令に基づく場合を除いて第三者に渡しません。</p></div></section>
+
+<section class="card about-s"><div class="body"><h3>配信と保護（Cloudflare）</h3>
+<p>このサイトは、配信と不正なアクセスからの保護に Cloudflare を使っています。ページを表示するときの通信は Cloudflare を通り、IP アドレスなどの通信の情報は <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener noreferrer" target="_blank">Cloudflare のプライバシーポリシー</a>に従って扱われます。</p></div></section>
+
+<section class="card about-s"><div class="body"><h3>ブラウザに保存するもの</h3>
+<p>表示を便利にするため、次の 2 つをお使いのブラウザの中にだけ保存します。サーバーには送られず、ブラウザの設定から消せます。</p>
+<dl class="kv">
+<dt>表示言語</dt><dd>日本語か English か（ブラウザに残ります）</dd>
+<dt>表示している日</dt><dd>過去の日を選んだとき、その日付（タブを閉じると消えます）</dd></dl></div></section>
+
+<section class="card about-s"><div class="body"><h3>ほかのサービスへの通信</h3>
+<p>ページを表示するとき、お使いのブラウザが次のサービスに直接接続します。そのとき、各サービスには IP アドレスやブラウザの種類などが伝わり、各サービスの方針に従って扱われます。このサイトは、どのページから接続したか（Referer）を送らない設定にしています。</p>
+<ul class="dot">
+<li>Google Fonts（文字の表示）: <a href="https://policies.google.com/privacy" rel="noopener noreferrer" target="_blank">Google のプライバシーポリシー</a></li>
+<li>Steam の画像の配信サーバー（作品の画像）: <a href="https://store.steampowered.com/subscriber_agreement/" rel="noopener noreferrer" target="_blank">Steam の規約</a></li></ul>
+<p>引用の「原文」などのリンクを押すと、リンク先のサイトに移ります。移った先での情報の扱いは、そのサイトの方針によります。</p></div></section>
+
+<section class="card about-s"><div class="body"><h3>お問い合わせでいただいた情報</h3>
+<p>お問い合わせでいただいたお名前・連絡先・内容は、お返事と対応のためだけに使い、法令に基づく場合を除いて第三者に渡しません。</p></div></section>
+
+<section class="card about-s"><div class="body"><h3>このポリシーの変更</h3>
+<p>このポリシーを改めたときは、最終更新の日付を改めます。</p></div></section>
+</div>
+</div>
+
+<div class="le">
+<div class="sec-h"><h2>Privacy policy</h2><p class="info-date">Established {{ESTABLISHED_EN}} · Last updated {{UPDATED_EN}}</p></div>
+<div class="about">
+<section class="card about-s"><div class="body"><h3>Information about visitors</h3>
+<dl class="kv">
+<dt>Accounts and forms</dt><dd>None. You are never asked to enter your name, email address or the like.</dd>
+<dt>Cookies</dt><dd>This site does not use them. Cloudflare, which delivers the site, may use them to protect it from abusive access.</dd>
+<dt>Analytics</dt><dd>To understand how the site is used (such as page views and visits) and improve it, we use Cloudflare Web Analytics. It does not tell browsers apart with cookies or the like, and we only look at aggregate figures that do not identify individuals. The data is handled under the Cloudflare Privacy Policy.</dd>
+<dt>Ads</dt><dd>No ads are currently shown, and there is no tracking for advertising.</dd></dl></div></section>
+
+<section class="card about-s"><div class="body"><h3>Access records</h3>
+<p>To run the site, investigate failures and deal with abusive access, we keep a web server's standard records (such as the time of access, the pages viewed and the browser type). They are deleted automatically after about two weeks, are not used for any other purpose, and are not given to third parties except as required by law.</p></div></section>
+
+<section class="card about-s"><div class="body"><h3>Delivery and protection (Cloudflare)</h3>
+<p>This site uses Cloudflare to deliver it and to protect it from abusive access. Connections to display a page pass through Cloudflare, and connection information such as your IP address is handled under the <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener noreferrer" target="_blank">Cloudflare Privacy Policy</a>.</p></div></section>
+
+<section class="card about-s"><div class="body"><h3>What is stored in your browser</h3>
+<p>For convenience, the following two items are stored only inside your browser. They are not sent to the server, and you can remove them in your browser settings.</p>
+<dl class="kv">
+<dt>Display language</dt><dd>Japanese or English (kept in your browser)</dd>
+<dt>Selected day</dt><dd>The date, when you choose an earlier day (removed when you close the tab)</dd></dl></div></section>
+
+<section class="card about-s"><div class="body"><h3>Connections to other services</h3>
+<p>When a page is displayed, your browser connects directly to the services below. Those services receive your IP address, browser type and the like, and handle them under their own policies. This site is set not to send the referring page (Referer).</p>
+<ul class="dot">
+<li>Google Fonts (for text): <a href="https://policies.google.com/privacy" rel="noopener noreferrer" target="_blank">Google Privacy Policy</a></li>
+<li>Steam image servers (for title images): <a href="https://store.steampowered.com/subscriber_agreement/" rel="noopener noreferrer" target="_blank">Steam Terms</a></li></ul>
+<p>Following a link such as “Original” on a quote takes you to that site, where its own policies apply.</p></div></section>
+
+<section class="card about-s"><div class="body"><h3>Information you send us</h3>
+<p>Your name, contact details and message are used only to reply and respond, and are not given to third parties except as required by law.</p></div></section>
+
+<section class="card about-s"><div class="body"><h3>Changes to this policy</h3>
+<p>When this policy is revised, the “last updated” date is changed.</p></div></section>
+</div>
+</div>

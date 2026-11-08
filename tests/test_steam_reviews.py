@@ -30,7 +30,7 @@ class FakeHttp:
 
 def reader(http, **kw):
     cfg = factory.load_sources_config()
-    return factory.create("steam_reviews", http, {"steam_reviews": {**cfg["steam_reviews"], "appids": ["10"], "max_pages_per_app": 3, **kw}})
+    return factory.create("steam_reviews", http, {"steam_reviews": {**cfg["steam_reviews"], "appids": ["10"], "max_pages_per_app": 3, "max_age_days": 0, **kw}})
 
 
 def test_enabled_for_daily_collect():

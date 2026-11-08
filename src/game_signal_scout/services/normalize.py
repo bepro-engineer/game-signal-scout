@@ -13,6 +13,8 @@ ProtonDB の報告の対応:
 """
 from __future__ import annotations
 
+import re
+
 import hashlib
 from datetime import datetime, timezone
 
@@ -65,8 +67,13 @@ def protondb(conn, source: str, settings: dict | None = None) -> int:
     return normalize(conn, source)
 
 
+def voices(conn, source: str, settings: dict | None = None, batch: int = 2000) -> int:
+    """どの取得元の発言も同じ手順で player_post にする（取得元の payload: author・text・lang、作品が決まるなら appid）。"""
+    return bluesky(conn, source, settings, batch)
+
+
 def bluesky(conn, source: str, settings: dict | None = None, batch: int = 2000) -> int:
-    """発言を player_post にする。作品の辞書は ProtonDB の報告の題名から 1 回だけ作る。"""
+    """発言を player_post にする。作品の辞書は ProtonDB の報告の題名から 1 回だけ作る。payload に appid があれば、作品は取得元で決まる（matched_by = source）。"""
     from game_signal_scout.repositories import post as post_repo
     from game_signal_scout.services.identify import TitleIndex, identify
     settings = settings or {}
@@ -75,10 +82,12 @@ def bluesky(conn, source: str, settings: dict | None = None, batch: int = 2000) 
     while rows := post_repo.unnormalized(conn, source, batch):
         if index is None:
             index = TitleIndex(post_repo.known_titles(conn), settings.get("ambiguous_titles") or [],
-                               settings.get("title_context_words") or settings.get("context_words") or [], int(settings.get("min_title_chars", 8)))
+                               settings.get("title_context_words") or settings.get("context_words") or [], int(settings.get("min_title_chars", 8)),
+                               game_only=bool(settings.get("game_only")))
         out = []
         for item_id, occurred_at, p in rows:
-            appid, title, how = identify(p, index)
+            # 作品が取得元で決まる発言（作品ごとの掲示板・作品のページのコメント）は、その作品。ほかは本文から同定する
+            appid, title, how = (str(p["appid"]), None, "source") if p.get("appid") else identify(p, index)
             out.append({"source": source, "item_id": item_id, "at": occurred_at, "author": p.get("author") or "", "lang": p.get("lang"),
                         "appid": appid, "title": title, "matched_by": how, "flags": p.get("flags") or [], "text": p.get("text") or ""})
         with conn.transaction():
@@ -107,7 +116,14 @@ def steam_store_row(item_id: str, received_at, p: dict) -> dict | None:
             "image_url": p.get("header_image"), "genres": p.get("genres") or [], "modes": modes,
             "platforms": [label for k, label in STEAM_PLATFORMS.items() if (p.get("platforms") or {}).get(k)],
             "ja_text": ja_text, "ja_voice": ja_voice, "released": p.get("release_date"),
-            "store_url": f"https://store.steampowered.com/app/{p.get('appid') or item_id}/", "fetched_at": received_at}
+            "store_url": f"https://store.steampowered.com/app/{p.get('appid') or item_id}/", "fetched_at": received_at,
+            "coming_soon": p.get("coming_soon"),
+            # ゲーム内容: 日本語の取得で返った文が日本語ならそれ（日本語の文がない作品は英語の文が返る）、英語は英語の取得の文
+            "about_ja": p.get("about") if JA_CHARS.search(p.get("about") or "") else None,
+            "about_en": p.get("about_en") or (p.get("about") if p.get("about") and not JA_CHARS.search(p["about"]) else None)}
+
+
+JA_CHARS = re.compile(r"[\u3040-\u30ff]")   # かな（漢字だけの中国語の文を日本語と取らない）
 
 
 def steam_store(conn, source: str, settings: dict | None = None, batch: int = 500) -> int:
@@ -127,7 +143,9 @@ def steam_store(conn, source: str, settings: dict | None = None, batch: int = 50
 
 
 STEAM_LANG = {"japanese": "ja", "english": "en", "schinese": "zh", "tchinese": "zh", "koreana": "ko", "russian": "ru", "german": "de", "french": "fr",
-              "spanish": "es", "latam": "es", "brazilian": "pt", "portuguese": "pt", "polish": "pl", "turkish": "tr", "italian": "it", "ukrainian": "uk", "thai": "th"}
+              "spanish": "es", "latam": "es", "brazilian": "pt", "portuguese": "pt", "polish": "pl", "turkish": "tr", "italian": "it", "ukrainian": "uk", "thai": "th",
+              "swedish": "sv", "czech": "cs", "hungarian": "hu", "dutch": "nl", "danish": "da", "finnish": "fi", "norwegian": "no", "romanian": "ro",
+              "greek": "el", "bulgarian": "bg", "vietnamese": "vi", "indonesian": "id", "arabic": "ar"}
 
 
 def steam_reviews(conn, source: str, settings: dict | None = None, batch: int = 2000) -> int:
@@ -147,6 +165,19 @@ def steam_reviews(conn, source: str, settings: dict | None = None, batch: int = 
         conn.commit()
         if len(rows) < batch:
             break
+    return total
+
+
+def steam_upcoming(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
+    """これから発売の作品の一覧 → game_upcoming。"""
+    from datetime import date
+    from game_signal_scout.repositories import catalog
+    total = 0
+    while rows := catalog.upcoming_rows(conn, source, batch):
+        out = [(p["appid"], date.fromisoformat(p["day"]), source, item_id, p.get("rank")) for item_id, p in rows]
+        with conn.transaction():
+            total += catalog.insert_upcoming(conn, out)
+        conn.commit()
     return total
 
 

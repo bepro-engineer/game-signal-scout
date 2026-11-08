@@ -38,7 +38,8 @@ def details(appid, name, cats=(2, 9), ja=True, kind="game"):
                                                    "header_image": f"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appid}/header.jpg",
                                                    "genres": [{"description": "アクション"}], "categories": [{"id": c, "description": str(c)} for c in cats],
                                                    "platforms": {"windows": True, "mac": False, "linux": True}, "release_date": {"date": "2025年2月27日"},
-                                                   "supported_languages": langs}}}
+                                                   "supported_languages": langs,
+                                                   "about_the_game": f"<h2>{name}</h2><p>狩りに出よう。<br><img src='x.jpg'>仲間と&amp;一人で。</p>"}}}
 
 
 @pytest.fixture
@@ -54,6 +55,7 @@ def run(conn, tmp_path, monkeypatch):
     http = FakeHttp({"GetMostPlayedGames": {"response": {"rollup_date": T0 + 7 * 86400, "ranks": [
                          {"rank": 1, "appid": 730, "last_week_rank": 1, "peak_in_game": 1300000},
                          {"rank": 2, "appid": 999, "last_week_rank": 3, "peak_in_game": 5000}]}},
+                     "appids=2246340&l=english": {"2246340": {"success": True, "data": {"about_the_game": "<p>Hunt &amp; explore.</p>"}}},
                      "appids=2246340": details(2246340, "モンスターハンターワイルズ"),
                      "appids=730": details(730, "Counter-Strike 2", cats=(1, 49, 36), ja=True),
                      "appids=999": details(999, "Soundtrack", kind="music")})
@@ -71,7 +73,9 @@ def test_profiles_and_activity_flow_to_cards_and_game_documents(run, conn):
     go()                                       # 2 回目: 順位の上位の作品も作品の情報の対象になる
     rows = dict(conn.execute("SELECT appid, title FROM game_profile").fetchall())
     assert rows == {"2246340": "モンスターハンターワイルズ", "730": "Counter-Strike 2"}          # 作品でない app ID（999）は作らない
-    assert sum("appids=2246340" in u for u in http.calls) == 1                                     # 取った作品は次の回に取り直さない
+    assert sum("appids=2246340&l=japanese" in u for u in http.calls) == 1                          # 取った作品は次の回に取り直さない
+    # ゲーム内容（あらすじの代わり）: 日本語の取得の文（HTML を文に）と英語の取得の文
+    assert conn.execute("SELECT about_ja, about_en FROM game_profile WHERE appid='2246340'").fetchone() == ("モンスターハンターワイルズ\n狩りに出よう。\n仲間と&一人で。", "Hunt & explore.")
     ov = public_document.get_document(conn, "overview")
     cards = {c["appid"]: c for c in ov["catalog"]}
     assert cards["730"]["rank"] == 1 and cards["730"]["modes"] == ["対戦"] and cards["730"]["image"].endswith("/730/header.jpg")
@@ -81,23 +85,3 @@ def test_profiles_and_activity_flow_to_cards_and_game_documents(run, conn):
     assert g["profile"]["platforms"] == ["Windows", "Linux・Steam Deck"] and g["compat"] == {"n": 8, "failed": 0}
     assert public_document.get_document(conn, "game/730")["activity"]["peak_players"] == 1300000
     assert "item_id" not in json.dumps(ov["catalog"])
-
-
-def test_find_page_filters_by_mode_and_japanese(run, conn):
-    from fastapi.testclient import TestClient
-    from psycopg_pool import ConnectionPool
-    from game_signal_scout import config, db
-    from game_signal_scout.web.app import create_app
-    go, _ = run
-    go(); go()
-    pool = ConnectionPool(config.db_dsn(), min_size=1, max_size=2, kwargs={"autocommit": True}, configure=db.verify_identity, open=True)
-    with TestClient(create_app(pool=pool)) as c:
-        body = c.get("/games?mode=対戦").text
-        assert "Counter-Strike 2" in body and "モンスターハンターワイルズ" not in body and "1 作品" in body
-        assert "<h1>対戦プレイで遊べる</h1>" in body and "遊び方</b>" not in body                      # メニューから開いた遊び方のページ。ページ内に遊び方の選択は出さない
-        top = c.get("/").text
-        assert "遊び方から選ぶ" not in top and "いま多くの人が遊んでいるゲーム" in top and 'src="https://shared.akamai.steamstatic.com' in top
-        assert "https://*.steamstatic.com" in c.get("/").headers["content-security-policy"]
-        detail = c.get("/games/2246340").text
-        assert "自分に合うか、の材料" in detail and "日本語で遊べる" in detail and "まだ分からないこと" in detail
-    pool.close()

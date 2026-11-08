@@ -1,0 +1,13 @@
+# サイト説明・運営方針・権利関係のページ（about / guide / rights / terms / privacy）に差し込む値。
+# 本文は src/anime_signal_scout/web/templates/info/<name>.html。ここに無い窓口・サービスは本文に書かない。
+
+[operator]
+name_ja = "個人（Game Signal Scout の開発者）"
+name_en = "An individual developer of Game Signal Scout"
+# 問い合わせ・削除依頼の窓口（メールアドレス、または https:// のフォームの URL）。一般公開の前にユーザーが決める。
+# 空のあいだ、ページは「準備中」と表示する。Bluesky の Developer Guidelines は削除依頼の窓口を求める（config/source_terms.toml の BS-8）
+contact = "bepro.beengineer@gmail.com"
+
+[dates]
+established = 2026-10-12   # 制定
+updated = 2026-11-03       # 最終更新（本文を変えたら更新する）

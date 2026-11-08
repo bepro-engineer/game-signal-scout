@@ -42,3 +42,18 @@ def create(source: str, http, cfg: dict | None = None) -> SourceReader:
     reader = reader_class(source, cfg)(dict(cfg[source]), http)
     reader.name = source
     return reader
+
+
+
+# ---- Anime の factory の、取得しない用途の部品（画面の引用の URL・内部の識別子の印）
+def reader_for(source):
+    return None
+
+
+def permalink(source, item_id: str, url: str | None = None) -> str:
+    """発言の公開の URL。Steam のレビュー・Bluesky の投稿は item_id から作れるが、いまは保存した url か ID のまま。"""
+    return url or item_id
+
+
+def internal_id_markers() -> tuple:
+    return ()

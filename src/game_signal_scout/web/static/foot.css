@@ -1,0 +1,10 @@
+/* 全ページ共通のフッター（foot.js） */
+.app > .site-foot { grid-column: 2; grid-row: 3; }
+@media (max-width: 900px) { .app > .site-foot { grid-column: 1; grid-row: 4; } }
+.site-foot { margin-top: -2px; padding: 20px 4px 8px; border-top: 1px solid var(--line, #e4e1ef); display: flex; flex-direction: column; gap: 10px; }
+.site-foot nav { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; }
+.site-foot nav a { font-size: 14px; font-weight: 700; color: var(--ink-2, #3c3958); text-decoration: none; }
+.site-foot nav a:hover, .site-foot nav a[aria-current] { color: var(--accent, #5246c9); }
+.site-foot p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--ink-3, #57536f); }
+.site-foot .to-top { margin-left: auto; font: inherit; font-size: 14px; font-weight: 700; color: var(--accent, #5246c9); background: var(--accent-soft, #efeefc); border: 0; border-radius: 999px; padding: 6px 16px; cursor: pointer; }
+.site-foot .to-top:hover { text-decoration: underline; } .site-foot .to-top:focus-visible { outline: 3px solid var(--accent, #5246c9); outline-offset: 2px; }

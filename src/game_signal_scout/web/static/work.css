@@ -1,0 +1,126 @@
+/* 作品詳細（work.html）専用。空の表示は revival.css（.rv-empty）、言語の札は gaze.css（.lc）をそのまま使う */
+.wk-back { display: inline-block; margin: 0 0 12px; font-size: 15px; font-weight: 700; color: var(--accent); text-decoration: none; } .wk-back:hover { text-decoration: underline; }
+
+/* 見出し: バナー（文字を重ねない）／ 画像 180px ・作品名・作品情報 */
+.wk-banner { border-radius: 20px 20px 0 0; overflow: hidden; height: 150px; background: #e9e6f5; }
+.wk-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wk-head { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 28px; background: #fff; border-radius: 0 0 20px 20px; padding: 0 28px 24px; box-shadow: 0 1px 2px rgba(40,30,80,.05), 0 6px 18px rgba(40,30,80,.06); }
+.wk-head.nob { border-radius: 20px; padding-top: 24px; }
+.wk-head { grid-template-columns: 180px minmax(0, 1fr) minmax(0, 1fr); row-gap: 14px; }
+.wk-head > .art { width: 180px; aspect-ratio: 3 / 4; border-radius: 12px; margin-top: -60px; box-shadow: 0 6px 18px rgba(40,30,80,.18); border: 4px solid #fff; background: #f1eef9; }
+.wk-head.nob > .art { margin-top: 0; }
+.wk-ht { min-width: 0; padding-top: 18px; display: flex; flex-direction: column; gap: 6px; align-self: start; }
+/* 項目の行（全幅。画像の下から）: 左に項目名、右に中身。あらすじは 3 行で折りたたみ、続きを読むで全文（2026-10-18 Issue #7） */
+.wk-story { min-width: 0; padding: 18px 0 0 24px; border-left: 1px solid var(--line); align-self: start; }
+.wk-story h3 { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--ink-3); }
+.wk-story.open { grid-column: 1 / -1; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+.wk-rows { grid-column: 1 / -1; margin: 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; }
+.wk-rows > div { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 4px 16px; padding: 8px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.wk-rows > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.wk-rows dt { font-size: 14px; font-weight: 700; color: var(--ink-3); } .wk-rows dd { margin: 0; min-width: 0; }
+.wk-rows .wk-g, .wk-rows .wk-l { margin: 0; }
+.wk-cls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; } .wk-cls > p { display: contents; }
+.wk-cls .wk-g + .wk-tg::before { content: ""; width: 1px; height: 18px; background: var(--line); margin: 0 4px; }
+.wk-ht h1 { margin: 0; font-size: 32px; line-height: 1.3; overflow-wrap: anywhere; }
+.wk-en { margin: 0; font-size: 16px; color: var(--ink-3); }
+.wk-meta { margin: 4px 0 0; font-size: 17px; font-weight: 700; color: var(--ink-2); } .wk-sub { margin: 0; font-size: 15px; color: var(--ink-2); }
+.wk-g, .wk-l { margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.wk-g span { font-size: 14px; font-weight: 700; color: var(--ink-2); background: #f4f2fa; border-radius: 999px; padding: 2px 12px; }
+.wk-l a { font-size: 15px; font-weight: 700; color: var(--accent); text-decoration: none; border: 1.5px solid #d4cdee; border-radius: 999px; padding: 2px 14px; } .wk-l a:hover { background: #f4f1fd; }
+.wk-cr { grid-column: 1 / -1; margin: 0; font-size: 14px; color: var(--ink-3); } .wk-cr a { color: var(--ink-3); }
+@media (max-width: 1360px) { .wk-head { grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1fr); gap: 14px 22px; } .wk-head > .art { width: 150px; } .wk-ht h1 { font-size: 28px; } }
+
+.wk-sec .sec-h { margin-bottom: 12px; }
+.wk-card { background: #fff; border-radius: 16px; padding: 18px 22px; box-shadow: 0 1px 2px rgba(40,30,80,.05), 0 6px 18px rgba(40,30,80,.06); }
+
+.wk-note { margin: 12px 0 0; font-size: 14px; color: var(--ink-3); line-height: 1.6; }
+.wk-langs { margin: 8px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; } .wk-langs > span { font-size: 14px; font-weight: 700; color: var(--ink-2); margin-right: 4px; }
+
+/* 話題の動き（第 7 版 2026-10-18）: 期間の切り替え・棒の説明（ホバー・タップ・キーボード）・30 日以上の密な表示・日付の間引き */
+.wk-rng { margin: 0 0 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.wk-rng button { font: inherit; font-size: 13px; font-weight: 700; color: var(--accent); background: #fff; border: 1.5px solid #d4cdee; border-radius: 999px; padding: 2px 12px; cursor: pointer; }
+.wk-rng button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+.wk-rng button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.wk-ch .c { position: relative; outline: none; touch-action: manipulation; }
+.wk-ch .c:focus-visible .bar { outline: 3px solid var(--accent); outline-offset: 2px; }
+.wk-ch .c::after { content: attr(data-tip); position: absolute; left: 50%; top: 100%; transform: translate(-50%, 4px); background: var(--ink); color: #fff; font-size: 12px; font-weight: 700; line-height: 1.4; padding: 4px 8px; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; z-index: 3; }
+.wk-ch .c:hover::after, .wk-ch .c:focus::after { opacity: 1; }
+.wk-ch .c:last-child::after, .wk-ch .c:nth-last-child(2)::after { left: auto; right: 0; transform: translate(0, 4px); }
+.wk-ch .c:first-child::after, .wk-ch .c:nth-child(2)::after { left: 0; right: auto; transform: translate(0, 4px); }
+.wk-ch small.off { visibility: hidden; max-width: 100%; overflow: hidden; }
+.wk-ch small { white-space: nowrap; } .wk-ch .c:first-child small { align-self: flex-start; } .wk-ch .c:last-child small { align-self: flex-end; }   /* 端の日付を枠の内に（#52） */
+.wk-rng .u { align-self: center; margin-left: 4px; font-size: 13px; font-weight: 700; color: var(--ink-3); }   /* 粒度（1日ごと・週ごとの1日平均など） */
+.wk-ch.dense { gap: 2px; } .wk-ch.dense b { display: none; } .wk-ch.dense .tag { min-height: 10px; }
+.wk-ch.dense .ev .tag { width: 8px; height: 8px; min-height: 8px; padding: 0; border-radius: 50%; font-size: 0; }
+.wk-ch.dense .bar i { border-radius: 2px 2px 1px 1px; }
+
+/* 変化の要約と転換点 */
+.wk-sum { margin: 0; font-size: 16px; line-height: 1.8; color: var(--ink); }
+.wk-tp { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.wk-tp > li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; background: #faf9fd; border-radius: 10px; padding: 8px 12px; min-width: 0; }
+.wk-tp .d { font-family: var(--round); font-size: 18px; font-weight: 800; color: var(--accent); }
+.wk-tp .k { font-size: 14px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 1px 9px; }
+.wk-tp .n { font-size: 15px; color: var(--ink-2); }
+.wk-tp .qs { flex-basis: 100%; list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.wk-tp .qs li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 14px; color: var(--ink); background: #fff; border-radius: 8px; padding: 4px 10px; min-width: 0; }
+.wk-tp .qs q { flex: 1 1 100%; }   /* 引用は 1 行を占める（札とリンクは次の行。狭い列で 1 字ずつ折れない） */
+/* 転換点の段（全幅）: 3 列の札。段の中は白いカード */
+.wk-tp3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } .wk-tp3 > li { align-content: start; }
+.wk-tp .qs q { min-width: 0; overflow-wrap: anywhere; } .wk-tp .qs q::before { content: "「"; } .wk-tp .qs q::after { content: "」"; }
+.wk-tp .qs .qg { flex: 0 0 auto; font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.wk-tp .qs a { flex: 0 0 auto; margin-left: auto; font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; }
+
+/* あらすじ（見出しのカードの右）・載っているページ（見出しのカード。このサイトの中のリンクなので、外部リンクの札と地の色で区別する） */
+.wk-syn { margin: 0; font-size: 15px; line-height: 1.8; color: var(--ink-2); }
+.wk-mt { margin: 6px 0 0; font-size: 14px; color: var(--ink-3); line-height: 1.6; }
+.wk-pg .lb { font-size: 14px; font-weight: 700; color: var(--ink-3); align-self: center; } .wk-pg a { background: var(--accent-soft); border-color: transparent; }
+
+/* ===== 2026-10-12 第 2 版: あらすじの折りたたみ・凡例・狭い画面 ===== */
+.wk-syn { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: var(--cl, 3); overflow: hidden; overflow-wrap: anywhere; line-height: 1.75; }
+.wk-syn.open { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.wk-syn:not(.open) br { display: none; }   /* 折りたたみ中は段落を続けて読む（空行と「…」だけの行を作らない） */
+.wk-sf { margin: 4px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; } .wk-sf .wk-mt { margin: 0; font-size: 13px; } .wk-sf .wk-more { margin: 0; }
+.wk-more { margin-top: 6px; font: inherit; font-size: 14px; font-weight: 700; color: var(--accent); background: none; border: 0; padding: 2px 0; cursor: pointer; }
+.wk-more:hover { text-decoration: underline; } .wk-more:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.wk-key { margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--ink-3); }
+.wk-key span { display: inline-flex; align-items: center; gap: 6px; }
+.wk-key i { width: 14px; height: 14px; border-radius: 3px; background: #c9c3ea; } .wk-key i.ev { background: var(--accent); }
+.wk-key i.pt { background: #c9c3ea repeating-linear-gradient(135deg, rgba(255,255,255,.7) 0 2px, transparent 2px 5px); }
+.wk-key i.na { background: none; outline: 1px dashed #b9b2dd; outline-offset: -1px; }
+@media (max-width: 1100px) { .wk-head { grid-template-columns: 150px minmax(0, 1fr); } .wk-story { grid-column: 1 / -1; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--line); } }
+@media (max-width: 760px) {
+  .wk-head { grid-template-columns: minmax(0, 1fr); padding: 0 16px 18px; gap: 12px; } .wk-head > .art { width: 120px; margin-top: -40px; }
+  .wk-ht { padding-top: 0; } .wk-ht h1 { font-size: 24px; } .wk-banner { height: 100px; }
+  .wk-rows > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .wk-ch { gap: 3px; } .wk-ch .tag { font-size: 11px; padding: 1px 2px !important; } .wk-ch b { font-size: 13px; } .wk-ch small { font-size: 11px; }
+  .wk-card { padding: 14px; } }
+
+/* 本文の段（2026-10-18 Issue #7）: 話題の動き → 転換点。段は全幅で縦に並べ、左右に並べて高さの差（短い要約の下の空き）を作らない */
+.wk-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+/* 話題の動きのカード: 要約（全幅）→ 期間ボタンと棒（左）｜ 凡例・読み方・言語圏・出典（右 320px）。棒は右の列の高さまで伸びる（段の中に空きを作らない） */
+.wk-tr { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px 28px; align-items: stretch; }
+.wk-tr > .wk-sum { grid-column: 1 / -1; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.wk-tr > .wk-srcsel { grid-column: 1 / -1; margin: 0; } .wk-srcsel .u { margin: 0 4px 0 0; }   /* 出典の切り替え（#53。期間のボタンと同じ部品）*/
+.wk-sum .lb { display: inline-block; margin-right: 10px; font-size: 14px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 1px 9px; vertical-align: 2px; }
+.wk-trc { min-width: 0; display: flex; flex-direction: column; } .wk-trc .wk-chart { flex: 1 1 auto; display: grid; min-width: 0; }
+.wk-tr .wk-ch { grid-template-rows: minmax(0, 1fr); align-items: stretch; } .wk-tr .wk-ch .bar { flex: 1 1 140px; height: auto; min-height: 140px; }
+.wk-trt { min-width: 0; } .wk-trt > :first-child { margin-top: 0; }
+.wk-src { display: block; line-height: 1.6; } .wk-src > span { margin-right: 8px; }   /* 出典は札ではなく文（ラベルの後ろに続けて折り返す。ラベルだけの行を作らない） */
+@media (max-width: 1360px) { .wk-tr { grid-template-columns: minmax(0, 1fr) 300px; gap: 14px 22px; } }
+@media (max-width: 1100px) { .wk-tr { grid-template-columns: minmax(0, 1fr); } .wk-tr .wk-ch .bar { flex: none; height: 140px; } .wk-tp3 { grid-template-columns: minmax(0, 1fr); } }
+
+/* ===== 第 5 版（2026-10-12、ユーザーの指摘）: ほかのページと同じ段の作り（淡い紫の地の面・見出しの下の線・中に白いカード） ===== */
+main.wk .wk-grid > .wk-sec { background: #f3f0fb; border: 1px solid #e7e2f6; border-radius: 24px; padding: 22px 24px 24px; }
+main.wk .wk-grid > .wk-sec > .sec-h { padding: 0 0 12px; margin-bottom: 16px; border: 0; border-bottom: 1px solid rgba(82,70,201,.14); }
+main.wk .wk-grid > .wk-sec .wk-card { box-shadow: 0 1px 2px rgba(40,30,80,.05), 0 4px 12px rgba(40,30,80,.05); }
+@media (max-width: 1360px) { main.wk .wk-grid > .wk-sec { padding: 18px 18px 20px; } }
+
+/* ===== 第 6 版（2026-10-12、ユーザーの指摘）: 段の見出しをダッシュボード（gaze.css の #more・#world）と同じアイコン付きに ===== */
+main.wk .wk-grid > .wk-sec > .sec-h { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 14px; align-items: center; padding: 0 0 14px; margin-bottom: 18px; }
+main.wk .wk-grid > .wk-sec > .sec-h::before { content: ""; grid-row: 1 / 3; width: 44px; height: 44px; border-radius: 12px; }   /* 絵と色は palette.css */
+main.wk .wk-grid > .wk-sec > .sec-h h2 { grid-column: 2; margin: 0; font-size: 22px; line-height: 1.35; }
+main.wk .wk-grid > .wk-sec > .sec-h p { grid-column: 2; margin: 2px 0 0; font-size: 15px; color: var(--ink-2); }
+
+/* 選んだ棒の値（#59）: グラフの上の 1 行。選んだ棒に枠 */
+.wk-read { margin: 0 0 6px; min-height: 1.5em; font-size: 14px; font-weight: 700; color: var(--ink); }
+.wk-ch .c.sel .bar { outline: 2px solid var(--accent); outline-offset: 1px; }

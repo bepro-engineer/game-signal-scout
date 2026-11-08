@@ -1,0 +1,40 @@
+/* 言語圏の広がり（langspread.html）専用。段・行は postair.css（.pa-sec・.pa-t）と revival.css（.rv-t・.st）をそのまま使い、ここではカードと言語×日の表だけを書く */
+
+/* ほかの言語圏から広がった作品のカード: 画像 ／ 言語の移り変わり・広がった日・その後 ／ 言語ごと・日ごとの人数（再燃のカードと同じ横 3 列） */
+.lsc-list { display: flex; flex-direction: column; gap: 12px; }
+.lsc { display: grid; grid-template-columns: 88px minmax(0, 1fr) 500px; gap: 22px; align-items: center; background: #fff; border-radius: 16px; padding: 16px 20px 16px 16px; box-shadow: 0 1px 2px rgba(40,30,80,.05), 0 6px 18px rgba(40,30,80,.06); }
+.lsc > .art { width: 88px; aspect-ratio: 3 / 4; border-radius: 10px; align-self: start; }
+.lsc-t { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.lsc-t h3.wn { margin: 0; font-size: 19px; line-height: 1.4; }
+.lsc-chg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.lsc-chg .ar { color: var(--ink-3); font-size: 18px; margin: 0 2px; }
+.lsc-d, .lsc-s, .lsc-r { margin: 0; font-size: 15px; color: var(--ink-2); line-height: 1.6; }
+.lsc-d b { color: var(--ink); }
+.lsc-s { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; } .lsc-s b { color: var(--ink); }
+.lsc-r { font-size: 14px; color: var(--ink-3); }
+@media (max-width: 1360px) { .lsc { grid-template-columns: 72px minmax(0, 1fr) 430px; gap: 18px; } .lsc > .art { width: 72px; } }
+
+/* 言語×日の表: 行 = 言語、列 = 日。数字はその言語で話題にした人の数、濃さも人数。新しい言語圏で話題になり始めた日の列を枠で。
+   記号の意味は段の先頭の「表の見方」（.ls-key。見本は表と同じ .c で描く）と、各表のすぐ下の 1 行（.lsg-cap。枠の列の日付と言語圏）で常時示す（2026-10-18・Issue #3） */
+.lsg { display: grid; grid-template-columns: 76px repeat(var(--n), minmax(0, 1fr)); gap: 4px; align-items: center; }
+.lsg .hd { font-size: 14px; color: var(--ink-3); text-align: center; white-space: nowrap; height: 20px; }
+.lsg .hd.on { color: var(--accent); font-weight: 700; }
+.lsg .lab { font-size: 14px; font-weight: 700; white-space: nowrap; line-height: 1.15; }
+.lsg .lab small { display: block; font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.lsg .c, .ls-key .c { height: 30px; border-radius: 6px; display: grid; place-items: center; font-size: 14px; font-weight: 700; color: var(--ink);
+  background: color-mix(in srgb, var(--lc) calc(var(--a) * 100%), #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lc) 30%, #fff); }
+.lsg .c.z, .ls-key .c.z { background: #f6f5fa; box-shadow: none; }
+.lsg .c.on, .ls-key .c.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+.lsg .c.pt, .ls-key .c.pt { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.7) 0 2px, transparent 2px 5px); }
+.lsg .c.na, .ls-key .c.na { background: none; box-shadow: none; outline: 1px dashed #b9b2dd; outline-offset: -1px; color: var(--ink-3); font-weight: 400; }
+.lsg-cap { margin: 6px 0 0; font-size: 13px; color: var(--ink-3); line-height: 1.5; }
+.ls-key { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 12px; padding: 10px 14px; background: #fff; border-radius: 12px; font-size: 13px; color: var(--ink-2); }
+.ls-key > span { display: inline-flex; align-items: center; gap: 8px; }
+.ls-key .k { display: inline-flex; gap: 3px; font-style: normal; } .ls-key .c { width: 26px; height: 24px; font-size: 13px; }
+
+/* 新しく話題になり始めた作品: 1 行 1 作品（列は放送後も熱いの一覧と同じ） */
+.ls-t .rv-last .lc { margin-left: 4px; font-size: 13px; padding: 0 8px; }
+.ls-t .pa-q { align-items: center !important; }
+
+/* 状態の札（revival.css の色をそのまま。em の斜体を消す） */
+.ls .st { font-style: normal; font-weight: 700; font-size: 14px; white-space: nowrap; border-radius: 6px; padding: 0 7px; }

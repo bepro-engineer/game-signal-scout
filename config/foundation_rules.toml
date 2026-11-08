@@ -1,0 +1,28 @@
+# 共通基盤の判定の規則（ADR 0051）。Source を問わない判定の型の閾値。
+
+[actor_role]
+# 投稿者の振る舞いから見た役割（foundation/account.py）。2026-10-15 夜に Bluesky の投稿の多いアカウントを実際に読んで決めた初期値（精度は実測で確かめる）
+window_days = 14                    # 直近の何日の振る舞いで見るか
+min_posts = 5                       # これより少ない投稿者は person（少数の投稿で決めつけない）
+template_min_posts = 10
+template_max_distinct_ratio = 0.3   # 本文全体の種類 / 自分の言葉のある投稿 がこれ以下 = 同じ文の繰り返し（定型の前置きでも作品名・話数が違えば別の文）
+aggregator_min_works = 30           # 期間に投稿した作品の数（実況するファン 9〜23・感想ブログ 59 だがリンクが少ない）
+aggregator_min_link_share = 0.3     # リンクつきの投稿の割合（配信の告知 0.49・ニュースのまとめ 0.38〜0.42・感想ブログ 0.03）
+aggregator_link_always_min_works = 20   # リンクがほぼ常にある投稿者は 20 作品から（転載サイト: リンク 1.0・21 作品）
+aggregator_link_always_share = 0.8
+
+[voice]
+# 発言にしない項目の印（取得元の Adapter が付ける共通の印。旧い Bluesky の履歴への取り込みと同じ規則を共通の層で）:
+# adult = 成人向けのラベル / listing = 作品名の一覧の投稿（自己紹介のタグ・鍵が多すぎる）/ stale = 作成の時刻が受信より古すぎる投稿（古い投稿の再流入）
+# no_terms = 候補の語のない投稿（文脈には一致したが作品を名指ししていない。旧い履歴は鍵ごとの登録だったので入らなかった）
+exclude_flags = ["adult", "listing", "stale", "no_terms"]
+[counting]
+# ファンの声の人数（地図・言語ページ・作品の Signal）に入れず、情報の発信（info_work の Signal）として扱う投稿者の役割。行は捨てずに共通層に残す
+info_actor_roles = ["aggregator", "template"]
+
+[info_signal]
+# 情報の発信の Signal（announcement）。まとめ・告知・宣伝の投稿者が、その日に作品について発信した数で見る（ファンの急増の規則とは別）
+min_accounts = 5        # その日に発信した情報の発信の投稿者の数（3 では毎週の配信の告知まで拾った。5 で複数のまとめが一斉に報じる発表に絞る）
+baseline_days = 7       # 比べる前の日数（観測した日）
+ratio = 3.0             # 前の 1 日の平均の何倍
+floor = 0.5             # 平均の下限（0 で割らない）

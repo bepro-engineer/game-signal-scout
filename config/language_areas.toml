@@ -1,0 +1,354 @@
+# 言語圏 → 世界地図の国・地域（ADR 0049・2026-10-15 改訂）。世界地図は投稿者の所在地ではなく、観測した言語が使われる地域の広がりを示す。
+# 国・地域と言語圏は多対多。集計は言語圏の単位で、国で人数・作品を足さない。
+#
+# 国ごとの言語の役割（公用語かどうかでは決めない。社会での役割・実際の使用・地域差で判断し、理由を why に書く。固定の割合の閾値は使わない）:
+#   primary   = 主要な社会言語: その国の多数が日常的に使う言語（地図: 塗り。主要な言語が 2 つ以上なら太い縞）
+#   shared    = 共通語・第二言語: 行政・教育・報道・都市の共通語として広く使われるが、多数の日常の言語ではない（地図: 細い斜線。国全体を代表させない）
+#   regional  = 国の一部の地域・少数の人だけの言語（地図: 塗らない）
+#   uncertain = 使用の実態・位置づけが確かめられない・変わりつつある（地図: 塗らない）
+# 出典と確認時点（2026-10-15）: 各国の国勢調査（インド 2011・南アフリカ 2022・カナダ 2021・アンゴラ 2014 など）、OIF「La langue française dans le monde 2022」
+#   の国別のフランス語話者の推計（Wikipedia「Geographical distribution of French speakers」経由）、Wikipedia の各国の言語の記事（Languages of India / Nigeria /
+#   South Africa / Canada ほか）。国の言語の事情は変わるので、変えたときは why と確認時点を書き直す。
+# 地図の SVG にない小さな国・地域（シンガポール・マカオ・マルタ・バーレーン・モーリシャスなど）は塗れない（一覧・言語ページには出る）。
+# 新しい言語を観測したら、ここに言語圏を足すだけで地図に出る。
+
+# 本番の地図でこの対応表を使うか（承認の後に true。開発の Viewer は常に使う）
+enabled = true                 # 2026-10-15 のユーザーの指示（開発 8766 の完成済みの表示を本番へ）で本番に適用（承認事項 A4）
+
+[areas.en]
+primary = ["us", "gb", "ie", "ca", "au", "nz", "jm", "bs", "tt", "gy", "ag", "kn", "vi", "vg", "fk", "gs", "tc"]
+shared = ["in", "pk", "lk", "ng", "gh", "ke", "ug", "tz", "zm", "zw", "mw", "bw", "na", "ls", "sz", "lr", "sl", "gm", "ss", "cm", "za",
+          "ph", "my", "bn", "pg", "fj", "sb", "ws", "to", "ki", "ae", "pr", "bz"]
+uncertain = ["bd", "er", "sd", "rw", "bi", "vu", "il"]
+[areas.en.why]
+in = "国勢調査 2011: 英語を第一言語とする人 0.02%、第二・第三言語を含めて 10.6%。行政・教育・ビジネスの共通語。主な言語は地域ごとに異なる（ヒンディー語 43.6% など）"
+pk = "公用語・行政と高等教育の言語。日常はパンジャーブ語・ウルドゥー語など"
+lk = "シンハラ語とタミル語をつなぐ共通語"
+ng = "最も広い共通語（政府・教育・ビジネス）。日常はハウサ語・ヨルバ語・イボ語・ナイジェリア・ピジン語など"
+za = "国勢調査 2022: 英語を第一言語とする人 8.7%。政府・報道の主な言語で都市で広く通じる。最大の第一言語はズールー語 24.4%"
+ke = "公用語・教育の言語。日常の共通語はスワヒリ語"
+gh = "公用語・教育の言語。日常はアカン語など"
+ph = "公用語・教育とビジネスの言語。主要な社会言語はフィリピノ語"
+my = "教育・ビジネスで広く使われる。主要な社会言語はマレー語"
+cm = "英語圏は北西・南西の 2 州。フランス語とともに共通語"
+ae = "住民の多くを占める外国人の共通語。国の主な言語はアラビア語"
+pr = "主要な社会言語はスペイン語。英語は公用語"
+ca = "国勢調査 2021: 英語を母語とする人 56.6%"
+bd = "公用語ではない。教育・ビジネスで使われるが、国全体での位置づけは確かめていない"
+il = "広く通じるが主要な社会言語ではない"
+
+[areas.fr]
+primary = ["fr", "gf", "gp", "pf", "nc", "tf"]
+shared = ["be", "ch", "lu", "ca", "ht", "lb", "sn", "ci", "bj", "tg", "gn", "cd", "cg", "ga", "cm", "cf", "td", "ml", "bf", "ne", "bi", "dj", "km",
+          "mg", "dz", "ma", "tn", "mr"]
+uncertain = ["rw", "vu", "gq"]
+[areas.fr.why]
+be = "ワロン・ブリュッセルの言語（フランス語話者 約 76%、OIF）。地域で分かれるため、国全体ではなく共通語として示す"
+ch = "フランス語圏はロマンディ（人口の約 23%）。フランス語話者 約 67%（OIF）"
+lu = "フランス語話者 約 92%（OIF）。主要な社会言語はルクセンブルク語"
+ca = "国勢調査 2021: フランス語を母語とする人 20.2%。ケベック州を中心に地域に集まる"
+ht = "フランス語話者 約 42%（OIF）。主要な社会言語はハイチ・クレオール語"
+lb = "フランス語話者 約 38%（OIF）。主要な社会言語はアラビア語"
+sn = "フランス語話者 約 26%（OIF・国勢調査 2013）。日常の共通語はウォロフ語"
+ci = "フランス語話者 約 34%（OIF・国勢調査 2014）。行政・教育・都市の共通語"
+bj = "フランス語話者 約 34%（OIF）"
+tg = "フランス語話者 約 41%（OIF）"
+gn = "フランス語話者 約 27%（OIF）"
+cd = "フランス語話者 約 51%（OIF）。行政・教育の言語。日常はリンガラ語・スワヒリ語など"
+cg = "フランス語話者 約 61%（OIF）。日常はリンガラ語・キトゥバ語など"
+ga = "フランス語話者 約 80%（OIF）。都市では日常語にもなっている"
+cm = "フランス語話者 約 41%（OIF・国勢調査 2005）。10 州のうち 8 州がフランス語圏"
+cf = "フランス語話者 約 29%（OIF）。日常の共通語はサンゴ語"
+td = "フランス語話者 約 13%（OIF）。チャド・アラビア語とともに共通語"
+ml = "フランス語話者 約 17%（OIF）。2023 年の憲法でフランス語は作業言語に。日常の共通語はバンバラ語"
+bf = "フランス語話者 約 24%（OIF）。日常はモシ語など"
+ne = "フランス語話者 約 13%（OIF）。日常の共通語はハウサ語"
+bi = "フランス語話者 約 9%（OIF）。主要な社会言語はキルンディ語"
+dj = "フランス語話者 約 50%（OIF）"
+km = "フランス語話者 約 36%（OIF）"
+mg = "フランス語話者 約 26%（OIF・国勢調査 2018）。主要な社会言語はマダガスカル語"
+dz = "フランス語話者 約 33%（OIF）。公用語ではないが教育・ビジネス・報道で広く使われる"
+ma = "フランス語話者 約 36%（OIF）。公用語ではないが行政・ビジネス・高等教育で広く使われる"
+tn = "フランス語話者 約 52%（OIF）"
+mr = "フランス語話者 約 13%（OIF）。教育・ビジネスの一部で使われる"
+rw = "フランス語話者 約 6%（OIF）"
+
+[areas.es]
+primary = ["es", "mx", "gt", "hn", "sv", "ni", "cr", "pa", "cu", "do", "pr", "co", "ve", "ec", "pe", "bo", "cl", "ar", "py", "uy"]
+shared = ["gq", "bz"]
+[areas.es.why]
+pe = "主要な社会言語はスペイン語。ケチュア語・アイマラ語などが地域で使われる"
+bo = "主要な社会言語はスペイン語。ケチュア語・アイマラ語などが広く使われる"
+py = "スペイン語とグアラニー語の 2 つが広く使われる"
+gq = "公用語・行政の言語。日常はファン語など"
+bz = "英語・スペイン語・クリオール語が広く使われる"
+
+[areas.pt]
+primary = ["pt", "br", "ao", "st"]
+shared = ["mz", "cv", "gw", "tl"]
+uncertain = ["gq"]
+[areas.pt.why]
+ao = "国勢調査 2014: 家庭でポルトガル語を話す人 約 71%"
+mz = "公用語。話す人は人口の約半分で、第一言語とする人は少ない"
+cv = "主要な社会言語はカーボベルデ・クレオール語。ポルトガル語は公用語・教育の言語"
+gw = "主要な共通語はギニアビサウ・クレオール語"
+tl = "主要な社会言語はテトゥン語。ポルトガル語は公用語"
+
+[areas.ar]
+primary = ["sa", "ae", "qa", "kw", "om", "ye", "iq", "sy", "jo", "lb", "ps", "eg", "ly", "tn", "dz", "ma", "eh", "sd", "mr"]
+shared = ["td", "dj", "km", "so"]
+aliases = ["arz", "ary", "apc", "acm"]   # 方言の言語コード（エジプト・モロッコ・レバント・イラクのアラビア語）はアラビア語圏に入れる
+[areas.ar.why]
+ma = "日常はモロッコ・アラビア語（ダリジャ）。ベルベル語が地域で使われる"
+dz = "日常はアルジェリア・アラビア語。ベルベル語が地域で使われる"
+iq = "クルド語が北部で広く使われる"
+td = "チャド・アラビア語が共通語。フランス語とともに"
+so = "主要な社会言語はソマリ語"
+
+[areas.ru]
+primary = ["ru", "by", "kz"]
+shared = ["kg"]
+uncertain = ["ua", "lv", "ee", "lt", "md", "tj", "uz", "tm", "am", "az", "ge"]
+[areas.ru.why]
+by = "家庭でロシア語を話す人が多数（ベラルーシ語とともに国の言語）"
+kz = "ロシア語が広く使われる（国家語はカザフ語）"
+kg = "公用語。主要な社会言語はキルギス語"
+ua = "話す人は多いが、国の言語・使用の実態が変わりつつあるため塗らない"
+
+[areas.zh]
+primary = ["cn", "tw", "hk"]
+regional = ["my"]
+aliases = ["zh-Hant", "zh-Hans", "zh-TW", "zh-CN", "zh-HK"]   # 文字の区別は内部（area_input の script）に持つ。色は中国語圏で統一（ADR 0047 決定 5）
+
+[areas.ja]
+primary = ["jp"]
+
+[areas.ko]
+primary = ["kr", "kp"]
+
+[areas.de]
+primary = ["de", "at", "ch"]
+shared = ["lu"]
+regional = ["be", "it"]
+[areas.de.why]
+ch = "ドイツ語圏は人口の約 62%"
+lu = "主要な社会言語はルクセンブルク語。ドイツ語・フランス語が広く使われる"
+
+[areas.it]
+primary = ["it"]
+regional = ["ch"]
+
+[areas.nl]
+primary = ["nl", "be", "sr"]
+[areas.nl.why]
+be = "フランデレン（人口の約 6 割）"
+
+[areas.tr]
+primary = ["tr"]
+regional = ["cy"]
+
+[areas.el]
+primary = ["gr", "cy"]
+
+[areas.pl]
+primary = ["pl"]
+
+[areas.cs]
+primary = ["cz"]
+
+[areas.hu]
+primary = ["hu"]
+
+[areas.ro]
+primary = ["ro", "md"]
+
+[areas.uk]
+primary = ["ua"]
+
+[areas.fi]
+primary = ["fi"]
+
+[areas.sv]
+primary = ["se"]
+regional = ["fi"]
+
+[areas.fa]
+primary = ["ir"]
+shared = ["af"]
+[areas.fa.why]
+af = "ダリー語（ペルシア語の変種）が共通語"
+
+[areas.ur]
+shared = ["pk"]
+[areas.ur.why]
+pk = "国語・共通語。第一言語とする人は少なく、最大の第一言語はパンジャーブ語"
+
+[areas.hi]
+shared = ["in"]
+[areas.hi.why]
+in = "国勢調査 2011: 第一言語 43.6%。北部を中心に広く使われるが、南部・東部では主な言語が異なる"
+
+[areas.bn]
+primary = ["bd"]
+regional = ["in"]
+
+[areas.ta]
+regional = ["in", "lk"]
+
+[areas.id]
+primary = ["id"]
+
+[areas.ms]
+primary = ["my", "bn"]
+
+[areas.tl]
+primary = ["ph"]
+
+[areas.th]
+primary = ["th"]
+
+[areas.vi]
+primary = ["vn"]
+
+[areas.he]
+primary = ["il"]
+
+[areas.sw]
+primary = ["ke", "tz"]
+shared = ["ug"]
+
+[areas.am]
+shared = ["et"]
+[areas.am.why]
+et = "連邦の作業言語・広い共通語。最大の第一言語はオロモ語"
+
+[areas.ha]
+primary = ["ne"]
+regional = ["ng"]
+
+[areas.yo]
+regional = ["ng"]
+
+[areas.pcm]
+shared = ["ng"]
+[areas.pcm.why]
+ng = "ナイジェリア・ピジン語。話す人 6,000 万〜8,000 万人の共通語"
+
+[areas.zu]
+shared = ["za"]
+[areas.zu.why]
+za = "国勢調査 2022: 第一言語として最大（24.4%）"
+
+[areas.af]
+regional = ["za"]
+shared = ["na"]
+
+[areas.gn]
+primary = ["py"]
+
+# ---- いまは観測が少ない・まだない言語（観測したら地図に出るように、主要な社会言語の国を入れておく）
+[areas.sq]
+primary = ["al", "xk"]
+[areas.hy]
+primary = ["am"]
+[areas.az]
+primary = ["az"]
+[areas.bs]
+primary = ["ba"]
+[areas.hr]
+primary = ["hr"]
+[areas.sr]
+primary = ["rs", "me"]
+[areas.bg]
+primary = ["bg"]
+[areas.dz]
+primary = ["bt"]
+[areas.da]
+primary = ["dk", "fo"]
+[areas.kl]
+primary = ["gl"]
+[areas.et]
+primary = ["ee"]
+[areas.ka]
+primary = ["ge"]
+[areas.is]
+primary = ["is"]
+[areas.km]
+primary = ["kh"]
+[areas.lo]
+primary = ["la"]
+[areas.lt]
+primary = ["lt"]
+[areas.lv]
+primary = ["lv"]
+[areas.mk]
+primary = ["mk"]
+[areas.my]
+primary = ["mm"]
+[areas.mn]
+primary = ["mn"]
+[areas.no]
+primary = ["no"]
+aliases = ["nb", "nn"]
+[areas.ne]
+primary = ["np"]
+[areas.sl]
+primary = ["si"]
+[areas.sk]
+primary = ["sk"]
+[areas.tg]
+primary = ["tj"]
+[areas.tk]
+primary = ["tm"]
+[areas.uz]
+primary = ["uz"]
+[areas.kk]
+primary = ["kz"]
+[areas.ky]
+primary = ["kg"]
+[areas.mg]
+primary = ["mg"]
+[areas.rw]
+primary = ["rw"]
+[areas.rn]
+primary = ["bi"]
+[areas.so]
+primary = ["so"]
+[areas.om]
+shared = ["et"]
+[areas.ti]
+primary = ["er"]
+[areas.wo]
+shared = ["sn"]
+[areas.ln]
+shared = ["cd", "cg"]
+[areas.sn]
+primary = ["zw"]
+[areas.ny]
+primary = ["mw"]
+[areas.st]
+primary = ["ls"]
+[areas.tn]
+primary = ["bw"]
+[areas.ss]
+primary = ["sz"]
+[areas.ht]
+primary = ["ht"]
+[areas.bi]
+primary = ["vu"]
+[areas.tpi]
+primary = ["pg"]
+[areas.sm]
+primary = ["ws"]
+[areas.to]
+primary = ["to"]
+[areas.fj]
+primary = ["fj"]
+[areas.ps]
+primary = ["af"]
+[areas.pa]
+regional = ["in", "pk"]
+[areas.si]
+primary = ["lk"]
+[areas.lb]
+primary = ["lu"]

@@ -1,7 +1,7 @@
 # 運用の設定（ops/runner）。秘密は書かない。
 
 [daily_run]
-jobs = ["collect", "normalize", "analyze", "insight", "publish"]   # publish = Viewer が読む表 public_document の置き換え（外への公開ではない）
+jobs = ["collect", "normalize", "observe", "analyze", "insight", "digest", "publish"]   # publish = Viewer が読む表 public_document の置き換え（外への公開ではない）
 max_attempts = 3              # 再試行は呼ぶ側の 1 層だけ。上限と待ちはここに 1 か所
 retry_after_minutes = 30
 max_running_hours = 6         # running のまま残った実行を abandoned で閉じる目安
@@ -32,7 +32,23 @@ min_jump = 0.30               # 失敗の割合の変化（30 ポイント）
 enabled = false
 config = ""                   # 枠の設定ファイルのパス（scout-infra の config/llm_gate.toml）
 
+[dashboard_digest]
+# 今日の兆し（Anime の ops/dashboard_digest.py を流用。値は Anime の config/daily.toml と同じ。声の取得元だけ Game のもの）
+enabled = true
+voice_sources = ["steam_reviews", "bluesky"]
+timeout_seconds = 400
+num_ctx = 16384
+refresh_days = 3
+model = "gemma4:12b-it-q4_K_M"
+languages = ["ja", "en", "es", "pt", "fr", "de", "it", "ko", "zh", "tr", "ru", "id"]
+
+[publish]
+# Anime の流用（signal/content.py）が読む: 日次の画面の最初の日 = Game が観測を始めた日（2026-11-08 の本人の指摘: 先月の日を出さない）。
+# それより前の日は、さかのぼって取ったレビューで「普段」を測るためだけに使い、画面の日にしない
+start_day = "2026-11-07"
+
 [web]
+analytics_script_src = ""   # Anime の画面の流用が読む（Game はアクセス解析を入れない）
 # Viewer（web/app）。待ち受けは自分の機械だけ。公開はしていない
 host = "127.0.0.1"
 port = 8720

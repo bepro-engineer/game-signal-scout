@@ -69,8 +69,8 @@ def test_daily_run_one_cycle_and_idempotent_rerun(conn, tmp_path):
     path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", dump_records())
     code, out = runner.daily_run(TARGET, reader_factory=lambda name: reader_for(path))
     assert code == runner.EXIT_OK, out
-    assert [j["job"] for j in out["jobs"]] == ["collect", "normalize", "analyze", "insight", "publish"]
-    assert out["jobs"][4]["detail"]["status"] == "published" and out["jobs"][4]["output"] == 2
+    assert [j["job"] for j in out["jobs"]] == ["collect", "normalize", "observe", "analyze", "insight", "digest", "publish"]
+    assert out["jobs"][6]["detail"]["status"] == "published" and out["jobs"][6]["output"] >= 2
     assert (count(conn, "source_item"), count(conn, "player_report")) == (37, 37)
     ev = conn.execute("SELECT side, appid, n_key FROM shift_event").fetchall()
     assert ev == [("fail", "A", 7)]
@@ -79,7 +79,7 @@ def test_daily_run_one_cycle_and_idempotent_rerun(conn, tmp_path):
     assert code == runner.EXIT_OK
     assert out["jobs"][0]["output"] == 0 and out["jobs"][1]["output"] == 0
     assert (count(conn, "source_item"), count(conn, "player_report"), count(conn, "shift_event")) == (37, 37, 1)
-    assert [r[1] for r in conn.execute("SELECT job, status FROM job_run ORDER BY id")] == ["ok"] * 10
+    assert [r[1] for r in conn.execute("SELECT job, status FROM job_run ORDER BY id")] == ["ok"] * 14
 
 
 def test_failure_midway_is_retryable_and_resumes_without_duplicates(conn, tmp_path):
@@ -186,7 +186,7 @@ def test_status_separates_collection_analysis_and_publication(conn, tmp_path):
     assert s["jobs"]["collect"]["status"] == "ok" and s["jobs"]["collect"]["sources"]["protondb"]["inserted"] == 37
     assert s["sources"]["protondb"]["items"] == 37 and s["sources"]["protondb"]["cursor"]["complete"] is True
     assert s["analysis"]["events"] == {"fail": 1} and s["publication"]["external"] == "none"
-    assert s["publication"]["documents"] == 2 and s["publication"]["stale"] is False   # overview と作品 A
+    assert s["publication"]["documents"] >= 2 and s["publication"]["stale"] is False   # overview と作品 A（と Anime の流用の文書）
 
 
 def test_recent_success_skips_fetching_until_interval(conn, tmp_path):

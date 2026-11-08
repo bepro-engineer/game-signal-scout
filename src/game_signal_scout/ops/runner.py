@@ -161,6 +161,49 @@ def job_insight(ctx: Context) -> JobResult:
     return JobResult(input_count=len(todo), output_count=len(done), detail={"done": done, "unchanged": skipped, "failed": failed})
 
 
+def job_observe(ctx: Context) -> JobResult:
+    """観測の集計（Anime の sources/observations をそのまま流用: 日 × 作品 × 言語の独立した投稿者。画面と今日の兆しの材料）。直近 28 日を作り直す。"""
+    from game_signal_scout import observations
+    from game_signal_scout.days import default_day
+    d = default_day()
+    res = observations.run(ctx.conn, observations.days_to_refresh(ctx.conn, d))
+    errs = [r for r in res if r.get("error")]
+    if errs:
+        raise RuntimeError(f"観測の集計の失敗: {errs[0]}")
+    return JobResult(output_count=sum(1 for r in res if r.get("state") == "complete"), detail={"day": d.isoformat(), "days": len(res)})
+
+
+def job_digest(ctx: Context) -> JobResult:
+    """今日の兆し（Anime の ops/jobs.dashboard_digest をそのまま流用）。観測した最新の日について、プレイヤーの声から発見を 1 つ確定して書き、
+    job_artifact に保存する。[dashboard_digest] enabled のときだけ。失敗しても日次（公開）を止めない。同じ入力の記録があれば作り直さない。"""
+    import sys
+    from game_signal_scout.days import default_day
+    from game_signal_scout.ops import dashboard_digest as dd
+    from game_signal_scout.signal import content
+    if not (ctx.cfg.get("dashboard_digest") or {}).get("enabled", False):
+        return JobResult(detail={"status": "disabled"})
+    day = default_day()
+    vc = content.day_ctx(ctx.cfg, day)
+    try:
+        changes = content.work_changes(vc, day)
+    finally:
+        vc.conn.close()
+    ih = dd.input_key(ctx.conn, day, dd.voice_sources(ctx.cfg), changes)
+    done = job_repo.get_artifact(ctx.conn, dd.JOB, day, ih, dd.VERSION)
+    if done is not None:
+        return JobResult(output_count=int(bool(done.get("passed"))), detail={"status": "already_generated", "passed": done.get("passed")})
+    out = {"version": dd.VERSION, "input_hash": ih, "generated_at": datetime.now(timezone.utc).isoformat()}
+    try:
+        out.update(dd.generate_day(dd.DbDayReader(ctx.conn), ctx.cfg, day, log=lambda m: print(m, file=sys.stderr), changes=changes))
+    except Exception as e:  # noqa: BLE001 — 兆しの失敗で日次を止めない（保存しない。次の回に作り直す）
+        ctx.conn.rollback()
+        return JobResult(detail={"passed": False, "saved": False, "reason": f"error:{type(e).__name__}:{str(e)[:200]}"})
+    job_repo.upsert_artifact(ctx.conn, dd.JOB, day, ih, dd.VERSION, out)
+    ctx.conn.commit()
+    return JobResult(input_count=len(out.get("per_work") or []), output_count=int(bool(out.get("passed"))),
+                     detail={"passed": out.get("passed"), "finding": bool(out.get("finding")), "reason": out.get("reason")})
+
+
 def job_publish(ctx: Context) -> JobResult:
     """分析の結果から公開用の文書を作り、表 public_document に置き換える（Viewer が読む。外への公開ではない）。
     検査に通らない・作れないときは、表を前の回のままにして段を失敗にする。"""
@@ -171,7 +214,8 @@ def job_publish(ctx: Context) -> JobResult:
     return JobResult(output_count=r.get("documents"), detail=r)
 
 
-JOBS = {"collect": job_collect, "normalize": job_normalize, "analyze": job_analyze, "insight": job_insight, "publish": job_publish}
+JOBS = {"collect": job_collect, "normalize": job_normalize, "observe": job_observe, "analyze": job_analyze, "insight": job_insight, "digest": job_digest,
+        "publish": job_publish}
 
 
 def _run_job(ctx: Context, run_id: str, name: str, attempt: int) -> dict:

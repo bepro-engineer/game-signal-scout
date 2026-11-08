@@ -1,0 +1,30 @@
+/* 放送後も熱い作品（postair.html・postair-example.html）専用。
+   revival.css（確定・変更しない）の行（.rv-t）・空の表示（.rv-empty）・検証用のカード（.rvx）をそのまま使い、ここではこのページの段と列と時間軸だけを書く */
+
+/* 段: 再燃のページと同じ淡い紫の地・白い行 */
+main.pa .pa-sec { background: #f3f0fb; border: 1px solid #e7e2f6; border-radius: 24px; padding: 22px 24px 24px; }
+main.pa .pa-sec .sec-h { padding: 0 0 12px; margin-bottom: 16px; border: 0; border-bottom: 1px solid rgba(82,70,201,.14); }
+.pa-sum .g-kick b { background: var(--brand); }
+
+/* 1 行 1 作品: 画像 ／ 作品名と形式 ／ 放送終了（または予定）／ → ／ その後（いま）の反応 */
+.rv-t.pa-t { --cols: 48px minmax(0, 1fr) 236px 24px 372px !important; }
+@media (max-width: 1360px) { .rv-t.pa-t { --cols: 48px minmax(0, 1fr) 176px 20px 372px !important; } .pa-q { column-gap: 5px; } }
+.pa-t .rv-last { display: flex; flex-direction: column; line-height: 1.45; white-space: normal; }
+.pa-t .pa-d { font-size: 14px; color: var(--ink-3); }
+.pa-t .rv-last .pa-d b { color: var(--ink); font-size: 15px; }
+.pa-q { display: flex !important; flex-direction: row !important; flex-wrap: wrap; align-items: baseline !important; justify-content: flex-start; column-gap: 6px; row-gap: 0; text-align: left !important; }
+.pa-q .pa-d { font-size: 14px; color: var(--ink-3); }
+.pa-q b.pa-n { font-family: var(--round); font-size: 21px; font-weight: 800; color: var(--accent); margin: 0; }
+.pa-q b.pa-n.now { color: var(--ink); }
+.pa-q small { font-size: 13px; color: var(--ink-3); }
+.pa-q .ar { color: var(--ink-3); font-size: 16px; margin: 0 2px; }
+.pa-q .pq, .pa-t .rv-last .pq { font-size: 13px; color: var(--ink-3); cursor: help; vertical-align: 5px; margin-left: 1px; }
+/* 話題が続いている作品のカード（スマホ）: 日付は終了の日だけ・数字を小さく（重なる・段がずれる）・状態の札を折り返す（#26） */
+@media (max-width: 600px) { .pa .rvx .wk-ch { gap: 3px; } .pa .rvx .wk-ch b { font-size: 12px; } .pa .rvx .wk-ch small { visibility: hidden; white-space: nowrap; font-size: 12px; }
+  .pa .rvx .wk-ch .ev small { visibility: visible; } .pa .rvx-steps .st { white-space: normal; } }
+.pa-gnote { margin: -2px 0 6px; font-size: 13px; line-height: 1.45; color: var(--ink-3); }   /* 状態の区分の根拠・比べられない理由（区分に 1 回。#26） */
+.pa-none { margin: 0 0 10px; font-size: 15px; color: var(--ink-2); }
+
+/* ===== 検証用のカード（postair-example.html）: 画像 ／ 4 つの段階 ／ 放送終了前 → 放送終了 → その後 の時間軸 ===== */
+
+.rvx-steps li.b { --c: #cfc8ee; } .rvx-steps li.e { --c: var(--accent); } .rvx-steps li.a { --c: #f3b6cd; } .rvx-steps li.n { --c: #b2306a; }

@@ -3,7 +3,7 @@
 日中の定期の起動（interval）は日次処理の実行中は作らない。中身の作り方（build_documents）は架空に差し替える。"""
 from game_signal_scout.publication import content, publishing
 from game_signal_scout.repositories import job as job_repo, public_document as public_document_repo
-from game_signal_scout.web import public_content
+from game_signal_scout.web.services import public_content
 
 CFG = {"daily_run": {"max_running_hours": 6}, "analysis": {"version": "t"}}
 

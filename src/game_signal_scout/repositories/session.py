@@ -14,3 +14,8 @@ def try_advisory_lock(conn, name: str) -> bool:
 
 def advisory_unlock(conn, name: str) -> None:
     conn.execute("SELECT pg_advisory_unlock(hashtext(%s))", (PREFIX + name,))
+
+
+
+def set_read_only(conn) -> None:
+    conn.execute("SET TRANSACTION READ ONLY")

@@ -1,0 +1,39 @@
+/* 作品を探す（search.html）専用。空の表示は revival.css（.rv-empty）、言語の札は gaze.css（.lc）をそのまま使い、ここでは探す欄と結果のカードだけを書く */
+
+/* 探す欄: 白い面。作品名の入力 ／ 条件の行（見出し 7em ＋ 丸いボタン） */
+.sr-panel { background: #fff; border-radius: 20px; padding: 20px 24px; box-shadow: 0 1px 2px rgba(40,30,80,.05), 0 6px 18px rgba(40,30,80,.06); display: flex; flex-direction: column; gap: 12px; }
+.sr-q { display: flex; align-items: center; gap: 10px; border: 2px solid #ddd7f3; border-radius: 14px; padding: 10px 16px; background: #fbfaff; }
+.sr-q:focus-within { border-color: var(--accent); background: #fff; }
+.sr-q svg { width: 22px; height: 22px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; flex: 0 0 auto; }
+.sr-q input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 18px; color: var(--ink); }
+.sr-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.sr-l { flex: 0 0 7em; font-size: 15px; font-weight: 700; color: var(--ink-2); } .sr-l2 { flex: 0 0 auto; margin-left: 12px; }
+.sr-chips { display: flex; flex-wrap: wrap; gap: 6px 8px; flex: 1; min-width: 0; }
+.sr-chip { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 15px; font-weight: 700; color: var(--ink-2); background: #f4f2fa; border: 1.5px solid transparent; border-radius: 999px; padding: 3px 14px; cursor: pointer; }
+.sr-chip small { font-size: 13px; color: var(--ink-3); font-weight: 700; }
+.sr-chip i { width: 9px; height: 9px; border-radius: 50%; }
+.sr-chip:hover { border-color: #d4cdee; }
+.sr-chip[aria-pressed="true"] { background: var(--accent); color: #fff; } .sr-chip[aria-pressed="true"] small { color: rgba(255,255,255,.85); }
+.sr-chip[aria-pressed="true"] i { box-shadow: 0 0 0 2px #fff; }
+.sr-sel select { font: inherit; font-size: 15px; color: var(--ink); background: #f4f2fa; border: 1.5px solid #e4e0f2; border-radius: 10px; padding: 5px 10px; }
+
+/* 件数と条件 */
+.sr-count { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 0; padding: 8px 16px; background: #fff; border: 1px solid var(--line); border-radius: 12px; font-size: 15px; line-height: 1.4; color: var(--ink-2); }   /* 他のページの sp-bar と同じ独立した白いバー。上下に余白を足さない（ブロックの間の隙間で縦に伸ばさない） */
+.sr-count > b { font-family: var(--round); font-size: 24px; font-weight: 800; line-height: 1.2; color: var(--accent); } .sr-count > span { flex-basis: 100%; font-size: 14px; color: var(--ink-3); }   /* 2 段目: （全○作品中。…）（他のページのブロックと同じ 2 段の形。2026-10-15） */
+.sr-cond { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.sr-cond em { font-style: normal; font-size: 14px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 0 8px; }
+.sr-cond button { font: inherit; font-size: 14px; font-weight: 700; color: var(--accent); background: none; border: 0; cursor: pointer; text-decoration: underline; }
+
+/* 結果: 3 列のカード（画像 72px ／ 文）。同じ役割のカードは同じ大きさ */
+.sr-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.sr-card { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 12px; background: #fff; border-radius: 16px; padding: 12px 14px 12px 12px; box-shadow: 0 1px 2px rgba(40,30,80,.05), 0 6px 18px rgba(40,30,80,.06); align-items: center; }
+.sr-card > .art { width: 60px; aspect-ratio: 3 / 4; border-radius: 8px; }
+.sr-t { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.sr-t h3.wn { margin: 0; font-size: 16px; line-height: 1.35; }
+.sr-meta { font-size: 13px; color: var(--ink-3); }
+.sr-k { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.sr-k .kt { font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 1px 7px; white-space: nowrap; }
+.sr-k .kt.on { background: var(--accent); color: #fff; }
+.sr-empty { grid-column: 1 / -1; }
+@media (max-width: 1360px) { .sr-card { grid-template-columns: 54px minmax(0, 1fr); gap: 12px; } .sr-card > .art { width: 54px; } }
+

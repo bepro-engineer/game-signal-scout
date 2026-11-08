@@ -1,0 +1,48 @@
+# 利用者に見せる「変化のカード」の条件（signal_cards）。docs/adr/0023 と docs/USER-VALUE.md を参照。
+# 目的は precision の改善ではなく「変化していないものを利用者へ見せない」こと。
+# 値はすべて m4 の既存データで決めた暫定値（人間の確認の後に見直す）。
+provisional = true
+
+[change]
+# 窓（6 時間）の独立した投稿者が、この人数以上で、自分の「いつも」の surge_ratio 倍以上のとき「動いた」とする
+min_window_authors = 5
+surge_ratio = 3.0
+# 「いつも」= 直前の観測のそろった窓（最大 baseline_windows 個 = 7 日分、出ていない窓は 0 人）の 1 窓あたりの平均（TBD-35 の初期値）
+baseline_windows = 28
+# 直前に観測していた窓がこれより少ないときは、比べられないので出さない
+min_baseline_windows = 3
+# 「いつも」が 0 人でも、比べる値はこれより小さくしない（0 で割らない。小母数の誇張を防ぐ）
+baseline_floor = 0.5
+
+[resurface]
+# 再浮上: 一度話題になった（それまでに min_before_authors 人以上の窓があった）後、直前 quiet_windows 個の窓で 0 人になってから、また動いた
+quiet_windows = 2
+min_before_authors = 2
+
+[independence]
+# 同じ人・同じ文の繰り返し（bot・ニュースの転載）で人数を増やさない
+max_top_author_share = 0.5
+# 動いた窓で、文の書き出しが互いに違う投稿がこの数以上
+min_distinct_texts = 3
+
+[spread]
+# 新しい言語圏: その日より前に、言語の分かる投稿者が min_before_authors 人以上いて、その日に、それまで観測していない言語（und・uncertain を除く）の投稿者がこの人数以上
+min_new_language_authors = 3
+# かつ、その日の投稿者の合計がこの人数以上
+min_day_authors = 4
+min_before_authors = 3
+
+[continuation]
+# 動いた窓の後の窓の人数の中央値が、max(min_after_authors, after_ratio × いつも) 以上なら「続いている」
+min_after_authors = 3
+after_ratio = 2.0
+# 後の窓がこの数より少なければ「まだ分からない」
+min_after_windows = 2
+
+[anchor]
+# アニメとの結びつき: 動いた窓（新しい言語圏はその日）の投稿者のうち、アニメに固有の手がかり
+# （アニメ・漫画・声優・原作・PV などの語や hashtag）を含む投稿をした人の割合。
+# 「」の題名・視聴・配信・放送・話数の語だけでは、映画・ドラマ・ゲーム・番組と区別できない（m4 の標本）
+min_anime_author_share = 0.3
+anime_rule_prefixes = ["kw.anime", "hc.anime", "ht.anime.", "kw.seiyuu", "kw.crunchyroll", "kw.adapt", "kw.manga", "rx.pv"]
+anime_rule_exact = ["ht.anime"]

@@ -88,3 +88,21 @@ def summary(conn) -> list[tuple]:
     """取得元ごとの件数・最新の発生時刻（データの鮮度）・最後に保存した時刻・続きの位置。"""
     return conn.execute("SELECT s.source, count(*), max(s.occurred_at), max(s.received_at), c.cursor, c.updated_at FROM source_item s "
                         "LEFT JOIN source_checkpoint c ON c.source = s.source GROUP BY s.source, c.cursor, c.updated_at ORDER BY s.source").fetchall()
+
+
+
+# ---- Anime の source_item の、観測の範囲の表示に使う 2 つの関数（Game は共通の発言 player_post の言語で数える）
+def count_items_by_lang_day(conn, start, end) -> list[tuple]:
+    """期間に受け取った発言の数を言語 × 放送日（3:00 JST の区切り）で (lang, 放送日, 件数)。"""
+    return conn.execute("SELECT lang, ((at) AT TIME ZONE 'Asia/Tokyo' - interval '3 hours')::date, count(*) FROM player_post "
+                        "WHERE at >= %s AND at < %s GROUP BY 1, 2", (start, end)).fetchall()
+
+
+def get_last_ok_fetch_of_any_source(conn):
+    return conn.execute("SELECT max(ts) FROM source_fetch WHERE ok").fetchone()[0]
+
+
+
+def list_item_texts(conn, source: str, item_ids: list[str]) -> list[tuple]:
+    """項目の本文と言語 (item_id, 言語, body)（Anime と同じ形。Game は共通の発言 player_post の本文）。"""
+    return conn.execute("SELECT item_id, lang, text FROM player_post WHERE source=%s AND item_id = ANY(%s)", (source, item_ids)).fetchall()

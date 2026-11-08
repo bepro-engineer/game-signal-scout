@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 
-COLS = ("appid", "source", "item_id", "title", "summary", "image_url", "genres", "modes", "platforms", "ja_text", "ja_voice", "released", "store_url", "fetched_at")
+COLS = ("appid", "source", "item_id", "title", "summary", "image_url", "genres", "modes", "platforms", "ja_text", "ja_voice", "released", "store_url", "fetched_at", "about_ja", "about_en", "coming_soon")
 JSON_COLS = {"genres", "modes", "platforms"}
 
 
@@ -14,6 +14,7 @@ def active_apps(conn, days: int, limit: int) -> list[tuple[str, int]]:
     return conn.execute(
         "SELECT appid, sum(n)::int FROM ("
         " SELECT appid, 1000 - min(rank) n FROM game_activity WHERE day = (SELECT max(day) FROM game_activity) AND rank IS NOT NULL GROUP BY appid"
+
         " UNION ALL"
         " SELECT appid, count(*) n FROM player_report WHERE appid IS NOT NULL AND at > (SELECT max(at) FROM player_report) - make_interval(days => %s) GROUP BY appid"
         " UNION ALL"
@@ -23,8 +24,10 @@ def active_apps(conn, days: int, limit: int) -> list[tuple[str, int]]:
 
 
 def targets(conn, days: int, limit: int, refresh_days: int, source: str) -> list[str]:
-    """作品の情報を取りに行く作品: 対象の作品のうち、その取得元の情報がない・refresh_days より古いもの。"""
+    """作品の情報を取りに行く作品: 対象の作品（と、これから発売の作品）のうち、その取得元の情報がない・refresh_days より古いもの。"""
     want = [a for a, _ in active_apps(conn, days, limit)]
+    # これから発売の作品（最新の一覧）も作品の情報を揃える（発売日・画像。画面のまもなく発売）。レビューの対象にはしない
+    want += [a for (a,) in conn.execute("SELECT appid FROM game_upcoming WHERE day = (SELECT max(day) FROM game_upcoming) ORDER BY rank") if a not in want]
     if not want:
         return []
     fresh = {r[0] for r in conn.execute("SELECT appid FROM game_profile WHERE appid = ANY(%s) AND source = %s AND fetched_at > now() - make_interval(days => %s)",
@@ -36,7 +39,7 @@ def targets(conn, days: int, limit: int, refresh_days: int, source: str) -> list
 
 def unnormalized(conn, source: str, limit: int):
     return conn.execute("SELECT s.item_id, s.received_at, s.payload FROM source_item s LEFT JOIN game_profile g ON g.source = s.source AND g.item_id = s.item_id "
-                        "WHERE s.source = %s AND g.item_id IS NULL ORDER BY s.item_id LIMIT %s", (source, limit)).fetchall()
+                        "WHERE s.source = %s AND (g.item_id IS NULL OR s.received_at > g.fetched_at) ORDER BY s.item_id LIMIT %s", (source, limit)).fetchall()
 
 
 def upsert(conn, rows: list[dict]) -> int:
@@ -57,6 +60,25 @@ def profiles(conn, appids: list[str]) -> dict[str, dict]:
 def activity_rows(conn, source: str, limit: int):
     return conn.execute("SELECT s.item_id, s.payload FROM source_item s LEFT JOIN game_activity a ON a.source = s.source AND a.item_id = s.item_id "
                         "WHERE s.source = %s AND a.item_id IS NULL ORDER BY s.item_id LIMIT %s", (source, limit)).fetchall()
+
+
+def upcoming_rows(conn, source: str, limit: int):
+    return conn.execute("SELECT s.item_id, s.payload FROM source_item s LEFT JOIN game_upcoming u ON u.source = s.source AND u.item_id = s.item_id "
+                        "WHERE s.source = %s AND u.item_id IS NULL ORDER BY s.item_id LIMIT %s", (source, limit)).fetchall()
+
+
+def insert_upcoming(conn, rows: list[tuple]) -> int:
+    with conn.cursor() as cur:
+        cur.executemany("INSERT INTO game_upcoming (appid, day, source, item_id, rank) VALUES (%s,%s,%s,%s,%s) ON CONFLICT (appid, day, source) DO NOTHING", rows)
+        return cur.rowcount
+
+
+def upcoming(conn) -> list[dict]:
+    """これから発売の作品（最新の日の一覧の順）: app ID・順位・作品の情報（題名・画像・発売日の文・発売前か・ストアの URL）。"""
+    rows = conn.execute("SELECT u.appid, u.rank, g.title, g.image_url, g.released, g.coming_soon, g.store_url, g.genres, g.platforms FROM game_upcoming u "
+                        "LEFT JOIN game_profile g ON g.appid = u.appid WHERE u.day = (SELECT max(day) FROM game_upcoming) ORDER BY u.rank").fetchall()
+    keys = ("appid", "rank", "title", "image", "released", "coming_soon", "store_url", "genres", "platforms")
+    return [dict(zip(keys, r)) for r in rows]
 
 
 def insert_activity(conn, rows: list[tuple]) -> int:

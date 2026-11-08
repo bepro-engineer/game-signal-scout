@@ -1,0 +1,10 @@
+# 観測の集計に入れる取得元（Anime の config/map_sources.toml と同じ形。game_signal_scout/observations.py）。人数は取得元の中で数え、足さない。
+[sources.steam_reviews]
+reader = "foundation"
+production = true
+label = ["Steam のレビュー", "Steam reviews"]
+
+[sources.bluesky]
+reader = "foundation"
+production = true
+label = ["Bluesky の投稿", "Bluesky posts"]

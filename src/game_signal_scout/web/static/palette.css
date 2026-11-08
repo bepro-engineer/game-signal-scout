@@ -1,0 +1,282 @@
+/* 画面の配色（全ページ。最後に読む）。明るく洗練された、アニメの華やかさとデータ分析メディアの信頼感の両立。
+   基本は白・グレー・濃紺。色は情報の意味を伝えるときだけ使う（新しい兆し＝ローズ・言語圏の広がり＝ブルー・継続＝ティール・再燃＝アンバー・操作＝紫）。
+   ページのアクセント: 世界で広がる＝ブルー・再燃＝アンバー・放送後も熱い＝ティール・言語圏の広がり＝無彩色（地図と表の言語の色が主役）・
+   作品を探す／作品詳細／説明のページ＝白基調。
+   レイアウト・カードの大きさ・余白は変えない（線は既存の線の色を替えるか box-shadow で描く）。最後に読む（ほかの CSS を色だけ上書きする） */
+:root {
+  --bg: #F7F8FC; --card: #FFFFFF; --line: #E5E8F0; --soft: #F2F4F8;
+  --ink: #20283D; --ink-2: #3E475C; --ink-3: #697386;
+  --accent: #5B55D6; --accent-soft: #EFEEFC; --brand: #D94C88;
+  --c-new: #D94C88; --c-new-soft: #FCEEF4; --c-lang: #477AC8; --c-lang-soft: #ECF2FB;
+  --c-cont: #238B78; --c-cont-soft: #E8F4F1; --c-re: #C18435; --c-re-soft: #FAF2E6;
+  /* 文字に使うときの濃さ（白・淡い地の上で 4.5:1 以上。面・線・点は上の色のまま） */
+  --c-new-ink: #B8396F; --c-lang-ink: #33609F; --c-cont-ink: #1B6E5F; --c-re-ink: #8A5A1C; --brand-badge: #C63F7A;
+  --today: #5B55D6; --today-new: #A9A6EC; --other: #CDD2DE; --strong: #8E95A8;
+  --shadow: 0 1px 2px rgba(32, 40, 61, .04), 0 4px 14px rgba(32, 40, 61, .05);
+}
+body { background: var(--bg); color: var(--ink); }
+body::before { background: var(--bg) !important; }
+
+/* 左の案内・上の表示: 白い面と細い線。選んでいるページだけ操作の色 */
+.side { box-shadow: 0 0 0 1px var(--line); }   /* 線は幅を取らない box-shadow で描く（レイアウトを変えない） */
+.side a { color: var(--ink-2); }
+.side a:hover { background: var(--soft); }
+.side a.on { background: var(--accent-soft); color: var(--accent); }
+.uiloc .seg { background: var(--soft); }
+.g-dn .rb, .g-dn .pill { border-color: var(--line); color: var(--ink); }
+.g-dn .latest { background: var(--accent-soft); color: var(--accent); }
+.g-dl { color: var(--ink-3); }
+
+/* サイトの紹介: 装飾の色の縁をやめる（強調はその日の兆しだけ） */
+.intro { border-left-color: transparent; box-shadow: 0 0 0 1px var(--line); }
+.intro h2 { color: var(--ink); } .intro p { color: var(--ink-3); }
+
+/* 今日の兆し: ページでいちばん強い段。白い面に、ローズの上の線と札だけで強調する */
+.g-lead { box-shadow: inset 0 4px 0 var(--c-new), 0 0 0 1px var(--line), 0 10px 28px rgba(32,40,61,.07); }
+.g-kick b { background: var(--brand-badge); }
+.g-kick .g-day { color: var(--ink-3); }
+.g-lead h1 { color: var(--ink); }
+.g-lead .lede, .g-lead .lede .lede-t { color: var(--ink-2); }
+.g-lead .lede .nb { color: var(--ink); }
+.g-row .wn { color: var(--ink); }
+.g-foot { border-top-color: var(--line); } .g-foot span { color: var(--ink-3); }
+.g-foot a, .lede-more { color: var(--accent) !important; }
+.art { background: var(--soft) !important; }
+
+/* 段（言語ごとの作品数・今チェック・もっと見る）: 地の色を変えない。白い面と細い線で区切り、中のカードは線で分ける */
+main.g #world, main.g #others, main.g #more { background: var(--card) !important; border-color: transparent !important; box-shadow: 0 0 0 1px var(--line), 0 4px 14px rgba(32,40,61,.04) !important; }
+main.g #others .g-h, main.g #more .sec-h, main.g #world .sec-h { border-bottom-color: var(--line) !important; }
+main.g #others .g-h::before, main.g #more .sec-h::before, main.g #world .sec-h::before { box-shadow: none !important; background-color: var(--accent-soft) !important; }
+main.g #others .g-h { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B55D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l2.3 5.2L20 9l-4.2 3.9L17 19l-5-3-5 3 1.2-6.1L4 9l5.7-.8z'/%3E%3C/svg%3E"); }
+main.g #more .sec-h { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B55D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19V5M4 19h16M8 15l3-4 3 2 5-6'/%3E%3C/svg%3E"); }
+main.g #world .sec-h { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B55D6' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18'/%3E%3C/svg%3E"); }
+main.g #others .g-h::before, main.g #more .sec-h::before, main.g #world .sec-h::before { background: var(--ico) center / 24px 24px no-repeat, var(--accent-soft) !important; }
+main.g #others .g-h small, main.g #more .sec-h p, main.g #world .sec-h p { color: var(--ink-3); }
+.mv-q, .mv-list { box-shadow: 0 0 0 1px var(--line) !important; }
+
+/* 世界地図: 海は薄い水色。国の色（言語）・大きさ・配置・右の一覧は変えない */
+.lo-map { background: #EAF4FB !important; box-shadow: 0 0 0 1px var(--line); }   /* 海は薄い水色（2026-10-12 ユーザーの指示。陸地の色・地図の大きさ・配置は変えない） */
+.lo-side { background: var(--card); border-color: var(--line); }
+.lo-head { color: var(--ink-3); }
+.lo-row:hover, .lo-row.hit { background: var(--soft); }
+.lo-d.up { color: var(--c-cont-ink); } .lo-d.down { color: #A8434E; }
+.lo-note { color: var(--ink-3); }
+
+/* 今チェックしておきたい作品: 白いカード。変化の種類を意味の色で示す（札・変化の 1 行・左の細い線） */
+.ck1 { background: var(--card) !important; color: var(--ink) !important; box-shadow: inset 4px 0 0 var(--cc2, var(--c-new)), 0 0 0 1px var(--line), 0 4px 14px rgba(32,40,61,.06) !important; }
+.ck1::before, .ck1-bg { display: none !important; }
+.ck1 h3.wn { color: var(--ink) !important; text-shadow: none !important; }
+.ck1-line { color: var(--ink-2) !important; text-shadow: none !important; }
+.ck1-k .pick { background: var(--ink) !important; color: #fff !important; }
+.ck1-k .lab { background: var(--cc2s, var(--c-new-soft)) !important; color: var(--cc2i, var(--c-new-ink)) !important; border: 0 !important; }
+.ck1-chips span { background: var(--soft) !important; border: 1px solid var(--line) !important; color: var(--ink-2) !important; }
+.ck1-chips em { color: var(--ink-3) !important; }
+.ck1-im .art { box-shadow: 0 4px 14px rgba(32,40,61,.14) !important; }
+.ck2 { background: var(--card) !important; border-color: var(--line) !important; }
+.ck2-l { color: var(--ink-2) !important; }
+/* 変化の種類: 文字は無彩色。行の前の小さな点だけ意味の色（ダッシュボードでローズを広げない） */
+.ck2-l::before, .ck1-line::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 6px 1px 0; vertical-align: middle; background: var(--cc2, var(--accent)); }
+.ck2-l i { color: var(--cc2, var(--accent)); }
+.ck2-m { color: var(--ink-3) !important; }
+.ck-rh { color: var(--ink); }
+[data-cls="surge"], [data-cls="new"] { --cc2: var(--c-new); --cc2s: var(--c-new-soft); --cc2i: var(--c-new-ink); }
+[data-cls="cont"] { --cc2: var(--c-cont); --cc2s: var(--c-cont-soft); --cc2i: var(--c-cont-ink); }
+[data-cls="re"] { --cc2: var(--c-re); --cc2s: var(--c-re-soft); --cc2i: var(--c-re-ink); }
+[data-cls="overseas"] { --cc2: var(--c-lang); --cc2s: var(--c-lang-soft); --cc2i: var(--c-lang-ink); }
+/* 点の色の凡例（「ほかに動き始めた作品」の見出しの行の右。高さを増やさない） */
+.ck-rh { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; }
+.ck-key { display: inline-flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; font-weight: 500; color: var(--ink-3); }
+.ck-key span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 5px 1px 0; vertical-align: middle; background: var(--cc2); }
+
+/* アニメの動きをもっと見る: 白いカード。グラフは「その日＝紫・ほかの日＝グレー」でそろえる。急増だけ新しい兆しの色 */
+.mv-a, .mv-q p { color: var(--ink-2); }
+.legend i { border-radius: 3px; }
+.rank li .bar { background: var(--soft) !important; } .rank li .bar span { background: var(--other) !important; } .rank li.first .bar span { background: var(--accent) !important; }
+.tagfirst { background: var(--accent-soft) !important; color: var(--accent) !important; }
+.mv-note, .rank + p { color: var(--ink-3); }
+
+/* フッター */
+.site-foot { border-top-color: var(--line); }
+
+/* ============================== 全ページ共通 ============================== */
+/* 段の面（各ページ）: 薄紫の面をやめ、白い面に細い線。大きさは変えない（線の色だけ替える） */
+main.sp .sp-digest, main.rv #rv-revived, main.rv #rv-watch, main.pa .pa-sec, main.sp #sp-grew, main.sp #sp-new, main.sp #sp-cont,
+main.wk .wk-grid > .wk-sec, .sr-panel, .about-s, .lw { background: var(--card) !important; border-color: var(--line) !important; box-shadow: 0 0 0 1px var(--line) !important; }
+.sp-digest { background: var(--card) !important; }
+.sp-bar { border-color: var(--line); }
+.sp-bar a, .sp-bar button { background: var(--soft); color: var(--ink-2); }
+.sp-bar a b, .sp-bar button b { color: var(--ink); }
+.sec-h h2 .cnt, .sec-h .cnt { background: var(--soft) !important; color: var(--ink-2) !important; }
+.sec-h { border-bottom-color: var(--line) !important; }
+.note, .rv-air, .sr-meta { color: var(--ink-3); }
+.rv-empty { background: var(--soft) !important; } .rv-empty .ic { background: var(--card) !important; }
+.rv-r, .nwt-r, .ct-list li, .gr3, .lsc, .rvx, .sr-card, .wk-card { box-shadow: 0 0 0 1px var(--line) !important; }
+.rv-g { color: var(--ink-2); } .rv-g small { background: var(--soft) !important; color: var(--ink-2) !important; }
+/* 状態の札（その後）: 続いている＝継続のティール・落ち着いた＝灰・これから＝灰 */
+.st.on { color: var(--c-cont-ink) !important; background: var(--c-cont-soft) !important; }
+.st.off { color: var(--ink-2) !important; background: var(--soft) !important; }
+.st.tbd { color: var(--ink-3) !important; background: var(--soft) !important; }
+/* ページの要約の札: ページの意味の色（下で上書き） */
+.sp-digest .g-kick b { background: var(--pa-badge, var(--ink)) !important; }
+/* 変化の種類の札（作品を探す・作品詳細）: 札は無彩色、前の小さな点だけ意味の色（ダッシュボードの点と同じ） */
+.kt[data-kind] { background: var(--soft) !important; color: var(--ink-2) !important; }
+.kt[data-kind] { box-shadow: inset 3px 0 0 var(--kc, var(--accent)); }   /* 左端の色の線（幅を変えない） */
+.kt[data-kind="surge"], .kt[data-kind="new"], .kt[data-kind="emergence"] { --kc: var(--c-new); }
+.kt[data-kind="cont"], .kt[data-kind="persist"] { --kc: var(--c-cont); }
+.kt[data-kind="re"], .kt[data-kind="resurgence"] { --kc: var(--c-re); }
+.kt[data-kind="overseas"], .kt[data-kind="new_language"] { --kc: var(--c-lang); }
+.kt.on { box-shadow: inset 3px 0 0 var(--kc, var(--accent)), inset 0 0 0 1.5px var(--accent); }
+/* 一部の時間しか観測できなかった日の斜線: 灰の系統 */
+
+/* ============================== 世界で広がる（ブルー） ============================== */
+[data-page="spread"] { --pa: var(--c-lang); --pa-ink: var(--c-lang-ink); --pa-soft: var(--c-lang-soft); }
+[data-page="spread"] .sp-digest .g-kick b { background: var(--brand-badge) !important; }      /* 今日の兆し（ダッシュボードと同じ意味）はローズ */
+[data-page="spread"] .sp-lead { box-shadow: inset 0 4px 0 var(--c-lang), 0 0 0 1px var(--line), 0 10px 28px rgba(32,40,61,.07) !important; border-top-color: transparent !important; }
+[data-page="spread"] .sp-lead .g-kick b { background: var(--c-lang-ink) !important; }
+[data-page="spread"] .h-chg .h-now small { color: var(--c-lang-ink) !important; }
+[data-page="spread"] .hero3 .h-tl, [data-page="spread"] .gr3 .gr-tl { background: var(--c-lang-soft) !important; }   /* 時系列は淡いブルーの地 */
+[data-page="spread"] .tl::before { background: #C9D7EE !important; }
+[data-page="spread"] .gr-ref { border-color: #C9D7EE !important; } [data-page="spread"] .gr-ref .to, [data-page="spread"] .h-t .more { color: var(--c-lang-ink) !important; }
+[data-page="spread"] .tl-key .k.add i { background: var(--c-lang) !important; } [data-page="spread"] .tl-key .k.again i { border-color: var(--c-lang) !important; }
+[data-page="spread"] .unit-key .dots { --lc: var(--c-lang) !important; }
+
+/* ============================== 再燃（アンバー） ============================== */
+[data-page="revival"] .sp-digest .g-kick b { background: var(--c-re-ink) !important; }
+[data-page="revival"] .rvx-steps li.rv { --c: var(--c-re) !important; } [data-page="revival"] .rvx-steps li.pk { --c: var(--strong) !important; }
+[data-page="revival"] .rvx-ch rect.rv { fill: var(--c-re) !important; } [data-page="revival"] .rvx-ch rect.aft { fill: #E6C79D !important; }
+[data-page="revival"] .rvx-ch rect.pk { fill: var(--strong) !important; } [data-page="revival"] .rvx-ch rect.pre, [data-page="revival"] .rvx-ch rect.qt { fill: var(--other) !important; }
+[data-page="revival"] .rvx-ch .band-q { fill: var(--soft) !important; } [data-page="revival"] .rvx-ch .dt.rv { fill: var(--c-re-ink) !important; }
+[data-page="revival"] .rv-q b { color: var(--c-re-ink) !important; }
+[data-page="revival"] .rv-empty .ic svg { stroke: var(--c-re-ink) !important; }
+
+/* ============================== 放送後も熱い（ティール） ============================== */
+[data-page="postair"] .sp-digest .g-kick b { background: var(--c-cont-ink) !important; }
+[data-page="postair"] .pa-q b.pa-n { color: var(--c-cont-ink) !important; fill: var(--c-cont-ink) !important; }
+
+[data-page="postair"] .rv-empty .ic svg { stroke: var(--c-cont-ink) !important; }
+
+/* ============================== 言語圏の広がり（無彩色。地図と表の言語の色が主役） ============================== */
+[data-page="langspread"] .sp-digest .g-kick b { background: var(--ink) !important; }
+[data-page="langspread"] .lsg .hd.on { color: var(--ink) !important; }
+[data-page="langspread"] .lsg .c.on, [data-page="langspread"] .ls-key .c.on { box-shadow: 0 0 0 2px var(--ink) inset !important; }
+[data-page="langspread"] .lsg .c.z, [data-page="langspread"] .ls-key .c.z { background: var(--soft) !important; }
+
+/* ============================== 作品を探す（白基調・作品画像が主役） ============================== */
+.sr-q { border-color: var(--line) !important; background: var(--card) !important; }
+.sr-q:focus-within { border-color: var(--accent) !important; }
+.sr-chip { background: var(--soft) !important; color: var(--ink-2) !important; border-color: transparent !important; }
+.sr-chip[aria-pressed="true"] { background: var(--accent) !important; color: #fff !important; }
+.sr-sel select { background: var(--card) !important; border-color: var(--line) !important; }
+.sr-cond em { background: var(--soft) !important; color: var(--ink-2) !important; }
+
+/* ============================== 作品詳細（白基調・作品画像と分析グラフが主役） ============================== */
+.wk-banner { background: var(--soft) !important; }
+.wk-head > .art { box-shadow: 0 4px 14px rgba(32,40,61,.16) !important; }
+.wk-g span { background: var(--soft) !important; color: var(--ink-2) !important; }
+.wk-l a { border-color: var(--line) !important; }
+.wk-ch .bar { background: var(--soft) !important; }
+.wk-ch .bar i, .wk-key i { background-color: var(--other) !important; }     /* ほかの日＝グレー・変化のあった日＝紫（ダッシュボードのグラフと同じ） */
+.wk-ch .ev .bar i, .wk-key i.ev { background-color: var(--accent) !important; }
+.wk-key i.na { background: none !important; outline-color: var(--strong) !important; }
+main.wk .wk-grid > .wk-sec::before, main.wk .sec-h::before { box-shadow: none !important; }
+main.wk #wk-trend > .sec-h { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B55D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19V5M4 19h16'/%3E%3Cpath d='M8 15v-3M12 15V8M16 15v-5'/%3E%3C/svg%3E"); }
+main.wk #wk-points > .sec-h { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B55D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E"); }
+main.wk #wk-creation > .sec-h { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B55D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20l4.5-1L19 8.5 15.5 5 5 15.5z'/%3E%3Cpath d='M13.5 7l3.5 3.5'/%3E%3C/svg%3E"); }   /* 創作の動き（#19） */
+main.wk .wk-grid > .wk-sec .sec-h::before, main.wk .wk-sec > .sec-h::before { background: var(--ico) center / 24px 24px no-repeat, var(--accent-soft) !important; }
+
+/* 作品詳細の外部リンク: 区別の手がかり（ドメインと道筋）・地域制限の印・公式と配信の区切り */
+.wk-l a small.lh { margin-left: 6px; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.wk-l a small.ls { margin-left: 6px; font-size: 12px; font-weight: 700; color: var(--ink-3); background: var(--soft); border-radius: 6px; padding: 0 6px; }
+.wk-l .wk-lsep { align-self: center; width: 1px; height: 18px; background: var(--line); margin: 0 4px; }   /* 公式と配信の区切り（同じ行に続ける） */
+
+/* ============================== 今日の兆し（全 6 ページ共通。2026-10-12） ==============================
+   ダッシュボード #lead・世界で広がる #sp-digest・再燃 #rv-sum・放送後も熱い #pa-sum・言語圏の広がり #ls-sum。
+   見出しの札・文字の大きさ・行の間・余白・装飾をそろえ、ページの中でいちばん目立たせる。文章は省略せず全文（「続きを読む」を使わない）。
+   中身と、その下の段は変えない */
+main.g #lead, main.sp #sp-digest, #rv-sum, #pa-sum, #ls-sum {
+  background: var(--card) !important; border: 0 !important; border-radius: 20px !important; padding: 26px 32px 28px !important;
+  box-shadow: inset 0 4px 0 var(--c-new), 0 0 0 1px var(--line), 0 12px 32px rgba(32,40,61,.08) !important; }
+main.g #lead .g-kick, main.sp #sp-digest .g-kick, #rv-sum .g-kick, #pa-sum .g-kick, #ls-sum .g-kick {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin: 0 0 14px; }
+main.g #lead .g-kick b, main.sp #sp-digest .g-kick b, #rv-sum .g-kick b, #pa-sum .g-kick b, #ls-sum .g-kick b {
+  background: var(--brand-badge) !important; color: #fff !important; font-family: var(--round); font-size: 16px; font-weight: 800; border-radius: 8px; padding: 3px 14px; }
+main.g #lead .g-kick .g-day, main.sp #sp-digest .g-kick .g-day, #rv-sum .g-kick .g-day, #pa-sum .g-kick .g-day, #ls-sum .g-kick .g-day {
+  font-size: 15px; font-weight: 700; color: var(--ink-3); }
+main.g #lead .lede, main.g #lead .lede .lede-t, main.sp #sp-digest .dg-t, #rv-sum .dg-t, #pa-sum .dg-t, #ls-sum .dg-t {
+  margin: 0; font-size: 18px !important; line-height: 1.9 !important; color: var(--ink) !important; }
+/* 全文を出す（省略しない） */
+main.g #lead .lede .lede-t, main.sp #sp-digest .dg-t.clamp3 { display: inline !important; -webkit-line-clamp: unset !important; overflow: visible !important; }
+main.sp #sp-digest .dg-t.clamp3 { display: block !important; }
+main.g #lead .lede-more, main.sp #sp-digest .lede-more { display: none !important; }
+main.sp #sp-digest[hidden] { display: none !important; }
+@media (max-width: 600px) {
+  main.g #lead, main.sp #sp-digest, #rv-sum, #pa-sum, #ls-sum { padding: 18px 18px 20px !important; }
+  main.g #lead .lede, main.g #lead .lede .lede-t, main.sp #sp-digest .dg-t, #rv-sum .dg-t, #pa-sum .dg-t, #ls-sum .dg-t { font-size: 16px !important; line-height: 1.85 !important; }
+}
+main.g #lead .lede { margin: 0 0 18px !important; }   /* 文章の下の作品の列との間（今までと同じ） */
+
+/* 世界で広がる: 今日の広がり（具体例）は今日の兆しの中の一部。別のカードの面・線・影を外し、区切り線の下に置く */
+main.sp #sp-digest > #sp-lead.in-digest { margin: 22px 0 0 !important; padding: 20px 0 0 !important; background: none !important; border: 0 !important; border-top: 1px solid var(--line) !important;
+  border-radius: 0 !important; box-shadow: none !important; }
+main.sp #sp-digest > #sp-lead.in-digest .g-kick b { background: var(--soft) !important; color: var(--ink) !important; font-size: 14px; }
+main.sp #sp-digest > #sp-lead.in-digest .hero3 { box-shadow: none !important; }
+/* 今日の兆しの中の具体例には札・説明の行を出さない（配置で伝わる。見出しがそれだけで何の話かを言う） */
+main.sp #sp-digest > #sp-lead.in-digest > .g-kick { display: none !important; }
+/* 今日の兆しの中の具体例: 見出しだけを画像の右の横いっぱい（時系列の上まで）に広げ、1 行に収める。ほかの配置・大きさは変えない */
+main.sp #sp-digest > #sp-lead.in-digest .hero3 { grid-template-rows: auto auto auto auto; row-gap: 14px; }
+main.sp #sp-digest > #sp-lead.in-digest .hero3 .h-im { grid-column: 1; grid-row: 1 / 5; }
+main.sp #sp-digest > #sp-lead.in-digest .hero3 .h-t { display: contents; }
+main.sp #sp-digest > #sp-lead.in-digest .hero3 .h-t h1 { grid-column: 2 / -1; grid-row: 1; margin: 0; }
+main.sp #sp-digest > #sp-lead.in-digest .hero3 .h-t > :not(h1) { grid-column: 2; margin: 0; }
+main.sp #sp-digest > #sp-lead.in-digest .hero3 .h-tl { grid-column: 3; grid-row: 2 / 5; }
+@media (max-width: 900px) { main.sp #sp-digest > #sp-lead.in-digest .hero3 > *, main.sp #sp-digest > #sp-lead.in-digest .hero3 .h-t > * { grid-column: 1 / -1 !important; grid-row: auto !important; } }
+/* 再燃: 再燃した作品は今日の兆しの中の一部。別の段の面・線・影を外し、区切り線の下に置く（中身は変えない） */
+#rv-sum > #rv-revived.in-digest { margin: 22px 0 0 !important; padding: 20px 0 0 !important; background: none !important; border: 0 !important; border-top: 1px solid var(--line) !important;
+  border-radius: 0 !important; box-shadow: none !important; }
+/* 放送後も熱い: 放送後も熱い作品は今日の兆しの中の一部（再燃と同じ。中身は変えない） */
+#pa-sum > #pa-hot.in-digest { margin: 22px 0 0 !important; padding: 20px 0 0 !important; background: none !important; border: 0 !important; border-top: 1px solid var(--line) !important;
+  border-radius: 0 !important; box-shadow: none !important; }
+/* 言語圏の広がり: 今日の兆しが取り上げている代表の 1 作品のカードを、今日の兆しの中の具体例として置く（区切り線の下。カードの面・線・影は外す） */
+#ls-sum > .ls-ex.in-digest { margin: 22px 0 0; padding: 20px 0 0; border-top: 1px solid var(--line); }
+#ls-sum > .ls-ex.in-digest .lsc { background: none !important; box-shadow: none !important; padding: 0 !important; }
+/* 言語圏の広がり: 一覧の中の、今日の兆しで紹介した作品の参照の行（世界で広がるの参照の行と同じ） */
+.ls-ref { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 6px 14px 6px 6px; border-radius: 10px;
+  border: 1.5px dashed var(--line); text-decoration: none; color: var(--ink); }
+.ls-ref .art { width: 36px; aspect-ratio: 3 / 4; border-radius: 6px; } .ls-ref .wn { font-size: 15px; font-weight: 700; }
+.ls-ref .to { font-size: 14px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+
+/* ============================== 今日の兆しの文章の組版（6 ページ共通。2026-10-12） ==============================
+   1 文目＝見出し（このページで注目すること。大きく太く）→ 残り＝読みやすい段落（行の長さを抑え、行間と段落の間をとる）。
+   数字は太く濃く、作品名は太字のまま。文章は変えない */
+.dg-text { max-width: none; }
+.dg-text .dg-para { max-width: none; }   /* 見出しも本文も横幅いっぱい（右に余白を残して折らない） */
+.dg-text .dg-lead { margin: 0 0 14px; font-family: var(--round); font-size: 24px; font-weight: 800; line-height: 1.55; color: var(--ink); letter-spacing: .01em; }
+.dg-text .dg-para { margin: 0 0 10px; font-size: 17px; line-height: 1.95; color: var(--ink-2); }
+.dg-text .dg-para:last-child { margin-bottom: 0; }
+.dg-text .dg-lead b, .dg-text .dg-lead .nb { color: var(--ink); }
+.dg-text .dg-para b, .dg-text .dg-para .nb { color: var(--ink); font-weight: 700; }
+.dg-text strong.dg-num { font-weight: 800; color: var(--brand-badge); }
+.dg-text .dg-lead strong.dg-num { color: var(--brand-badge); }
+/* 見出しの札・日付と文章の間、文章と下の具体例の間の余白をそろえる */
+main.g #lead .g-kick, main.sp #sp-digest .g-kick, #rv-sum .g-kick, #pa-sum .g-kick, #ls-sum .g-kick { margin-bottom: 16px !important; }
+/* ダッシュボード: 見出し（h1）の下の文章も同じ段落の組み方 */
+main.g #lead .lede.dg-shaped, main.g #lead .lede .dg-text { font-size: 17px !important; line-height: 1.95 !important; color: var(--ink-2) !important; }
+main.g #lead .dg-text { margin: 0 0 18px; }
+main.g #lead .dg-text .dg-para { font-size: 17px; }
+@media (max-width: 600px) {
+  .dg-text .dg-lead { font-size: 19px; line-height: 1.6; } .dg-text .dg-para { font-size: 15.5px; line-height: 1.9; }
+}
+/* 今日の兆しの引用（出典。ADR 0052）: 文章と分け、言語・訳・原文（投稿へのリンク）を 1 行ずつ。ダッシュボードと世界で広がる作品で同じ作り・間隔 */
+.dg-cites { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.dg-cites li { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; padding-left: 10px; border-left: 3px solid var(--line); }
+.dg-cites .ct-l { font-size: 12px; font-weight: 700; color: var(--lc, var(--ink-3)); white-space: nowrap; }
+.dg-cites .ct-r { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.dg-cites .ct-m { color: var(--ink); }
+.dg-cites .ct-o { font-size: 12.5px; color: var(--ink-3); text-decoration: none; overflow-wrap: anywhere; }
+.dg-cites .ct-o.ct-own { font-size: 14px; color: var(--ink); }
+.dg-cites a.ct-o:hover { text-decoration: underline; }
+main.g #lead .dg-text:has(+ .dg-cites) { margin-bottom: 0; }
+main.g #lead .dg-cites { margin: 8px 0 18px; }
+
+/* Game: メニューの項目（一人（ソロ）で遊べる・コントローラで遊べる）を 1 行に収める（本人の指示: メニューは折り返さない） */
+.side a { font-size: 14px; padding: 10px 8px; gap: 8px; white-space: nowrap; }

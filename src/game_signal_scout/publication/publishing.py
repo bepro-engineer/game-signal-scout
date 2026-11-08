@@ -30,6 +30,9 @@ def code_version() -> str:
     h = hashlib.sha256()
     for name in ("content.py", "themes.py"):
         h.update((Path(__file__).parent / name).read_bytes())
+    from game_signal_scout import config as _cfg
+    for f in sorted((Path(__file__).parent.parent / "signal").glob("*.py")) + [_cfg.CONFIG / n for n in ("daily.toml", "pages.toml", "signal_cards.toml", "language_areas.toml")]:
+        h.update(f.read_bytes())   # Anime の流用の文書（signal/）と、その設定を替えたら作り直す
     from game_signal_scout.repositories import insight as insight_repo   # noqa: F401  （AI の読み取りは材料の版に入る: input_version）
     return h.hexdigest()[:12]
 
@@ -45,6 +48,13 @@ def input_version(conn, cfg: dict) -> str:
 def build_documents(conn, cfg: dict) -> tuple[dict[str, object], dict]:
     t0 = time.perf_counter()
     docs = content.build(conn, cfg["analysis"]["version"])
+    conn.rollback()
+    from game_signal_scout.signal import publishing as signal_publishing   # Anime の画面の流用が読む文書（day/・pages・search・soon・work/・days）
+    try:
+        sdocs, sstats = signal_publishing.build_documents(conn, cfg)
+        docs.update(sdocs)
+    except Exception as e:  # noqa: BLE001 — 流用の文書が作れなくても、いまの画面の文書は公開する
+        log_signal_error = f"{type(e).__name__}: {str(e)[:200]}"
     conn.rollback()
     problems = content.audit(docs)
     if problems:

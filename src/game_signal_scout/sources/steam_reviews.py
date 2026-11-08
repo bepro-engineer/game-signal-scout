@@ -8,10 +8,14 @@
 - 投稿者の Steam ID は保存しない（人数の数え方が必要になったら、Scout の鍵で HMAC にする）。
 - 版は timestamp_updated。編集されたレビューは保存を置き換え、正規化をやり直す。
 - 作品ごとに cursor で続きを読み、cursor が変わらない・レビューが空になったら、その作品を終える。
+- 量の多い作品で途中を取りこぼさない（2026-11-08: 1 作品 1,000 件の上限で 42 作品の過去が欠け、「初めて話題に」と誤って出た）:
+  max_age_days の日数分のレビューがそろっている作品は、保存済みのレビューだけのページに届いたら終える（毎日の差分）。
+  そろっていない作品は、max_age_days より古いレビューに届くまで遡る（max_pages_per_app が上限）。
 """
 from __future__ import annotations
 
 import json
+import time
 import urllib.parse
 from collections.abc import Iterator
 from datetime import datetime, timezone
@@ -44,6 +48,8 @@ class SteamReviews(SourceReader):
         # 前回、全作品を読み終えていれば、今回は最初から（新しい・編集されたレビューを拾う）。途中なら続きから
         state = {} if not cursor or cursor.get("complete") else dict(cursor)
         pages = int(self.settings.get("max_pages_per_app", 3))
+        age = int(self.settings.get("max_age_days") or 0)
+        covered = self._covered(appids, age)
         for appid in appids:
             if state.get(appid, {}).get("done"):
                 continue
@@ -58,12 +64,31 @@ class SteamReviews(SourceReader):
                 reviews, nxt = body.get("reviews") or [], body.get("cursor")
                 items = [self._item(appid, r) for r in reviews if r.get("recommendationid")]
                 done = not reviews or not nxt or nxt == pos
+                # 新しい順に読み、この日数より古いレビューに届いたらその作品を終える
+                if age and reviews and min(int(r.get("timestamp_created") or 0) for r in reviews) < time.time() - age * 86400:
+                    done = True
+                if appid in covered and items and self._all_known([i.item_id for i in items]):
+                    done = True                                          # 過去はそろっている: 保存済みに届いた
                 state[appid] = {"cursor": nxt or pos, "done": done}
                 yield Batch(items, dict(state))
                 if done:
                     break
                 pos = nxt
         yield Batch([], {**state, "complete": all(state.get(a, {}).get("done") for a in appids)})
+
+    def _covered(self, appids: list[str], age: int) -> set[str]:
+        """max_age_days の日数分のレビューがそろっている作品（保存したいちばん古いレビューが、その日数より前）。"""
+        if self.conn is None or not age:
+            return set()
+        rows = self.conn.execute("SELECT payload->>'appid' FROM source_item WHERE source = %s AND payload->>'appid' = ANY(%s) GROUP BY 1 "
+                                 "HAVING min(occurred_at) < now() - make_interval(days => %s)", (self.name, appids, age)).fetchall()
+        return {r[0] for r in rows}
+
+    def _all_known(self, ids: list[str]) -> bool:
+        if self.conn is None:
+            return False
+        n = self.conn.execute("SELECT count(*) FROM source_item WHERE source = %s AND item_id = ANY(%s)", (self.name, ids)).fetchone()[0]
+        return n == len(ids)
 
     def _item(self, appid: str, r: dict) -> SourceItem:
         payload = {"appid": appid, **{k: r.get(k) for k in KEEP if k in r},
