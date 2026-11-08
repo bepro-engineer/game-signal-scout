@@ -29,4 +29,5 @@ router.add_api_route("/index.html", _page("index"), methods=["GET"])
 @router.get("/robots.txt")
 def show_robots():
     """クローラーへの決まり（利用規約・データ利用ポリシーと同じ。検索エンジンは許可、AI の学習用のクローラーは断る）。robots.txt はドメインの直下でしか読まれない（#65）。"""
-    return FileResponse(pages.STATIC / "robots.txt", media_type="text/plain; charset=utf-8")
+    # 途中の cache（Cloudflare）に長く残さない。決まりを変えたらすぐ届くように（2026-11-08: 4 時間古いまま残った）
+    return FileResponse(pages.STATIC / "robots.txt", media_type="text/plain; charset=utf-8", headers={"Cache-Control": "public, max-age=300"})

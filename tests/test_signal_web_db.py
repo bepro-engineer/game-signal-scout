@@ -104,7 +104,9 @@ def test_pages_carry_plain_text_for_readers_without_javascript(client):
     work = c.get("/work.html?id=w2246340").text
     assert 'id="plain"' in work and "狩りに出よう。" in work
     assert 'id="plain"' not in c.get("/work.html?id=w0").text            # 公開していない作品: 要約なしで、ページは出す
-    assert 'id="plain"' not in c.get("/about.html").text                 # 説明のページは本文がもともと HTML にある
+    assert 'id="plain"' not in c.get("/about.html").text
+    r = c.get("/robots.txt")
+    assert "ChatGPT-User" not in r.text and "GPTBot" in r.text and r.headers["cache-control"] == "public, max-age=300"   # 頼まれて読む ChatGPT は断らない。学習用は断る                 # 説明のページは本文がもともと HTML にある
     from pathlib import Path
     assert 'getElementById("plain")' in (Path(__file__).parents[1] / "src/game_signal_scout/web/static/boot.js").read_text()
 
