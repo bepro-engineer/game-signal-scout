@@ -51,3 +51,8 @@ DB は共有の PostgreSQL のバックアップに含まれます（Game 専用
 - 利用者の入口は VAIO の Apache（ポート 80）だけです。家の中は `http://192.168.11.3/game/`（`deploy/apache-game.conf` → VAIO の `/etc/apache2/viewers.d/game.conf`）、公開は `https://game-signal-scout.com/`（`deploy/apache-game-public.conf` → `/etc/apache2/sites-available/30-game-public.conf`。Cloudflare Tunnel の公開の名前のルートの URL は Anime と同じ `localhost:80`）。
 - 画面の処理（Mac mini のポート 8720）は VAIO の Apache が中継する裏の口で、受ける相手は Mac mini 自身と VAIO だけです（`[web] allow_from`）。利用者は使いません。
 - 入口を置く・変えるときは VAIO の sudo が要ります（オーナーの操作）。
+
+## 8. 読みに来る AI とクローラー（2026-11-08）
+
+- `robots.txt` は検索エンジンと、利用者に頼まれてページを読む AI（`ChatGPT-User`）を許可し、AI の学習用として知られているクローラー（GPTBot など）を断ります。途中の cache に 5 分より長く残さないよう `Cache-Control: public, max-age=300` を付けます。
+- 画面は JavaScript が描くので、最初の HTML の `<main>` の最後に、公開した文書から作った文だけの要約（`#plain`。`web/plain.py`）を入れています。ブラウザでは `boot.js` が消すので見た目は変わりません。
