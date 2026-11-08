@@ -44,6 +44,10 @@
 - 投稿者の名前・ID は持ちません（取得元ごとの hash）。
 - 削除への追従: 取得元が消えた項目を返すもの（全件の配布物など）は消し、消えた事実は `source_gone` に残します。Steam のレビューは版（更新時刻）が変われば置き換えます。
 - 保留: Steam の掲示板・ワークショップ・告知へのコメント（Steam の利用規約 4.C。オーナーの指示）。
+- 利用条件の記録: [config/source_terms.toml](../config/source_terms.toml)（取得元ごとに一次資料の URL・条項の要旨・確認日、分類 explicitly_prohibited／conditional／explicitly_allowed／unconfirmed）。判定は `source_terms.py` の 1 か所。
+  - 禁止が明記された取得元は、取得・集計・公開に入れない。複数のサイトを読む取得元は、禁止のサイトだけを `excluded_hosts` に書き、記述から外し、保存済みの発言に印 `terms_excluded` を付けて集計・公開から外す（消さない）。未確認を禁止として扱わない。
+  - 公開の画面に原文を引用するのは、`public_quote` が allowed と記録された取得元だけ（2026-11-08 現在 0）。AI が読む声は分析として使う。
+  - 取得の共通の部品（`sources/http.Fetcher`）は、ホストの robots.txt の Crawl-delay を守る。
 
 ## 5. 公開の基準
 
