@@ -114,3 +114,51 @@ def test_poll_sources_are_the_feed_forums():
     cfg = factory.load_sources_config()
     p = pollers(cfg)
     assert {"blizzard_forums", "ptt_games", "computerbase"} <= set(p) and "steam_reviews" not in p and "bluesky" not in p
+
+
+def test_lemmy_and_mastodon_skip_bots_and_old_items():
+    from game_signal_scout.sources.feeds import Lemmy, MastodonTags
+
+    class Http:
+        def get_json(self, s, url):
+            if "/api/v3/post/" in url:
+                return {"posts": [{"post": {"id": 3, "name": "Elden Ring DLC", "body": "so hard", "published": "2026-11-07T10:00:00Z", "ap_id": "https://l/p/3"},
+                                   "creator": {"actor_id": "https://l/u/a"}},
+                                  {"post": {"id": 4, "name": "bot", "published": "2026-11-07T10:00:00Z"}, "creator": {"bot_account": True}}]}
+            if "/api/v3/comment/" in url:
+                return {"comments": []}
+            return [{"id": "9", "created_at": "2026-11-07T10:00:00Z", "content": "<p>Loving the new Hades II update, the boss is great</p>", "account": {"url": "https://m/@a"}},
+                    {"id": "8", "created_at": "2026-11-07T10:00:00Z", "content": "<p>https://x.y #steam</p>", "account": {"url": "https://m/@b"}}]
+    lb = list(Lemmy({"communities": [{"base": "https://l", "name": "games"}]}, Http()).read(None))[0]
+    assert [i.payload["text"] for i in lb.items] == ["Elden Ring DLC\nso hard"]
+    mb = list(MastodonTags({"base": "https://m", "tags": ["gaming"]}, Http()).read(None))[0]
+    assert [i.item_id for i in mb.items] == ["9"] and mb.cursor["https://m#gaming"] == "9"
+
+
+def test_gog_reviews_map_title_and_stop_at_last_seen():
+    from datetime import datetime, timezone
+    from game_signal_scout.sources.gog_reviews import GogReviews
+    now = datetime.now(timezone.utc).isoformat()
+
+    class Http:
+        def get_json(self, s, url):
+            if "catalog" in url:
+                return {"products": [{"id": "9", "title": "Hades II: Soundtrack", "productType": "dlc"}, {"id": "7", "title": "Hades II", "productType": "game"}]}
+            return {"pages": 1, "_embedded": {"items": [{"id": "r2", "creationDate": now, "content": {"title": "Great", "description": "boss &amp; music", "language": "de-DE"},
+                                                          "reviewer": {"id": "1"}, "rating": {"value": 5}},
+                                                         {"id": "r1", "creationDate": now, "content": {"title": "Ok", "description": "fine", "language": "en-US"},
+                                                          "reviewer": {"id": "2"}}]}}
+    r = GogReviews({"apps": [["1145350", "Hades II"]], "max_age_days": 28}, Http())
+    b = list(r.read(None))[0]
+    assert b.cursor["map"] == {"1145350": "7"} and [(i.item_id, i.payload["lang"], i.payload["appid"]) for i in b.items] == [("r2", "de", "1145350"), ("r1", "en", "1145350")]
+    assert b.items[0].payload["text"] == "Great\nboss & music" and "1" not in b.items[0].payload["author"][:0]
+    assert list(r.read(b.cursor))[0].items == []                                # 前回の最新に届いたら止まる
+
+
+def test_nicopedia_responses_have_jst_time_and_daily_id():
+    from game_signal_scout.sources.nicopedia import parse
+    page = ('<span class="bbs_resInfo_resTime" >2026/11/07(土) 19:57:36</span> ID: abc'
+            '</div></dt><dd class="st-bbs_resbody" data-article_id="1" data-res_no="46236" data-id_hash="abc" data-res_hidden="0">'
+            '<div class="bbs_resbody_inner" ><a href="/b/a/x/1-#3" class="dic">&gt;&gt;3</a><br>アプデで<a class="auto" href="/a/x">重く</a>なった</div>\n  </dd>')
+    r = parse(page)
+    assert [(x["no"], x["at"].isoformat(), x["id"], x["text"]) for x in r] == [(46236, "2026-11-07T19:57:36+09:00", "abc", "アプデで重くなった")]

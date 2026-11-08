@@ -93,3 +93,23 @@ label = ["Guild Wars 2 の公式掲示板", "Guild Wars 2 forums"]
 reader = "foundation"
 production = true
 label = ["CD PROJEKT RED の掲示板", "CD PROJEKT RED forums"]
+
+[sources.lemmy_games]
+reader = "foundation"
+production = true
+label = ["Lemmy のゲームのコミュニティ", "Lemmy gaming communities"]
+
+[sources.mastodon_games]
+reader = "foundation"
+production = true
+label = ["Mastodon のゲームの投稿", "Mastodon gaming posts"]
+
+[sources.gog_reviews]
+reader = "foundation"
+production = true
+label = ["GOG のレビュー", "GOG reviews"]
+
+[sources.nicopedia]
+reader = "foundation"
+production = true
+label = ["ニコニコ大百科の掲示板", "Nicopedia boards"]

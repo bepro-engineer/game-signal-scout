@@ -317,3 +317,50 @@ min_interval_hours = 0
 feeds = [
   { url = "https://forums.cdprojektred.com/index.php?forums/-/index.rss" },
 ]
+
+[lemmy_games]
+adapter = "game_signal_scout.sources.feeds:Lemmy"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（Lemmy のゲームのコミュニティ。公開 API。キー不要。台帳 config/source_candidates.toml の lemmy_games）
+game_only = true
+poll = true
+min_interval_hours = 0
+communities = [
+  { base = "https://lemmy.world", name = "games" },
+  { base = "https://lemmy.world", name = "pcgaming" },
+  { base = "https://lemmy.world", name = "patientgamers" },
+  { base = "https://lemmy.world", name = "nintendo" },
+  { base = "https://lemmy.ml", name = "gaming" },
+]
+
+[mastodon_games]
+adapter = "game_signal_scout.sources.feeds:MastodonTags"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（Mastodon のゲームのハッシュタグ。公開 API。キー不要。台帳の mastodon_tags）。宣伝の bot が多いので bot と URL だけの投稿は採らない
+game_only = true
+poll = true
+min_interval_hours = 0
+base = "https://mastodon.social"
+tags = ["gaming", "pcgaming", "videogames", "steam", "ゲーム", "nintendoswitch", "ps5"]
+
+[gog_reviews]
+adapter = "game_signal_scout.sources.gog_reviews:GogReviews"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（GOG のユーザーレビュー。作品ごと・多言語・星 1〜5。公開 JSON。キー不要。台帳の gog_reviews）。作品は取得元で決まる
+max_games = 60
+active_days = 90
+max_age_days = 28
+max_pages_per_app = 20
+refresh_days = 7
+min_interval_hours = 6
+
+[nicopedia]
+adapter = "game_signal_scout.sources.nicopedia:Nicopedia"
+normalizer = "game_signal_scout.services.normalize:voices"
+# 役割: プレイヤーの声（ニコニコ大百科の作品の記事の掲示板。日本語。HTML。キー不要。台帳の nicovideo_dic_bbs）。作品は記事で決まる。Crawl-delay 5 を守る
+max_games = 60
+active_days = 90
+max_pages = 3
+crawl_delay = 5
+refresh_days = 7
+min_interval_hours = 6

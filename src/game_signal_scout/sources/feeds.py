@@ -115,3 +115,61 @@ class Discourse(SourceReader):
             if posts:
                 state[base] = max([int(p.get("id") or 0) for p in posts] + [since])
             yield Batch(items, dict(state))
+
+
+class Lemmy(SourceReader):
+    """Lemmy の公開 API（キー不要）。記述の communities = [{base, name, appid?}]。話題（post）と返信（comment）の新しいもの 50 件ずつ。
+    続きの位置 = コミュニティごとの最大の ID（post・comment 別）。投稿者は actor_id の sha256。bot のアカウントの投稿は採らない。"""
+
+    def read(self, cursor: dict | None) -> Iterator[Batch]:
+        state = dict(cursor or {})
+        for c in self.settings.get("communities") or []:
+            base, name = c["base"].rstrip("/"), c["name"]
+            items = []
+            for kind in ("post", "comment"):
+                key = f"{base}/c/{name}#{kind}"
+                body = self.http.get_json(self.name, f"{base}/api/v3/{kind}/list?community_name={name}&sort=New&limit=50&type_=All")
+                rows = (body or {}).get(f"{kind}s") or []
+                since = int(state.get(key, 0))
+                for r in rows:
+                    o, cr = r.get(kind) or {}, r.get("creator") or {}
+                    if int(o.get("id") or 0) <= since or o.get("deleted") or o.get("removed") or cr.get("bot_account"):
+                        continue
+                    text = plain((o.get("name") or "") + "\n" + (o.get("body") or "") if kind == "post" else o.get("content")).strip()[:4000]
+                    at = when(o.get("published"))
+                    if not text or not at:
+                        continue
+                    items.append(SourceItem(self.name, o.get("ap_id") or f"{base}/{kind}/{o['id']}", at,
+                                            {"text": text, "author": actor(base, cr.get("actor_id")), "url": o.get("ap_id"), "lang": detect(text),
+                                             "kind": kind, **({"appid": str(c["appid"])} if c.get("appid") else {})}, None))
+                if rows:
+                    state[key] = max([int((r.get(kind) or {}).get("id") or 0) for r in rows] + [since])
+            yield Batch(items, dict(state))
+
+
+class MastodonTags(SourceReader):
+    """Mastodon のハッシュタグの公開の流れ（キー不要）。記述の base と tags。前回より新しい投稿だけ（続きの位置 = タグごとの最大の ID）。
+    宣伝の自動投稿が多いので、bot のアカウントと、本文が URL だけの投稿は採らない。"""
+
+    def read(self, cursor: dict | None) -> Iterator[Batch]:
+        import urllib.parse
+        state = dict(cursor or {})
+        base = self.settings["base"].rstrip("/")
+        for tag in self.settings.get("tags") or []:
+            key = f"{base}#{tag}"
+            since = state.get(key)
+            q = f"{base}/api/v1/timelines/tag/{urllib.parse.quote(tag)}?limit=40" + (f"&since_id={since}" if since else "")
+            rows = self.http.get_json(self.name, q) or []
+            items = []
+            for r in rows if isinstance(rows, list) else []:
+                acc = r.get("account") or {}
+                text = plain(r.get("content"))
+                if acc.get("bot") or len(re.sub(r"https?://\S+|#\S+", "", text).strip()) < 15:
+                    continue
+                items.append(SourceItem(self.name, r["id"] if "/" not in str(r["id"]) else hashlib.sha256(r["id"].encode()).hexdigest()[:24],
+                                        when(r.get("created_at")) or datetime.now(timezone.utc),
+                                        {"text": text[:4000], "author": actor(base, acc.get("url") or acc.get("id")), "url": r.get("url"),
+                                         "lang": (r.get("language") or detect(text))}, None))
+            if isinstance(rows, list) and rows:
+                state[key] = max((str(r["id"]) for r in rows), key=lambda x: (len(x), x))
+            yield Batch(items, dict(state))
