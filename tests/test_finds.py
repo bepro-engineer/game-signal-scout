@@ -34,7 +34,7 @@ def test_people_and_trend_are_counted_here_not_by_the_llm():
 def test_group_ignores_numbers_that_were_not_in_the_list():
     exps = [("p1", {"did": "a", "happened": "b", "topic": "t", "verdict": "fun"}), ("p2", {"did": "a", "happened": "b", "topic": "t", "verdict": "fun"})]
     g = insight.group(lambda p: json.dumps([{"title": "同じ体験", "ids": [0, 1, 7]}, {"title": "", "ids": [0]}]), "T", exps)
-    assert g == [{"title": "同じ体験", "fits": "", "members": ["p1", "p2"]}]
+    assert g == [{"title": "同じ体験", "fits": "", "appeal": "", "members": ["p1", "p2"]}]
 
 
 def test_titles_that_are_not_japanese_are_dropped():

@@ -1,0 +1,75 @@
+[
+ {
+  "appid": "4115450",
+  "name": {
+   "ja": "Phantom Blade Zero",
+   "en": "Phantom Blade Zero"
+  },
+  "jp": {
+   "ui": true,
+   "sub": true,
+   "voice": false
+  },
+  "capsule": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4115450/7f882f889630270d3d3fb93825ac6f55b55e7a6c/header.jpg?t=1793261976",
+  "finds": [
+   {
+    "appeal": "多彩な武器による高速チャンバラ",
+    "appeal_kind": "feel",
+    "verdict": "fun",
+    "people": 3,
+    "frustration": 0,
+    "caution": null,
+    "title": "武器ごとに異なるアクションや処刑技を楽しめる",
+    "examples": [
+     {
+      "did": "武器を次々と入手して試す",
+      "happened": "武器ごとに異なる動きを体験し、周回プレイをしたくなる"
+     }
+    ]
+   },
+   {
+    "appeal": "ガードと回避を使い分ける戦略性",
+    "appeal_kind": "feel",
+    "verdict": "mixed",
+    "people": 2,
+    "frustration": 0,
+    "caution": null,
+    "title": "ガードを維持しつつ体幹を削り、多くの攻撃を回避できる",
+    "examples": [
+     {
+      "did": "ガードしながら攻撃し、タイミングを計って回避する",
+      "happened": "体幹を削りつつ、多くの攻撃を回避できる"
+     }
+    ]
+   }
+  ],
+  "singles": [
+   {
+    "verdict": "fun",
+    "appeal_kind": "conquer",
+    "appeal": "難易度を上げることでより熱く動的な戦闘を楽しめる点",
+    "did": "難易度をHellwalkerに変更",
+    "happened": "ボスや雑魚の攻撃が激しくなり、戦闘の動的な面白さが増した",
+    "caution": null
+   },
+   {
+    "verdict": "fun",
+    "appeal_kind": "grow",
+    "appeal": "豊富な武器とアクションの多様性",
+    "did": "25種類の武器を使い分け、武器の成長ルートを辿る",
+    "happened": "武器ごとに異なるアクションや処刑技を楽しめる",
+    "caution": null
+   }
+  ],
+  "shots": [
+   "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4115450/b2ebc232d3d88eafa8546f65b90d8dc8d2ece0b4/ss_b2ebc232d3d88eafa8546f65b90d8dc8d2ece0b4.1920x1080.jpg?t=1793261976",
+   "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4115450/53cc6faf8d70d29593495b2eaffc4c08761989ce/ss_53cc6faf8d70d29593495b2eaffc4c08761989ce.1920x1080.jpg?t=1793261976",
+   "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4115450/b0e2a5cbc38c67ffa2264d4067a6dc26aff2d9c6/ss_b0e2a5cbc38c67ffa2264d4067a6dc26aff2d9c6.1920x1080.jpg?t=1793261976",
+   "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4115450/f478e4ba5f5ba2e6c733be3a351c0b3e48af159d/ss_f478e4ba5f5ba2e6c733be3a351c0b3e48af159d.1920x1080.jpg?t=1793261976",
+   "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4115450/90f17b4095bdd04874edb954e9cfa9b97f8aa0f0/ss_90f17b4095bdd04874edb954e9cfa9b97f8aa0f0.1920x1080.jpg?t=1793261976",
+   "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4115450/51675168a60e5309793179a9f1cb044fb0e49206/ss_51675168a60e5309793179a9f1cb044fb0e49206.1920x1080.jpg?t=1793261976",
+   "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4115450/c6399f479abbecfd9d691705adc7c262f8b5bb86/ss_c6399f479abbecfd9d691705adc7c262f8b5bb86.1920x1080.jpg?t=1793261976",
+   "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4115450/20fa9dbc0f6bd0a7d9f95f2692ba6f8dcd1de73a/ss_20fa9dbc0f6bd0a7d9f95f2692ba6f8dcd1de73a.1920x1080.jpg?t=1793261976"
+  ]
+ }
+]

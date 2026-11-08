@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Signal Scout 見本</title>
+<style>
+/* 見本（2026-11-09 改）: 色は絞る。地は明るい灰、カードは白、文字は墨色、強調は 1 色（ヘッダーの「Beta」の青）だけ。
+   グラデーション・光る効果・判定ごとの色の札は使わない。色はゲームの絵に任せ、文字を載せる所だけ絵を黒の半透明で落とす。
+   人間工学: 1 画面に 1 つの問い／視線は 絵 → 醍醐味の一文 → 根拠 → 次の一歩／本文 16px・行間 1.7・文字と地のコントラスト 7:1 以上／押せる所は 44px 以上 */
+:root { --bg: #f4f5f7; --card: #fff; --ink: #1b1e27; --ink-2: #4a4f5c; --ink-3: #737886; --line: #e3e5ea; --accent: #1f5fd1; --bad: #a8402f; --r: 16px; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
+  font-size: 16px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 14px 24px 64px; }
+.top img { display: block; width: 100%; aspect-ratio: 4.8 / 1; object-fit: cover; border-radius: var(--r); }
+.cols { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 28px; margin-top: 16px; }
+nav.side { position: sticky; top: 16px; align-self: start; display: grid; gap: 2px; background: var(--card); border-radius: var(--r); padding: 8px; }
+nav.side a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 10px; color: var(--ink-2); text-decoration: none; font-weight: 700; font-size: 15px; }
+nav.side a.on { background: #eaf0fb; color: var(--accent); }
+nav.side a:hover { background: var(--bg); }
+
+.hero { position: relative; min-height: 440px; border-radius: 20px; overflow: hidden; display: flex; align-items: flex-end; isolation: isolate; background: #222; }
+.hero > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,.55) 45%, rgba(0,0,0,0) 78%); }
+.hero-in { padding: 36px 40px; max-width: 660px; color: #fff; }
+.kick { font-size: 14px; font-weight: 700; color: rgba(255,255,255,.85); }
+.hero h1 { margin: 8px 0 6px; font-size: clamp(28px, 4vw, 42px); line-height: 1.3; font-weight: 800; }
+.hero .game { margin: 0 0 14px; font-size: 16px; color: rgba(255,255,255,.85); } .hero .game b { color: #fff; }
+.ev { margin: 0 0 18px; font-size: 15px; color: rgba(255,255,255,.9); } .ev b { color: #fff; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: 14px; }
+.hero .meta { color: rgba(255,255,255,.9); }
+.btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 10px; font-weight: 700; text-decoration: none; color: #fff; background: var(--accent); }
+.who { font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin: 0 0 14px; padding: 10px 14px; background: #fff; border-radius: 12px; font-size: 13px; }
+.legend small { color: var(--ink-3); }
+/* 日本語の対応: 1 系統（青）の濃淡で 4 段階 ＋ 記号 */
+.jpl { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; }
+.jpl i { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; font-style: normal; font-size: 12px; font-weight: 800; }
+.jpl-voice i { background: #1f5fd1; color: #fff; } .jpl-sub i { background: #8fb0ea; color: #0d2a63; } .jpl-ui i { background: #dfe8f8; color: #2a4a8a; }
+.jpl-no i, .jpl-unk i { background: #e6e7eb; color: #6b707c; } .jpl-no, .jpl-unk { color: #6b707c; }
+.hero .jpl { color: #fff; } .hero .jpl-no, .hero .jpl-unk { color: rgba(255,255,255,.8); }
+
+h2 { margin: 44px 0 4px; font-size: 24px; line-height: 1.4; }
+.lead { margin: 0 0 16px; color: var(--ink-2); }
+.kinds { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.kind { position: relative; min-height: 150px; border-radius: var(--r); overflow: hidden; display: flex; align-items: flex-end; text-decoration: none; isolation: isolate; background: #222; color: #fff; }
+.kind img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; transition: transform .25s ease; }
+.kind::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgba(0,0,0,.8) 15%, rgba(0,0,0,0) 75%); }
+.kind:hover img { transform: scale(1.04); }
+.kind div { padding: 14px 16px; } .kind b { display: block; font-size: 18px; line-height: 1.4; } .kind small { color: rgba(255,255,255,.85); font-size: 13px; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.card { display: flex; flex-direction: column; background: var(--card); border-radius: var(--r); overflow: hidden; text-decoration: none; box-shadow: 0 1px 3px rgba(20,24,40,.08); transition: box-shadow .15s ease; }
+.card:hover { box-shadow: 0 6px 20px rgba(20,24,40,.14); }
+.card img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.card .in { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.card .gn { font-size: 13px; color: var(--ink-3); font-weight: 700; }
+.card h3 { margin: 0; font-size: 19px; line-height: 1.45; }
+.card p { margin: 0; font-size: 15px; color: var(--ink-2); }
+.card .foot { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--ink-2); }
+.v { font-weight: 700; color: var(--ink); } .v.frustration { color: var(--bad); }
+.warn { color: var(--bad); font-weight: 700; }
+details.how { margin-top: 40px; padding: 14px 18px; border-radius: var(--r); background: var(--card); color: var(--ink-2); font-size: 14px; }
+details.how summary { cursor: pointer; font-weight: 700; color: var(--ink); min-height: 28px; }
+@media (max-width: 900px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  nav.side { position: static; display: flex; overflow-x: auto; scrollbar-width: none; }
+  nav.side a { flex: none; }
+}
+@media (max-width: 600px) {
+  .wrap { padding: 10px 14px 48px; }
+  .top img { aspect-ratio: 3.2 / 1; object-position: left center; }
+  .hero { min-height: 500px; }
+  .hero::before { background: linear-gradient(0deg, rgba(0,0,0,.85) 40%, rgba(0,0,0,.3) 75%, rgba(0,0,0,0)); }
+  .hero-in { padding: 22px 18px; }
+  h2 { font-size: 21px; margin-top: 36px; }
+  .kinds { grid-template-columns: 1fr 1fr; gap: 10px; } .kind { min-height: 130px; } .kind b { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><img src="../../src/game_signal_scout/web/static/site-header.jpg" alt="Game Signal Scout"></div>
+  <div class="cols">
+    <nav class="side"><a class="on" href="#">いま面白いこと</a><a href="#">面白さから探す</a><a href="#">プレイヤーの発見</a><a href="#">作品を探す</a><a href="#">このサイトについて</a></nav>
+    <main id="main"></main>
+  </div>
+</div>
+<script>
+const D = /*DATA*/[];
+const KIND = { conquer: "強敵を自力で乗り越える手応え", explore: "探して、見つける喜び", story: "物語と世界に浸る", grow: "育てて、作り上げる楽しさ",
+  team: "仲間と作戦が決まる快感", versus: "相手との読み合い・駆け引き", feel: "思いどおりに動かす気持ちよさ", surprise: "予想外が起きる面白さ" };
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// 日本語: 一言で。誰が決めたか（販売元が Steam ストアに載せている対応言語）は title とページ下の説明に
+// 日本語の対応（4 段階。遊びやすさの順に 声 ＞ 字幕 ＞ メニューだけ ＞ なし）。色は 1 系統の濃淡と記号で見分ける。出典は下の説明（販売元の Steam ストアの表記）
+const jp = w => { const j = w.jp;
+  const L = !j ? ["unk", "？", "日本語は未確認"] : j.voice ? ["voice", "声", "声も日本語"] : j.sub ? ["sub", "字", "字幕まで日本語（声は外国語）"] : j.ui ? ["ui", "文", "メニューだけ日本語"] : ["no", "－", "日本語なし"];
+  return `<span class="jpl jpl-${L[0]}"><i>${L[1]}</i>${L[2]}</span>`; };
+const V = { fun: "面白い", mixed: "賛否あり", frustration: "不満" };
+// 醍醐味つきの体験を 1 本の一覧に（複数の人のまとまり ＋ ひとりの体験）
+const items = D.flatMap(w => [
+  ...w.finds.filter(f => f.appeal).map(f => ({ w, appeal: f.appeal, kind: f.appeal_kind, verdict: f.verdict, people: f.people, ev: f.examples[0], title: f.title, caution: f.caution,
+    against: f.verdict === "fun" ? f.frustration : 0 })),
+  ...w.singles.filter(e => e.appeal).map(e => ({ w, appeal: e.appeal, kind: e.appeal_kind, verdict: e.verdict, people: 1, ev: e, caution: e.caution, against: 0 }))])
+  .sort((a, b) => b.people - a.people || (a.verdict === "fun" ? -1 : 1));
+// 絵: 作品のスクリーンショット（ストアの作品情報に載っているもの）を、場所ごとに別の 1 枚に
+const shot = (w, i) => (w.shots && w.shots.length ? w.shots[i % w.shots.length] : w.capsule);
+const ppl = n => n > 1 ? `${n}人が同じことを書いた` : "1人の体験（まだ重なる声なし）";
+const h = items.find(x => x.verdict === "fun") || items[0];
+const kinds = Object.keys(KIND).map(k => ({ k, xs: items.filter(x => x.kind === k) })).filter(x => x.xs.length).sort((a, b) => b.xs.length - a.xs.length);
+// 凡例（日本語の印の意味を、印が出る段の上に常に出す）
+const legend = `<div class="legend"><b>日本語の対応</b>${[["voice", "声", "声も日本語（吹き替え）"], ["sub", "字", "字幕まで日本語（声は外国語）"], ["ui", "文", "メニューだけ日本語"], ["no", "－", "日本語なし"]]
+  .map(([k, i, l]) => `<span class="jpl jpl-${k}"><i>${i}</i>${l}</span>`).join("")}<small>販売元のストアの表記</small></div>`;
+document.getElementById("main").innerHTML = !h ? "<p>まだ読めた体験がありません。</p>" : `
+  <section class="hero"><img src="${esc(shot(h.w, 0))}" alt="">
+    <div class="hero-in"><span class="kick">いま、プレイヤーが夢中になっていること</span>
+      <h1>${esc(h.appeal)}</h1>
+      <p class="game"><b>${esc(h.w.name.ja)}</b> を遊んだプレイヤーの体験から</p>
+      <p class="ev"><b>${esc(h.ev.did)}</b> → ${esc(h.ev.happened)}</p>
+      <div class="meta"><span class="who">${ppl(h.people)}</span>${jp(h.w)}<a class="btn" href="#">この作品の体験を見る</a></div></div></section>
+  <h2>どんな面白さを味わいたい？</h2>
+  <p class="lead">世界のプレイヤーが実際に遊んで書いた体験から、面白さの種類ごとに集めました。</p>
+  <div class="kinds">${kinds.map(({ k, xs }, ki) => `<a class="kind" href="#"><img src="${esc(shot(xs[0].w, ki + 1))}" alt="" loading="lazy">
+    <div><b>${KIND[k]}</b><small>${[...new Set(xs.map(x => x.w.name.ja))].slice(0, 2).map(esc).join("・")}　体験 ${xs.length}件</small></div></a>`).join("")}</div>
+  <h2>プレイヤーが見つけた面白さ</h2>
+  <p class="lead">何をして、何が起きて、何が面白かったのか。</p>
+  ${legend}
+  <div class="cards">${items.slice(0, 9).map((x, i) => `<a class="card" href="#"><img src="${esc(i ? shot(x.w, i + 3) : x.w.capsule)}" alt="" loading="lazy">
+    <div class="in"><span class="gn">${esc(x.w.name.ja)}</span><h3>${esc(x.appeal)}</h3>
+      <p>${esc(x.ev.did)} → ${esc(x.ev.happened)}</p>
+      <div class="foot"><span class="v ${x.verdict}">${V[x.verdict]}</span><span>${ppl(x.people)}</span>${x.against ? `<span class="warn">反対の声 ${x.against}人</span>` : ""}${jp(x.w)}</div></div></a>`).join("")}</div>
+  <details class="how"><summary>この情報の出どころ</summary>
+    <p>体験は、世界のプレイヤーがこの 7 日に書いた発言を AI が読み、「何をして、何が起きて、何が面白かったか」を取り出したものです。人数はこちらで数えています（同じ人の複数の発言は 1 人）。原文は載せていません。</p>
+    <p>日本語の対応は 4 段階です。<b>声</b>＝登場人物が日本語でしゃべる（吹き替え）。<b>字</b>＝台詞が日本語の字幕で出る（声は外国語）。<b>文</b>＝メニューや説明の文字だけ日本語。<b>－</b>＝日本語なし。
+      販売元が Steam ストアに載せている対応言語の表（「インターフェース」「字幕」「音声」の欄）のとおりで、実際に遊んだ人の確認ではありません。</p></details>`;
+</script>
+</body>
+</html>

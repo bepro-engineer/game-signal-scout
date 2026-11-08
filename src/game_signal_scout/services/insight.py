@@ -27,6 +27,8 @@ VERDICTS = ("fun", "frustration", "mixed")
 STYLES = ("solo", "coop", "versus")       # その体験をどう遊んでいたか（ひとりで・協力して・対戦で）。発言から言えるときだけ
 INPUTS = ("controller",)                  # 体験が入力機器の操作感についてのとき
 CAUTIONS = ("time", "price", "performance", "bugs", "difficulty", "online")
+# 醍醐味（#2: そのゲームで何が面白いのか、の核心）の種類。体験から言えるときだけ付ける（作品の属性からは付けない）
+APPEALS = ("conquer", "explore", "story", "grow", "team", "versus", "feel", "surprise")
 KANA = re.compile(r"[\u3040-\u30ff]")
 HANZI_ONLY = re.compile(r"[遇到们这个吗么还没为说时会对过進數膨脹遊後變們這個麼還說時會對過]")   # 日本語では使わない簡体字・中国語の語
 
@@ -36,8 +38,13 @@ did は、ゲームの中の具体的な行動・場面・遊び方（例: 大�
 happened は、その結果ゲームの中で具体的に起きたこと（例: ボスを 1 回で倒せた・味方と連携できた・フレームレートが倍になった）。「楽しかった」「良かった」だけなら null。
 style は、その体験をどう遊んでいたときのものか（発言に書いてあるときだけ。言えなければ none）: solo（ひとりで）/ coop（ほかの人と協力して）/ versus（ほかの人と対戦して）/ none
 input は、体験がコントローラーの操作感・使い勝手についてのとき controller、それ以外は none
+appeal は、この体験の醍醐味＝何が面白かったのかの核心を、遊んだ人の実感の言い方で短く書いたもの（日本語 24 字以内）。
+  言い方の例（形だけの参考。この文を使わず、必ず発言の中身で書く）: 「畑を広げるほど毎朝やることが増えて、やめ時を失う」「コーナーぎりぎりでドリフトが決まる瞬間がたまらない」
+  悪い例（使わない）: 「〜の多様性」「〜の戦略性」「〜な点」「〜を楽しめる」のような、硬い名詞や評論の言い方
+  不満だけの体験・面白さが書かれていない体験では空にします。発言にない面白さを足さないでください。
+appeal_kind は、その醍醐味の種類: conquer（強敵・難所を自力で乗り越える手応え）/ explore（探索して見つける喜び）/ story（物語・世界に浸る）/ grow（育てる・作り上げる・やり込む）/ team（仲間との連携が決まる）/ versus（相手との駆け引き・読み合い）/ feel（操作・アクションの気持ちよさ）/ surprise（予想外の展開・意外な遊び方）/ none
 caution は、買う・遊ぶ前に知っておくべき注意（発言に書いてあるときだけ）: time（時間がかかる）/ price（価格・課金）/ performance（重い・動作）/ bugs（不具合）/ difficulty（難しさ）/ online（接続・人がいない・不正）/ none
-各発言について次の JSON を返します: {{"id": 番号, "exp": null または {{"did": "プレイヤーがしたこと（日本語 30 字以内）", "happened": "その結果起きたこと（日本語 40 字以内）", "verdict": "fun（面白い・良かった）/ frustration（不満・困った）/ mixed", "topic": "体験の話題を表す短い日本語（15 字以内）", "style": "solo / coop / versus / none", "input": "controller / none", "caution": "time / price / performance / bugs / difficulty / online / none"}}}}
+各発言について次の JSON を返します: {{"id": 番号, "exp": null または {{"did": "プレイヤーがしたこと（日本語 30 字以内）", "happened": "その結果起きたこと（日本語 40 字以内）", "verdict": "fun（面白い・良かった）/ frustration（不満・困った）/ mixed", "topic": "体験の話題を表す短い日本語（15 字以内）", "appeal": "醍醐味（日本語 30 字以内。なければ空）", "appeal_kind": "conquer / explore / story / grow / team / versus / feel / surprise / none", "style": "solo / coop / versus / none", "input": "controller / none", "caution": "time / price / performance / bugs / difficulty / online / none"}}}}
 次の形の JSON だけを返してください（前置き不要）: {{"items": [各発言の JSON, ...]}}
 
 発言:
@@ -47,8 +54,10 @@ GROUP_PROMPT = """ゲーム「{title}」のプレイヤーの体験の一覧で�
 言い換えでも中身が同じならまとめ、中身が違えば分けます。まとまらないものは入れなくてよいです。番号は一覧にあるものだけを使います。
 title は、一覧にある具体的な行動と結果をそのまま使って書きます（例:「斬馬刀でボスに挑むと、ほぼ一方的に押し切れる」「ボス戦の途中で強制終了し、進行が消える」）。
 「〜を評価する」「〜を感じる」「〜に満足」のような抽象的な言い方にしないでください。一覧にないことは足さないでください。
+appeal は、このまとまりの体験の醍醐味＝何が面白いのかの核心を、遊んだ人の実感の言い方で短く（日本語 24 字以内）。例の文は使わず、一覧の体験の中身で書く。
+「〜の多様性」「〜の戦略性」「〜な点」「〜を楽しめる」のような硬い言い方にしない。一覧にある体験の言葉を使い、面白さが書かれていなければ空にします。
 fits は、一覧の体験そのものから言える「この体験が向いている人」（例: 自力で攻略したい人・決まった仲間と遊べる人）。一覧から言えなければ空にします。
-次の形の JSON だけを返してください（前置き不要）: {{"groups": [{{"title": "まとめた体験を 1 文で（「〜すると、〜」の形。日本語 50 字以内）", "fits": "向いている人（日本語 25 字以内。言えなければ空）", "ids": [番号, ...]}}]}}
+次の形の JSON だけを返してください（前置き不要）: {{"groups": [{{"title": "まとめた体験を 1 文で（「〜すると、〜」の形。日本語 50 字以内）", "appeal": "醍醐味（日本語 30 字以内。なければ空）", "fits": "向いている人（日本語 25 字以内。言えなければ空）", "ids": [番号, ...]}}]}}
 
 一覧:
 {items}"""
@@ -62,6 +71,8 @@ def _json_array(text: str) -> list:
         return []
 
 
+EXAMPLES = ("畑を広げるほど毎朝やることが増えて、やめ時を失う", "コーナーぎりぎりでドリフトが決まる瞬間がたまらない")   # 指示の例の写しは使わない
+STIFF = re.compile(r"(性|な点|の点|点|を楽しめる|が楽しめる|を楽しむ)。?$")   # 硬い・評論の言い方の醍醐味は使わない
 ABSTRACT = re.compile(r"(を|に)(評価する|感じる|満足する|満足した|感じた)。?$")   # 具体的な体験でない見出し
 VAGUE = re.compile(r"^(ゲームを)?(プレイ|遊|始め|購入|買|触|やっ)[^、。]{0,6}$|^(ゲーム|本作|この作品)を(プレイ|遊)")   # 中身のない行動
 
@@ -75,8 +86,11 @@ def _clean_exp(e) -> dict | None:
         return None
     if any(not KANA.search(out[k]) or HANZI_ONLY.search(out[k]) for k in ("did", "happened")):   # 日本語でない（訳されていない）体験は使わない
         return None
-    sy, ip, ca = (str(e.get(k) or "").strip() for k in ("style", "input", "caution"))
-    return {**out, "verdict": v, "style": sy if sy in STYLES else None, "input": ip if ip in INPUTS else None, "caution": ca if ca in CAUTIONS else None}
+    sy, ip, ca, ak = (str(e.get(k) or "").strip() for k in ("style", "input", "caution", "appeal_kind"))
+    ap = str(e.get("appeal") or "").strip()[:40]
+    if v == "frustration" or not KANA.search(ap) or HANZI_ONLY.search(ap) or STIFF.search(ap) or ap in EXAMPLES:   # 不満だけの体験・訳されていない句には醍醐味を付けない
+        ap, ak = "", ""
+    return {**out, "verdict": v, "appeal": ap, "appeal_kind": ak if ak in APPEALS and ap else None, "style": sy if sy in STYLES else None, "input": ip if ip in INPUTS else None, "caution": ca if ca in CAUTIONS else None}
 
 
 def read_statements(ask, title: str, rows: list[dict]) -> dict[str, dict | None]:
@@ -109,11 +123,13 @@ def group(ask, title: str, exps: list[tuple[str, dict]]) -> list[dict]:
         if not KANA.search(str(g["title"])) or HANZI_ONLY.search(str(g["title"])) or ABSTRACT.search(str(g["title"])):   # 日本語でない文・抽象的な文は出さない
             continue
         ids = sorted({int(i) for i in g.get("ids") or [] if str(i).isdigit() and int(i) < len(exps)})
-        fits = str(g.get("fits") or "").strip()[:40]
+        fits, ap = str(g.get("fits") or "").strip()[:40], str(g.get("appeal") or "").strip()[:40]
         if fits and (not KANA.search(fits) or HANZI_ONLY.search(fits)):
             fits = ""
+        if ap and (not KANA.search(ap) or HANZI_ONLY.search(ap) or ABSTRACT.search(ap) or STIFF.search(ap) or ap in EXAMPLES):
+            ap = ""
         if ids:
-            out.append({"title": str(g["title"]).strip()[:80], "fits": fits, "members": [exps[i][0] for i in ids]})
+            out.append({"title": str(g["title"]).strip()[:80], "fits": fits, "appeal": ap, "members": [exps[i][0] for i in ids]})
     return out
 
 
@@ -139,7 +155,9 @@ def tally(groups: list[dict], posts: dict[str, dict], exps: dict[str, dict], sin
             continue
         v = Counter(exps[m]["verdict"] for m in cur)
         trend = "new" if before == 0 else "up" if people >= before * 1.5 else "down" if people * 1.5 <= before else "same"
-        finds.append({"title": g["title"], "fits": g.get("fits") or "", "verdict": _verdict(v), "people": people, "prev": before, "trend": trend,
+        kind = _major(cur, exps, "appeal_kind")
+        ap = g.get("appeal") or next((exps[m]["appeal"] for m in cur if exps[m].get("appeal") and exps[m].get("appeal_kind") == kind), "")
+        finds.append({"title": g["title"], "fits": g.get("fits") or "", "appeal": ap if _verdict(v) != "frustration" else "", "appeal_kind": kind if _verdict(v) != "frustration" else None, "verdict": _verdict(v), "people": people, "prev": before, "trend": trend,
                       "style": _major(cur, exps, "style"), "input": _major(cur, exps, "input"), "caution": _major(cur, exps, "caution"),
                       "fun": v["fun"], "frustration": v["frustration"], "mixed": v["mixed"],
                       "langs": [lg for lg, _ in Counter(posts[m]["lang"] for m in cur if posts[m]["lang"]).most_common()],
@@ -149,7 +167,7 @@ def tally(groups: list[dict], posts: dict[str, dict], exps: dict[str, dict], sin
 
 def singles(posts: dict[str, dict], exps: dict[str, dict], finds_members: set[str], since, limit: int = 6) -> list[dict]:
     """まだほかの人の声と重ならない、ひとりの具体的な体験（直近の窓）。発見ではなく「ひとりの体験」として、そう明記して出す。"""
-    out = [{"did": e["did"], "happened": e["happened"], "verdict": e["verdict"], "topic": e["topic"], "style": e.get("style"), "input": e.get("input"),
+    out = [{"did": e["did"], "happened": e["happened"], "verdict": e["verdict"], "topic": e["topic"], "appeal": e.get("appeal") or "", "appeal_kind": e.get("appeal_kind"), "style": e.get("style"), "input": e.get("input"),
             "caution": e.get("caution"), "lang": posts[k]["lang"]}
            for k, e in sorted(exps.items(), key=lambda kv: posts[kv[0]]["at"], reverse=True) if k not in finds_members and posts[k]["at"] >= since]
     return out[:limit]
