@@ -54,8 +54,7 @@ def test_only_game_context_or_steam_link_is_stored(proc, feed):
     assert feed(frame(1, text="今日は天気がいい"), frame(2, rkey="b", text="new patch broke the game"),
                 frame(3, rkey="c", text="look", link="Some Page", link_uri="https://store.steampowered.com/app/2246340/X/")) == \
         ["unmatched", "buffered", "buffered"]
-    assert proc.rows[f"{A}c"]["steam_appids"] == ["2246340"]
-    assert proc.rows[f"{A}b"]["steam_appids"] == []
+    assert proc.rows[f"{A}c"]["link"].startswith("https://store.steampowered.com/app/2246340")   # 作品の特定は共通の正規化（どの取得元も同じ）
 
 
 def test_duplicate_seq_is_suppressed_and_resume_skips_inclusive_event(proc, feed):
@@ -105,9 +104,7 @@ def test_promo_stream_and_link_only_are_flagged_not_dropped(proc, feed):
     feed(frame(1, rkey="a", text="live now playing the game twitch.tv/x"), frame(2, rkey="b", text="Game Title", link="Game Title"),
          frame(3, rkey="c", text="great game #ad amzn.to/x"), frame(4, rkey="d", text="Download game v1.2 Switch NSP/XCI ROMs"),
          frame(5, rkey="e", text="Now playing on Radio: Song! Tune in now"))
-    assert "stream" in proc.rows[f"{A}a"]["flags"] and "link_only" in proc.rows[f"{A}b"]["flags"] and "affiliate" in proc.rows[f"{A}c"]["flags"]
-    assert "piracy" in proc.rows[f"{A}d"]["flags"]
-    assert f"{A}e" not in proc.rows or "autopost" in proc.rows[f"{A}e"]["flags"]
+    assert {f"{A}a", f"{A}b", f"{A}c", f"{A}d"} <= set(proc.rows)        # 読み方は落とさずに残す。印は共通の正規化が付ける（どの取得元も同じ）
 
 
 # --- 接続の切り替えと再開位置（Anime の test_bluesky_adapter と同じ振る舞い） ---

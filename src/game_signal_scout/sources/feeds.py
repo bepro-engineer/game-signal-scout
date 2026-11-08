@@ -3,7 +3,7 @@
 - FeedForum: 掲示板・コメントの RSS / Atom（XenForo・Invision・Discuz・WordPress のコメント・PTT など）。1 件 = フィードの 1 項目（題名＋本文の抜粋）。
 - Discourse: Discourse の掲示板の公開 JSON（/posts.json = サイト全体の新しい投稿）。1 件 = 1 投稿（本文の全文）。
 どちらも、作品の掲示板（作品が決まる）には記述の appid、総合の掲示板は本文から同定する（normalize.voices・game_only）。
-言語は記述の lang、なければ本文から推定する。投稿者の名前は持たない（sha256 の先頭 16 桁）。前回より新しい項目だけを保存する（続きの位置 = 各フィード・サイトの最新の時刻）。
+言語は記述の lang（なければ共通の正規化が判定する）。投稿者の名前は持たない（sha256 の先頭 16 桁）。前回より新しい項目だけを保存する（続きの位置 = 各フィード・サイトの最新の時刻）。
 """
 from __future__ import annotations
 
@@ -15,7 +15,6 @@ from collections.abc import Iterator
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
-from game_signal_scout.languages_detect import detect
 from game_signal_scout.sources.contract import Batch, SourceItem, SourceReader
 
 NS = {"atom": "http://www.w3.org/2005/Atom", "dc": "http://purl.org/dc/elements/1.1/", "content": "http://purl.org/rss/1.0/modules/content/",
@@ -91,7 +90,7 @@ class FeedForum(SourceReader):
                 text = (plain(e["title"]) + "\n" + plain(e["body"])).strip()[:4000]
                 pid = hashlib.sha256(e["id"].encode()).hexdigest()[:24]
                 items.append(SourceItem(self.name, pid, e["at"], {"text": text, "author": actor(f["url"], e["author"]), "url": e["url"],
-                                                                  "lang": f.get("lang") or detect(text), **({"appid": str(f["appid"])} if f.get("appid") else {}),
+                                                                  "lang": f.get("lang"), **({"appid": str(f["appid"])} if f.get("appid") else {}),
                                                                   "feed": f["url"]}, None))
             if entries:
                 state[f["url"]] = max([e["at"].isoformat() for e in entries] + ([since] if since else []))
@@ -118,7 +117,7 @@ class Discourse(SourceReader):
                     continue
                 items.append(SourceItem(self.name, f"{base}#{p['id']}", at, {"text": text, "author": actor(base, p.get("username")),
                                                                              "url": f"{base}/t/{p.get('topic_slug')}/{p.get('topic_id')}/{p.get('post_number')}",
-                                                                             "lang": s.get("lang") or detect(text), **({"appid": str(s["appid"])} if s.get("appid") else {})}, None))
+                                                                             "lang": s.get("lang"), **({"appid": str(s["appid"])} if s.get("appid") else {})}, None))
             if posts:
                 state[base] = max([int(p.get("id") or 0) for p in posts] + [since])
             yield Batch(items, dict(state))
@@ -147,7 +146,7 @@ class Lemmy(SourceReader):
                     if not text or not at:
                         continue
                     items.append(SourceItem(self.name, o.get("ap_id") or f"{base}/{kind}/{o['id']}", at,
-                                            {"text": text, "author": actor(base, cr.get("actor_id")), "url": o.get("ap_id"), "lang": detect(text),
+                                            {"text": text, "author": actor(base, cr.get("actor_id")), "url": o.get("ap_id"),
                                              "kind": kind, **({"appid": str(c["appid"])} if c.get("appid") else {})}, None))
                 if rows:
                     state[key] = max([int((r.get(kind) or {}).get("id") or 0) for r in rows] + [since])
@@ -176,7 +175,7 @@ class MastodonTags(SourceReader):
                 items.append(SourceItem(self.name, r["id"] if "/" not in str(r["id"]) else hashlib.sha256(r["id"].encode()).hexdigest()[:24],
                                         when(r.get("created_at")) or datetime.now(timezone.utc),
                                         {"text": text[:4000], "author": actor(base, acc.get("url") or acc.get("id")), "url": r.get("url"),
-                                         "lang": (r.get("language") or detect(text))}, None))
+                                         "lang": r.get("language")}, None))
             if isinstance(rows, list) and rows:
                 state[key] = max((str(r["id"]) for r in rows), key=lambda x: (len(x), x))
             yield Batch(items, dict(state))

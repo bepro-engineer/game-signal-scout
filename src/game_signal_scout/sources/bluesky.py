@@ -2,12 +2,12 @@
 
 Anime からそのまま: 再開位置の規則（resume_cursor）、フレームの解釈（parse_frame）、1 周期の受信（Stream: 重複の抑止・削除・更新で
 対象外になった投稿・アカウントの停止と、その人の投稿の除外・形の違反の 1 件飛ばし）、endpoint の切り替えと時刻の巻き戻し、
-本文の取り出し（discovery/text）・言語（discovery/lang）・印（discovery/flags）、投稿者の HMAC（actor_key）。
+本文の取り出し（discovery/text）、投稿者の HMAC（actor_key）。
 Game で替えた所: 保存する投稿の条件（anime の文脈 → ゲームの文脈。GameContext）と、Game の取得元の契約（read(cursor) → Batch）。
-作品の同定（Steam app ID）は取り込みではせず、正規化（services/normalize.voices。どの取得元も同じ）で行う（Anime と同じく、受信と同定を分ける）。
+作品の同定・宣伝などの印・言語は、取り込みではせず、正規化（services/normalize.voices。どの取得元も同じ処理）で行う。
 
-保存（source_item）: 投稿 1 件 = 項目 1 件。payload に本文・言語・投稿者の HMAC（author。did は持たない）・印・リンクの題名・
-Steam のストアのリンクの app ID・返信と引用の相手。項目の ID は at:// URI（did を含む。Anime と同じ）。
+保存（source_item）: 投稿 1 件 = 項目 1 件。payload に本文・投稿者が付けた言語のタグ・投稿者の HMAC（author。did は持たない）・リンクとその題名・
+返信と引用の相手。項目の ID は at:// URI（did を含む。Anime と同じ）。
 """
 from __future__ import annotations
 
@@ -19,8 +19,6 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from game_signal_scout.discovery import lang
-from game_signal_scout.discovery.flags import flags_for
 from game_signal_scout.discovery.text import PostText, _dict, _list, clean, normalize, normalize
 from game_signal_scout.sources.contract import Batch, SourceItem, SourceReader
 
@@ -242,12 +240,10 @@ class Stream:
             if is_update:
                 self._erase(ev.uri, "update_unmatched")
             return "unmatched"
-        lg, prob, _method = lang.detect(pt.text)
-        steam = sorted({m for s in (pt.text, link) for m in STEAM_APP.findall(s)})
         self.rows[ev.uri] = {
             "did": ev.did, "cid": ev.cid, "seq": ev.seq or 0, "received_at": datetime.fromtimestamp(now, tz=timezone.utc),
             "created_at": parse_created_at(ev.record.get("createdAt")), "text": pt.text, "tags": pt.tags, "link_title": pt.link_title or None,
-            "link": link or None, "steam_appids": steam, "lang": lg, "lang_prob": prob, "langs_tag": pt.langs, "flags": flags_for(pt),
+            "link": link or None, "langs_tag": pt.langs,
             "text_hash": hashlib.sha256(pt.text.encode()).hexdigest(), "refs": _reply_refs(ev.record)}
         return "buffered"
 

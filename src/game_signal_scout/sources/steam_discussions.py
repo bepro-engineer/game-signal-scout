@@ -15,7 +15,6 @@ import re
 from collections.abc import Iterator
 from datetime import datetime, timezone
 
-from game_signal_scout.languages_detect import detect
 from game_signal_scout.sources.contract import Batch, SourceItem, SourceReader
 
 BASE = "https://steamcommunity.com/app/{appid}/discussions/0/"
@@ -108,5 +107,5 @@ class SteamDiscussions(SourceReader):
                 continue
             at = datetime.fromtimestamp(p["at"], timezone.utc)
             out[p["id"]] = SourceItem(self.name, p["id"], at, {"appid": appid, "topic": tid, "author": p["author"], "text": p["text"][:4000],
-                                                                 "lang": detect(p["text"]), "op": p["op"], "url": url}, None)
+                                                                 "op": p["op"], "url": url}, None)
         return list(out.values())

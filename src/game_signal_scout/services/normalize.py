@@ -67,6 +67,9 @@ def protondb(conn, source: str, settings: dict | None = None) -> int:
     return normalize(conn, source)
 
 
+STEAM_APP = re.compile(r"store\.steampowered\.com/app/(\d{1,10})")   # ストアのリンクの app ID（どの取得元の本文にも同じに当てる）
+
+
 def voices(conn, source: str, settings: dict | None = None, batch: int = 2000) -> int:
     """どの取得元の発言も同じ手順で player_post にする（取得元の payload: author・text・lang、作品が決まるなら appid、ストアのリンクがあれば steam_appids）。
     作品の辞書は作品の情報の題名（各言語の表示名を含む）。payload に appid があれば、作品は取得元で決まる（matched_by = source）。取得元の名前で分けない。"""
@@ -74,6 +77,7 @@ def voices(conn, source: str, settings: dict | None = None, batch: int = 2000) -
     from game_signal_scout.services.identify import TitleIndex, identify
     from game_signal_scout.discovery.flags import flags_for
     from game_signal_scout.discovery.text import PostText
+    from game_signal_scout.languages_detect import detect as detect_lang
     settings = settings or {}
     from game_signal_scout.services.identify import version as id_version
     titles = post_repo.known_titles(conn)
@@ -91,12 +95,16 @@ def voices(conn, source: str, settings: dict | None = None, batch: int = 2000) -
             index = TitleIndex(titles, args[0], args[1], args[2], game_only=args[3])
         out = []
         for item_id, occurred_at, p in rows:
+            # どの取得元の発言にも同じ処理（取得元の名前・種類で分けない。Adapter が渡すのは取得元の形を直した素材だけ）:
+            # ① 本文・リンクの中のストアのリンクの app ID ② 宣伝・告知・ニュースなどの印 ③ 言語（取得元が示さなければ共通の判定器）
+            text, link = p.get("text") or "", p.get("link") or p.get("url") or ""
+            p = {**p, "steam_appids": sorted({m for s in (text, link) for m in STEAM_APP.findall(s)})}
+            flags = flags_for(PostText(text=text, link_title=p.get("link_title") or "", tags=p.get("tags") or [], has_link=bool(p.get("link"))))
+            lang = p.get("lang") or detect_lang(text)
             # 作品が取得元で決まる発言（作品ごとの掲示板・作品のページのコメント）は、その作品。ほかは本文から同定する
             appid, title, how = (str(p["appid"]), None, "source") if p.get("appid") else identify(p, index)
-            if "flags" not in p:     # 宣伝・告知・ニュースなどの印（どの取得元も同じ規則〔discovery/flags〕。Anime の §4。取得元が印を付けないとき）
-                p["flags"] = flags_for(PostText(text=p.get("text") or "", link_title=p.get("link_title") or "", tags=p.get("tags") or []))
-            out.append({"source": source, "item_id": item_id, "at": occurred_at, "author": p.get("author") or "", "lang": p.get("lang"),
-                        "appid": appid, "title": title, "matched_by": how, "flags": p.get("flags") or [], "text": p.get("text") or "",
+            out.append({"source": source, "item_id": item_id, "at": occurred_at, "author": p.get("author") or "", "lang": lang,
+                        "appid": appid, "title": title, "matched_by": how, "flags": flags, "text": text,
                         "url": p.get("url") if str(p.get("url") or "").startswith("https://") else None, "id_version": ver})
         with conn.transaction():
             total += post_repo.insert(conn, out)

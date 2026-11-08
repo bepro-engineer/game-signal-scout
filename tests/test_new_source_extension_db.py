@@ -221,3 +221,22 @@ def test_system_works_when_any_source_is_stopped_disabled_or_empty(conn, monkeyp
     assert conn.execute("SELECT last_error_type IS NOT NULL FROM source_state WHERE source='src_down'").fetchone()[0]
     assert conn.execute("SELECT count(*) FROM player_post WHERE source='src_ok' AND appid='2246340'").fetchone()[0] == 4
     assert public_document.get_document(conn, f"day/{DAY.isoformat()}")["dashboard"]["works_today"] == 1   # 残りの取得元で画面の文書が成り立つ
+
+
+def test_common_normalizer_applies_the_same_rules_to_every_source(conn):
+    """共通 Service（5 原則）: ストアのリンクからの作品の特定・宣伝などの印・言語の判定は、取得元の読み方ではなく共通の正規化が、どの取得元にも同じに当てる。"""
+    from game_signal_scout.services import normalize
+    t = day_range(DAY)[0] + timedelta(hours=1)
+    for src in ("src_a", "src_b"):
+        conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES "
+                     "(%s, 'l', %s, %s, '{\"author\": \"u1\", \"text\": \"look https://store.steampowered.com/app/2246340/X/\"}'), "
+                     "(%s, 'p', %s, %s, '{\"author\": \"u2\", \"text\": \"live now playing the game twitch.tv/x\"}'), "
+                     "(%s, 'j', %s, %s, '{\"author\": \"u3\", \"text\": \"アプデで重くなった\"}')", (src, t, t, src, t, t, src, t, t))
+    conn.commit()
+    got = {}
+    for src in ("src_a", "src_b"):
+        normalize.voices(conn, src, {})
+        got[src] = {i: (a, m, "stream" in f, l) for i, a, m, f, l in conn.execute(
+            "SELECT item_id, appid, matched_by, flags, lang FROM player_post WHERE source=%s", (src,))}
+    assert got["src_a"] == got["src_b"]                                          # 取得元が違っても同じ結果
+    assert got["src_a"]["l"][:2] == ("2246340", "steam_link") and got["src_a"]["p"][2] is True and got["src_a"]["j"][3] == "ja"
