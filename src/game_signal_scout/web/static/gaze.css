@@ -521,3 +521,8 @@ main.sp .note { margin: 12px 2px 0; font-size: 14px; color: var(--ink-3); }
 @container (max-width: 990px) { .g-row { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; } .g-row > li:nth-child(n+7) { display: none; } }
 @container (max-width: 850px) { .g-row { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; } .g-row > li:nth-child(n+5) { display: none; } }
 @container (max-width: 560px) { .g-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px; } }
+/* 今チェックしておきたい作品（#2）: 右の小さなカードは中身の高さだけ（左の大きなカードの高さに引き伸ばさない）。メインが狭いときは縦に並べる */
+.ck-side { align-self: start; justify-content: flex-start; } .ck-side > li, .ck-side > .ck2 { flex: 0 0 auto; height: auto !important; }
+.ck2 { align-items: center; }
+#others { container-type: inline-size; }
+@container (max-width: 900px) { .ckg { grid-template-columns: minmax(0, 1fr) !important; } }
