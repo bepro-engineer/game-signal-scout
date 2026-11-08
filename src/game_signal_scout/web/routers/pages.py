@@ -26,6 +26,13 @@ for _name in pages.PAGES:
 router.add_api_route("/index.html", _page("index"), methods=["GET"])
 
 
+@router.get("/revival.html")
+def moved_revival_page():
+    """「再燃」は「プレイヤーの発見」の「いま変わったこと」にまとめた（#2）。"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse("finds.html?view=changed", status_code=308)
+
+
 @router.get("/spread.html")
 def moved_spread_page():
     """「世界で広がる作品」は「プレイヤーの発見」に置き換えた（#2）。古いリンクは新しいページへ。"""

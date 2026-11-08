@@ -6,7 +6,11 @@
   const INTENT = (() => { try { return new URLSearchParams(location.search).get("intent") || ""; } catch (e) { return ""; } })();
   const IT = A.INTENTS.find(x => x[0] === INTENT);
   const fits = w => w.finds.filter(f => f.intent === INTENT && f.verdict !== "frustration");
-  const F = IT ? ALL.filter(w => fits(w).length).sort((a, b) => fits(b)[0].people - fits(a)[0].people)
+  // いま変わったこと（#2: 「再燃」の置き換え）: 前の週になかった・増えた体験だけ。なぜ遊ぶ意味が変わったかを、体験と人数で示す
+  const VIEW = (() => { try { return new URLSearchParams(location.search).get("view") || ""; } catch (e) { return ""; } })();
+  const changed = w => w.finds.filter(f => f.trend === "new" || f.trend === "up");
+  const F = VIEW === "changed" ? ALL.filter(w => changed(w).length).map(w => ({ ...w, finds: changed(w) })).sort((a, b) => b.finds[0].people - a.finds[0].people)
+    : IT ? ALL.filter(w => fits(w).length).sort((a, b) => fits(b)[0].people - fits(a)[0].people)
     .map(w => ({ ...w, finds: [...fits(w), ...w.finds.filter(f => !fits(w).includes(f) && (f.verdict === "frustration" || f.caution))] })) : ALL;
   const CAUTION = { time: ["時間がかかる", "Time-consuming"], price: ["価格・課金", "Price / monetization"], performance: ["動作が重い", "Performance"],
     bugs: ["不具合", "Bugs"], difficulty: ["難しさ", "Difficulty"], online: ["接続・対戦相手", "Online issues"] };
@@ -30,7 +34,8 @@
         <ol class="fd-fs">${w.finds.map(f => find(f, w)).join("")}</ol>
         <p class="fd-src">${tr(`${esc(w.since)}からの 7 日に、この作品について書いた ${num(w.read_people || 0)}人の発言を AI が読み、具体的な体験を書いた ${num(w.experiences || 0)}件をまとめました。`,
           `AI read posts by ${num(w.read_people || 0)} players over 7 days from ${esc(w.since)} and grouped ${num(w.experiences || 0)} concrete experiences.`)}</p></div></article>`;
-  const tabs = `<nav class="fd-tabs">${[["", "すべて", "All"], ...A.INTENTS].map(([k, ja, en]) => `<a href="finds.html${k ? `?intent=${k}` : ""}"${k === INTENT ? ' class="on" aria-current="page"' : ""}>${tr(ja, en)}</a>`).join("")}</nav>`;
+  const tabs = `<nav class="fd-tabs">${[["", "すべて", "All"], ...A.INTENTS].map(([k, ja, en]) => `<a href="finds.html${k ? `?intent=${k}` : ""}"${k === INTENT && VIEW !== "changed" ? ' class="on" aria-current="page"' : ""}>${tr(ja, en)}</a>`).join("")}
+    <a href="finds.html?view=changed"${VIEW === "changed" ? ' class="on" aria-current="page"' : ""}>${tr("いま変わったこと", "What changed")}</a></nav>`;
   $("fd-note").innerHTML = tabs + `<p>${tr("人数は、同じ具体的な体験を書いた別々の人の数です（同じ人の複数の投稿は 1 人）。AI は発言を読んでまとめるだけで、数は数えていません。発言の原文は載せていません。",
     "Counts are distinct players who wrote the same concrete experience (several posts by one player count once). AI only reads and groups; counting is done separately. Original posts are not shown.")}</p>`;
   $("fd-list").innerHTML = F.length ? F.map(card).join("")

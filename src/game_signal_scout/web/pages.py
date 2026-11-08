@@ -44,7 +44,7 @@ PAGES: dict[str, Page] = {
     # Game: プレイヤーの発見（#2。「世界で広がる作品」の置き換え。古い spread.html は finds.html へ転送する）
     "finds": Page("プレイヤーの発見", "What players found", CSS_BASE + ["finds.css"], "pages", "finds.js"),
     "lang": Page("言語別の作品", "Titles by language", CSS_BASE, "day", "lang.js"),
-    "revival": Page("再燃している作品", "Heating up again", CSS_PAGE, "pages", "revival.js"),
+    # 「再燃」はプレイヤーの発見の「いま変わったこと」（finds.html?view=changed）にまとめた（#2。アニメの放送後の前提は Game に合わない。古い URL は転送）
     "langspread": Page("言語圏の広がり", "Language spread", CSS_PAGE + ["langspread.css"], "pages", "langspread.js"),
     # 作品詳細・作品を探す: 追加の作品情報の表示の語（タグ・役割・視聴状況の日本語。ADR 0041）は extra.js
     "search": Page("作品を探す", "Find titles", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js", ("extra.js",)),

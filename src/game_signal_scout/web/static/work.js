@@ -16,7 +16,7 @@
     source_material_read: GROUP[2][1], recommend: GROUP[2][1], fan_creation: GROUP[2][1], share: GROUP[3][1] };
   const PAGE = { language_spread: [tr("言語圏の広がり", "Language spread"), "langspread.html"],
     post_air: [tr("放送後も熱い（放送を終えた作品・これから終える作品）", "After the finale (ended / ending soon)"), "postair.html"],
-    revival: [tr("再燃（話題が落ち着いている作品）", "Heating up again (quiet titles)"), "revival.html"] };
+    revival: [tr("いま変わったこと", "What changed"), "finds.html?view=changed"] };
   const name = nm(W.name);
   document.title = `${name} | Game Signal Scout`;
   const days = W.days, last = days.at(-1);
