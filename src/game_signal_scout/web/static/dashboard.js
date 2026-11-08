@@ -50,7 +50,7 @@
   function leadFinds() { const ids = G.featured.map(w => w.id), w = ids.map(i => FI.find(x => x.id === i)).find(x => x && (x.finds.length || x.singles.length));
     if (!w) return "";
     const li = [...w.finds.slice(0, 3).map(f => `<li><span class="ask-v ask-v-${esc(f.verdict)}">${esc(tr(...VJ[f.verdict]))}</span>${esc(f.title)}<small>${tr(`${num(f.people)}人`, `${num(f.people)} players`)}${f.trend === "new" || f.trend === "up" ? tr("・今週増えた", " · up this week") : ""}</small></li>`),
-      ...w.singles.slice(0, Math.max(0, 3 - w.finds.length)).map(e => `<li><span class="ask-v ask-v-${esc(e.verdict)}">${esc(tr(...VJ[e.verdict]))}</span>${esc(e.did)} → ${esc(e.happened)}<small>${tr("1人の体験", "1 player")}</small></li>`)];
+      ...w.singles.slice(0, Math.max(0, 3 - w.finds.length)).map(e => `<li><span class="ask-v ask-v-${esc(e.verdict)}">${esc(tr(...VJ[e.verdict]))}</span>${esc(e.act)} → ${esc(e.result)}<small>${tr("1人の体験", "1 player")}</small></li>`)];
     return `<div class="g-did"><p>${tr(`『${esc(A.nm(w.name))}』でプレイヤーがしたこと・起きたこと`, `What players did in ${esc(A.nm(w.name))}`)}</p><ul>${li.join("")}</ul></div>`; }
   $("lead").innerHTML = `
     <div class="g-kick"><b>${tr("今日の兆し", "Today's signal")}</b><span class="g-day">${esc(today[L])}</span>
@@ -216,8 +216,9 @@
     const meta = c => [`${tr("初検知", "First seen")} ${first(c)}${grow(c) ? `・${grow(c)}` : ""}`, `${tr("その後", "After")}: ${(c.after || {})[L] || ""}`,
       ...(nl(c) ? [`${tr("新しい言語圏", "New language areas")}: ${nl(c)}`] : [])].join(" ・ ");
     const small = c => `<li class="ck2" data-cls="${esc(c.cls || "")}">${link(c)}${art(c)}<div class="ck2-t">${wn(c.name, 1)}<span class="ck2-l"><i>${esc((c.label || {})[L] || "")}</i>${esc((c.line || {})[L] || "")}</span><span class="ck2-m" title="${esc(meta(c))}">${esc(meta(c))}</span></div></li>`;
-    if (!CK.length && G.checks.length) {
-      $("others").remove();   // 動き始めた作品はすべて上の段に出した（空だと書かない）
+    if (!CK.length && G.checks.length) {   // 動き始めた作品は、すべて今日の兆しの見出しの作品だった: 段は消さず、そう書いて上へ案内する（空だと書かない・隠さない）
+      $("others").innerHTML = `<h2 class="g-h">${tr("今チェックしておきたい作品", "Worth a look now")}</h2><div class="rv-empty"><div><b>${tr(`この日に動き始めた作品は、上の「今日の兆し」の${G.checks.map(c => `『${esc(nm(c.name))}』`).join("・")}でした`, `The title that started moving today is the one in “Today's signal” above`)}</b>
+        <p><a href="#lead">${tr("今日の兆しへ戻る ↑", "Back to Today's signal ↑")}</a></p></div></div>`;
     } else if (!CK.length) {
       $("others").innerHTML = `<h2 class="g-h">${tr("今チェックしておきたい作品", "Worth a look now")}</h2><div class="rv-empty"><div><b>${tr("この日に動き始めた作品は見つかりませんでした", "No title started moving on this day")}</b></div></div>`;
     } else {

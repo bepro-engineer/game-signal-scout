@@ -58,7 +58,7 @@
   const SCORES = [["80", tr("80点以上", "80+")], ["70", tr("70点以上", "70+")], ["60", tr("60点以上", "60+")]];
   $("sr-panel").innerHTML = `<label class="sr-q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input id="sr-q" type="search" autocomplete="off" placeholder="${tr("作品名で探す（日本語・英語どちらでも）", "Search by title (Japanese or English)")}" value="${esc(st.q)}" aria-label="${tr("作品名", "Title")}"></label>
-    <div class="sr-row"><span class="sr-l">${tr("日本語", "Japanese")}</span><span class="sr-chips">${chipBtn("jp", "", tr("すべて", "All"), W.length)}${[["voice", tr("音声も日本語", "Japanese voice")], ["sub", tr("字幕まで日本語", "Japanese subtitles or voice")], ["any", tr("メニューだけでも日本語", "Japanese menus or more")], ["none", tr("日本語なし", "No Japanese")]].map(([k, l]) => chipBtn("jp", k, l, cnt(w => hitJ(w, k)))).join("")}</span></div>
+    <div class="sr-row"><span class="sr-l">${tr("日本語", "Japanese")}</span><span class="sr-chips">${chipBtn("jp", "", tr("すべて", "All"), W.length)}${[["voice", tr("日本語音声", "Japanese audio")], ["sub", tr("日本語字幕以上", "Japanese subtitles or more")], ["any", tr("日本語UI以上", "Japanese UI or more")], ["none", tr("日本語非対応", "No Japanese")]].map(([k, l]) => chipBtn("jp", k, l, cnt(w => hitJ(w, k)))).join("")}</span></div>
     <div class="sr-row"><span class="sr-l">${tr("発売年", "Year")}</span><span class="sr-sel"><select id="sr-year" aria-label="${tr("発売年", "Year")}"><option value="">${tr("すべて", "All")}</option>${years.map(([y, n]) => `<option value="${esc(y)}">${tr(`${y}年（${n}）`, `${y} (${n})`)}</option>`).join("")}</select></span>
       ${tagsAll.length ? `<span class="sr-l sr-l2">${tr("タグ", "Tag")}</span><span class="sr-sel"><select id="sr-tag" aria-label="${tr("タグ", "Tag")}"><option value="">${tr("すべて", "All")}</option>${tagsAll.map(([t, n]) => `<option value="${esc(t)}">${esc(EX.tag(t))}${tr(`（${n}）`, ` (${n})`)}</option>`).join("")}</select></span>` : ""}</div>
     <div class="sr-row"><span class="sr-l">${tr("ジャンル", "Genre")}</span><span class="sr-sel"><select id="sr-genre" aria-label="${tr("ジャンル", "Genre")}"><option value="">${tr("すべて", "All")}</option>${genres.map(([g, n]) => `<option value="${esc(g)}">${esc(GENRE[g] || g)}${tr(`（${n}）`, ` (${n})`)}</option>`).join("")}</select></span>
@@ -79,7 +79,7 @@
 
   function render() {
     const list = filtered(), shown = list.slice(0, st.n);
-    const JPN = { any: tr("メニューだけでも日本語", "Japanese menus or more"), sub: tr("字幕まで日本語", "Japanese subtitles or voice"), voice: tr("音声も日本語", "Japanese voice"), none: tr("日本語なし", "No Japanese"), unknown: tr("日本語は未確認", "JP unknown") };
+    const JPN = { any: tr("日本語UI以上", "Japanese UI or more"), sub: tr("日本語字幕以上", "Japanese subtitles or more"), voice: tr("日本語音声", "Japanese audio"), none: tr("日本語非対応", "No Japanese"), unknown: tr("日本語未確認", "JP unknown") };
     const conds = [st.q && `「${esc(st.q)}」`, st.jp && JPN[st.jp], st.kind && esc(KIND[st.kind]), st.lang && (st.lang === "other" ? tr("そのほかの言語圏", "Other language areas") : esc(ln(st.lang))), st.air && esc(AIR[st.air]), st.genre && esc(GENRE[st.genre] || st.genre),
       st.score && tr(`平均評価${st.score}点以上`, `Score ${st.score}+`), st.year && tr(`${esc(st.year)}年`, esc(st.year)), st.tag && esc(EX.tag(st.tag))].filter(Boolean);
     $("sr-count").innerHTML = `<b>${num(list.length)}</b>${tr("作品", " titles")}<span>${tr(`（全${W.length}作品中。${md(P.first)}〜${md(P.latest)}に話題の変化を観測した${W.length - NPAGE}作品と、各ページにだけ載っている${NPAGE}作品）`,

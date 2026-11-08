@@ -13,7 +13,7 @@
   const kinds = Object.keys(A.APPEAL).map(k => [k, ALL.filter(x => x.kind === k).length]).filter(([, n]) => n);
   const chips = `<div class="fd-row"><a href="${url({ k: "" })}"${!st.k ? ' class="on" aria-current="true"' : ""}>${tr("すべての面白さ", "All")}<small>${num(ALL.length)}</small></a>
       ${kinds.map(([k, n]) => `<a href="${url({ k: st.k === k ? "" : k })}"${st.k === k ? ' class="on" aria-current="true"' : ""}>${esc(tr(...A.APPEAL[k]))}<small>${num(n)}</small></a>`).join("")}
-      <a href="${url({ jp: st.jp ? "" : "any" })}"${st.jp ? ' class="on" aria-current="true"' : ""}>${tr("日本語で遊べる作品だけ", "Playable in Japanese only")}${st.jp ? " ×" : ""}</a></div>`;
+      <a href="${url({ jp: st.jp ? "" : "any" })}"${st.jp ? ' class="on" aria-current="true"' : ""}>${tr("日本語UI以上の作品だけ", "Japanese UI or more only")}${st.jp ? " ×" : ""}</a></div>`;
   // 買う前に知っておきたいこと: 不満・注意の体験（作品ごと。醍醐味のないものも含む）
   const warns = FI.filter(w => !st.jp || jpOk(w)).flatMap(w => [...w.finds.filter(f => f.verdict === "frustration" || f.caution).map(f => ({ w, f, ev: (f.examples || [])[0] || {}, people: f.people })),
     ...w.singles.filter(e => e.verdict === "frustration" || e.caution).map(e => ({ w, f: e, ev: e, people: 1 }))]).sort((a, b) => b.people - a.people).slice(0, 12);

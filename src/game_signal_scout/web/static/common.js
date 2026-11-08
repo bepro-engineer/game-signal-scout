@@ -20,16 +20,17 @@
   const wn = (name, lines = 2, tag = "b") => `<${tag} class="wn l${lines === 1 ? 1 : 2}" title="${esc(nm(name))}">${esc(nm(name))}</${tag}>`;
   // 日本語の対応（#2。日本人が最初に判断する）: 音声 > 字幕 > UI の順に、いちばん深い対応を 1 つの札で。属性がなければ「未確認」（非対応と混ぜない）
   const jpLevel = w => !w || w.jp == null ? "unknown" : w.jp.voice ? "voice" : w.jp.sub ? "sub" : w.jp.ui ? "ui" : "none";
-  // 日本語の対応（#2）: 遊びやすさの順に 4 段階。記号は使わず、印そのものに言葉で書く（音声も日本語＝吹き替え／字幕が日本語＝声は外国語／メニューだけ日本語／日本語なし）。
-  // 色は強調の紫 1 系統の濃淡で段階の目安だけ。出典は販売元のストアの対応言語の表（凡例の下に書く）
-  const JPL = { voice: ["音声も日本語", "Japanese voice"], sub: ["字幕が日本語", "Japanese subtitles"], ui: ["メニューだけ日本語", "Japanese menus only"],
-    none: ["日本語なし", "No Japanese"], unknown: ["日本語は未確認", "Japanese unknown"] };
+  // 日本語の対応（#2）: 一般的な言い方の札（日本語音声・日本語字幕・日本語UI・日本語非対応）。いちばん高い段階を 1 つだけ出す。
+  // 色は強調の紫 1 系統の濃淡で段階の目安。意味は凡例（札と短い定義）を、札の出る領域に必ず出す。出典は販売元のストアの対応言語の表
+  const JPL = { voice: ["日本語音声", "Japanese audio"], sub: ["日本語字幕", "Japanese subtitles"], ui: ["日本語UI", "Japanese UI"],
+    none: ["日本語非対応", "No Japanese"], unknown: ["日本語未確認", "Japanese unknown"] };
   const jpTag = w => { const k = jpLevel(w); return `<span class="jp jp-${k}">${esc(tr(...JPL[k]))}</span>`; };
-  const jpLegend = () => `<div class="jp-legend"><b>${tr("日本語の対応", "Japanese support")}</b>
-    <span><span class="jp jp-voice">${tr("音声も日本語", "Japanese voice")}</span>${tr("登場人物が日本語でしゃべる", "characters speak Japanese")}</span>
-    <span><span class="jp jp-sub">${tr("字幕が日本語", "Japanese subtitles")}</span>${tr("声は外国語、せりふは日本語の字幕", "foreign voice, Japanese subtitles")}</span>
-    <span><span class="jp jp-ui">${tr("メニューだけ日本語", "Japanese menus only")}</span>${tr("せりふは日本語にならない", "dialogue not in Japanese")}</span>
-    <small>${tr("販売元がストアに載せている対応言語の表より", "From the publisher's store listing")}</small></div>`;
+  const jpLegend = () => `<div class="jp-legend"><b>${tr("凡例", "Legend")}</b>
+    <span><span class="jp jp-voice">${tr("日本語音声", "Japanese audio")}</span>${tr("声・字幕・UI が日本語", "audio, subtitles and UI")}</span>
+    <span><span class="jp jp-sub">${tr("日本語字幕", "Japanese subtitles")}</span>${tr("字幕・UI が日本語（声は外国語）", "subtitles and UI")}</span>
+    <span><span class="jp jp-ui">${tr("日本語UI", "Japanese UI")}</span>${tr("メニュー等のみ日本語", "menus only")}</span>
+    <span><span class="jp jp-none">${tr("日本語非対応", "No Japanese")}</span></span>
+    <small>${tr("出典: 販売元のストアの対応言語", "Source: publisher's store listing")}</small></div>`;
   // 凡例は必ず付ける（#2）: 日本語の印が出る領域（本文・左の列）ごとに、最初の印より前に凡例がなければ、その印を含む段の前に入れる。
   // 後から足される印（「もっと見る」など）は、同じ領域の先頭の凡例が受け持つ
   const ensureJpLegend = () => document.querySelectorAll("main, .sidecol").forEach(root => {
@@ -331,7 +332,7 @@
     ...w.singles.filter(e => e.appeal).map(e => ({ w, appeal: e.appeal, kind: e.appeal_kind, verdict: e.verdict, people: 1, ev: e, caution: e.caution, against: 0, style: e.style, input: e.input }))])
     .sort((a, b) => b.people - a.people || (a.verdict === "fun" ? 0 : 1) - (b.verdict === "fun" ? 0 : 1));
   const pplWrote = n => n > 1 ? tr(`${num(n)}人が同じことを書いた`, `${num(n)} players wrote the same`) : tr("1人の体験（まだ重なる声なし）", "One player (not yet echoed)");
-  const evLine = ev => ev && ev.did ? `<b>${esc(ev.did)}</b> → ${esc(ev.happened)}` : "";
+  const evLine = ev => ev && ev.act ? `<b>${esc(ev.act)}</b> → ${esc(ev.result)}` : "";
   const dHero = x => `<section class="dh"><img src="${esc(shot(x.w, 0))}" alt="" referrerpolicy="no-referrer">
       <div class="dh-in"><span class="dh-k">${tr("いま、プレイヤーが夢中になっていること", "What players are into right now")}</span>
         <h1>${esc(x.appeal)}</h1><p class="dh-g">${tr(`<b>${esc(nm(x.w.name))}</b> を遊んだプレイヤーの体験から`, `From players of <b>${esc(nm(x.w.name))}</b>`)}</p>
