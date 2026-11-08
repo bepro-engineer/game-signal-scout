@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 
 from game_signal_scout.discovery import lang
 from game_signal_scout.discovery.flags import flags_for
-from game_signal_scout.discovery.text import MalformedRecordError, PostText, clean, extract_post_text, normalize
+from game_signal_scout.discovery.text import PostText, _dict, _list, clean, normalize, normalize
 from game_signal_scout.sources.contract import Batch, SourceItem, SourceReader
 
 SOURCE = "bluesky"
@@ -347,3 +347,63 @@ def _payload(row: dict, author: str) -> dict:
     out["created_at"] = row["created_at"].isoformat() if row["created_at"] else None
     out["received_at"] = row["received_at"].isoformat()
     return out
+
+
+# ---- この取得元の投稿の形（record）の読み方（共通の部品から移した。取得元ごとの読み方は sources/ に置く）
+# record は投稿者が書く JSON で、形どおりとは限らない。照合に欠かせない部分（record が object・text が文字列）の違反は MalformedRecordError（その投稿だけ飛ばす）。
+# 任意の部分（embed・facets・langs・リンクの題名）の形の違いは「ない」ものとして扱う。
+_HASHTAG_RE = re.compile(r"(?:^|\s)[#＃]([^\s#＃.,!?、。！？]+)")
+
+
+class MalformedRecordError(ValueError):
+    """投稿の record が、照合に欠かせない部分で想定の形と違う（入力データの問題。プログラムの不具合ではない）。"""
+
+
+def extract_post_text(record: dict) -> PostText:
+    if not isinstance(record, dict):
+        raise MalformedRecordError(f"record が object ではない（{type(record).__name__}）")
+    raw = record.get("text")
+    if raw is not None and not isinstance(raw, str):
+        raise MalformedRecordError(f"text が文字列ではない（{type(raw).__name__}）")
+    text = clean(raw)
+    tags: list[str] = []
+    for facet in _list(record.get("facets")):
+        for feat in _list(_dict(facet).get("features")):
+            feat = _dict(feat)
+            tag = clean(feat.get("tag"))
+            if feat.get("$type") == "app.bsky.richtext.facet#tag" and tag:
+                tags.append(tag)
+    for m in _HASHTAG_RE.finditer(text):
+        tags.append(m.group(1))
+    # embed は lexicon では 1 つの object。配列など形の違うものは「埋め込みなし」として扱う
+    embed = _dict(record.get("embed"))
+    etype = embed.get("$type", "")
+    etype = etype if isinstance(etype, str) else ""
+    link_title = ""
+    has_link = False
+    if etype == "app.bsky.embed.external":
+        has_link = True
+        link_title = clean(_dict(embed.get("external")).get("title"))
+    elif etype == "app.bsky.embed.recordWithMedia":
+        media = _dict(embed.get("media"))
+        if media.get("$type") == "app.bsky.embed.external":
+            has_link = True
+            link_title = clean(_dict(media.get("external")).get("title"))
+    has_media = etype in ("app.bsky.embed.images", "app.bsky.embed.video") or (
+        etype == "app.bsky.embed.recordWithMedia"
+    )
+    seen: set[str] = set()
+    uniq_tags = []
+    for t in tags:
+        n = normalize(t)
+        if n not in seen:
+            seen.add(n)
+            uniq_tags.append(t)
+    return PostText(
+        text=text,
+        tags=uniq_tags,
+        link_title=link_title,
+        langs=[clean(x) for x in _list(record.get("langs")) if isinstance(x, str)],
+        has_link=has_link,
+        has_media=has_media,
+    )

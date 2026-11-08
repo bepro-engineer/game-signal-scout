@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from game_signal_scout.discovery.text import MalformedRecordError, extract_post_text
+from game_signal_scout.sources.bluesky import MalformedRecordError, extract_post_text
 from game_signal_scout.services.identify import TitleIndex, identify
 from game_signal_scout.sources import bluesky as bs
 from game_signal_scout.sources.bluesky import GameContext, Stream, parse_frame
