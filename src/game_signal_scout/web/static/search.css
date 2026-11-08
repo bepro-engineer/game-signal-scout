@@ -52,3 +52,4 @@
 .sr-exp-more { text-align: right; margin: 6px 0 0; } .sr-exp-more a { font-weight: 700; color: #5246c9; text-decoration: none; }
 .sr-exp-none { margin: 0; padding: 12px 14px; border-radius: 12px; background: #fff; color: #555; font-size: 14px; }
 .sr-xp-list { margin-top: 16px; }
+.sr-fun { display: block; margin-top: 4px; font-size: 14px; font-weight: 700; line-height: 1.5; color: var(--ink, #20283d); overflow-wrap: anywhere; }
