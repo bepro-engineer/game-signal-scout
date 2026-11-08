@@ -80,4 +80,6 @@ def test_deleted_posts_and_gone_accounts_are_removed_with_their_normalized_rows(
     run(frame(4, op="delete", rkey="c"), frame(5, did="did:plc:bob", kind="account"))
     assert [r[0] for r in posts(conn)] == [f"{A}a"]
     assert conn.execute("SELECT count(*) FROM source_item WHERE source='bluesky'").fetchone()[0] == 1
+    # 削除の事実は残す（Anime の §2）: 消えた投稿 1 件と消えたアカウント 1 件。本文・名前は持たない
+    assert sorted(k for (k,) in conn.execute("SELECT kind FROM source_gone WHERE source='bluesky'")) == ["author", "item"]
     assert conn.execute("SELECT count(*) FROM source_fetch WHERE source='bluesky' AND ok").fetchone()[0] == 2

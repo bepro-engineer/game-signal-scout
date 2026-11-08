@@ -40,10 +40,20 @@ def upsert_items(conn, items: list[SourceItem], seen_in: str | None) -> tuple[in
 NORMALIZED = ("player_report", "player_post", "game_profile", "game_activity", "game_assets")   # 正規化した行の表（版が変わった項目の行を消し、次の正規化でやり直す）
 
 
+def _record_gone(conn, source: str, kind: str, refs: list[str]) -> None:
+    """削除の事実を残す（Anime の §2: 行の本文は消し、消えたことは残す）。本文・名前は持たない。"""
+    if refs:
+        with conn.cursor() as cur:
+            cur.executemany("INSERT INTO source_gone (source, ref, kind, gone_at) VALUES (%s, %s, %s, now()) ON CONFLICT DO NOTHING",
+                            [(source, r, kind) for r in refs])
+
+
 def delete_items(conn, source: str, item_ids: list[str]) -> int:
-    """取得元で消えた項目を消す（正規化した行も外部キーで一緒に消える）。"""
+    """取得元で消えた項目を消す（正規化した行も外部キーで一緒に消える）。消えた事実は source_gone に残す。"""
     if not item_ids:
         return 0
+    gone = [r[0] for r in conn.execute("SELECT item_id FROM source_item WHERE source=%s AND item_id = ANY(%s)", (source, list(item_ids)))]
+    _record_gone(conn, source, "item", gone)
     return conn.execute("DELETE FROM source_item WHERE source=%s AND item_id = ANY(%s)", (source, list(item_ids))).rowcount
 
 
@@ -51,6 +61,7 @@ def delete_by_author(conn, source: str, authors: list[str]) -> int:
     """消えた投稿者（アカウントの削除・停止）の項目をすべて消す。投稿者は payload の author（HMAC）。"""
     if not authors:
         return 0
+    _record_gone(conn, source, "author", list(authors))
     return conn.execute("DELETE FROM source_item WHERE source=%s AND payload->>'author' = ANY(%s)", (source, list(authors))).rowcount
 
 
@@ -60,6 +71,8 @@ def delete_missing(conn, source: str, snapshot: str, min_ratio: float) -> int:
     seen, total = conn.execute("SELECT count(*) FILTER (WHERE seen_in = %s), count(*) FROM source_item WHERE source=%s", (snapshot, source)).fetchone()
     if total == 0 or seen < total * min_ratio:
         return -1 if total else 0
+    gone = [r[0] for r in conn.execute("SELECT item_id FROM source_item WHERE source=%s AND seen_in IS DISTINCT FROM %s", (source, snapshot))]
+    _record_gone(conn, source, "item", gone)
     return conn.execute("DELETE FROM source_item WHERE source=%s AND seen_in IS DISTINCT FROM %s", (source, snapshot)).rowcount
 
 
