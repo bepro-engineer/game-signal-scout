@@ -33,10 +33,8 @@
   // 凡例は必ず付ける（#2）: 日本語の印が出る領域（本文・左の列）ごとに、最初の印より前に凡例がなければ、その印を含む段の前に入れる。
   // 後から足される印（「もっと見る」など）は、同じ領域の先頭の凡例が受け持つ
   const ensureJpLegend = () => document.querySelectorAll("main, .sidecol").forEach(root => {
-    const first = [...root.querySelectorAll(".jp")].find(j => !j.closest(".jp-legend")); if (!first) return;
-    const lg = root.querySelector(".jp-legend");
-    if (lg && (lg.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING)) return;
-    if (lg) lg.remove();
+    const first = [...root.querySelectorAll(".jp")].find(j => !j.closest(".jp-legend") && j.getClientRects().length); if (!first) return;   // 隠れている印は数えない
+    if (root.querySelector(".jp-legend")) return;   // その領域に凡例がある（置き場所はページが決める）
     let sec = first; while (sec.parentElement && sec.parentElement !== root) sec = sec.parentElement;
     sec.insertAdjacentHTML("beforebegin", jpLegend()); });
   // 醍醐味の種類（services/insight の appeal_kind と同じ鍵）。体験から言えたときだけ付く

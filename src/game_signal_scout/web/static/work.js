@@ -64,6 +64,7 @@
   const judge = `<div class="wk-judge" id="wk-judge">
       <p class="wkj-jp">${A.jpTag(W)}<span class="wkj-d">${J ? tr(`メニュー ${J.ui ? "日本語" : "外国語"}・字幕 ${J.sub ? "日本語" : "なし／外国語"}・声 ${J.voice ? "日本語" : "外国語"}`, `Menus ${J.ui ? "JP" : "–"} · Subtitles ${J.sub ? "JP" : "–"} · Voice ${J.voice ? "JP" : "–"}`) : ""}</span>
         <small class="wkj-s">${J ? tr(`販売元がストアに載せている対応言語の表より（${esc(W.jp_at || "")} 確認）`, `From the publisher's store listing (checked ${esc(W.jp_at || "")})`) : tr("ストアの表記を確かめられていません", "Not checked yet")}</small></p>
+      ${A.jpLegend()}
       <p class="wkj-dev"><b>${tr("開発元", "Developer")}</b> ${A.devLine(W, 99)}${(W.dev || []).some(d => d.ref) ? ` <small class="wkj-s">${tr("国・地域の出典: ", "Country source: ")}${W.dev.filter(d => d.ref).map(d => `<a href="${esc(d.ref)}" rel="noopener" target="_blank">${esc(d.n)} ↗</a>`).join(" ")}</small>` : ""}</p>
       ${(W.plat || []).length ? `<p class="wkj-pl"><b>${tr("機種", "Platforms")}</b> ${W.plat.map(p => esc(PLAT[p] || p)).join(tr("・", ", "))}</p>` : ""}
     </div>`;

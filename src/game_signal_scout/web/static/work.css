@@ -137,3 +137,5 @@ main.wk .wk-grid > .wk-sec > .sec-h p { grid-column: 2; margin: 2px 0 0; font-si
 .wkf-src { margin: 6px 0 0; font-size: 12px; color: #777; }
 .wkf-a { display: block; font-size: 17px; line-height: 1.5; color: var(--ink, #20283d); }
 .wk-finds { background: var(--soft, #f2f4f8); }
+
+.wk-judge .jp-legend { margin: 6px 0 10px; padding: 8px 10px; flex-direction: column; align-items: flex-start; gap: 4px; font-size: 12px; box-shadow: none; background: var(--soft, #f2f4f8); }
