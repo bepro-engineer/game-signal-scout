@@ -52,9 +52,11 @@ def test_a_new_source_flows_to_documents_without_changing_common_code(conn, monk
     # 観測の集計: 取得元ごと・言語ごとの人数（取得元をまたいで足さない）
     obs = dict(conn.execute("SELECT lang, persons FROM obs_work_lang_day WHERE source = 'fake_forum' AND target_day = %s AND work_id = 2246340", (DAY,)).fetchall())
     assert obs["*"] == 4 and obs["de"] == 3 and obs["en"] == 1
-    # 公開の文書と画面: 作品詳細の話題の動きに、この取得元の系列（切り替えの名前つき）が出る
+    # 公開の文書と画面: 作品詳細の話題の動きは作品全体の 1 つの系列で、この取得元は出典の説明に出る（#7: 出典の切り替えはしない）
     work = public_document.get_document(conn, "work/w2246340")
-    assert any(st.get("label") == ["架空の掲示板", "Fake forum"] or "fake_forum" in str(st.get("key")) for st in work["streams"]), work["streams"]
+    assert len(work["streams"]) == 1 and work["streams"][0]["all"], work["streams"]
+    assert any(x["label"] == ["架空の掲示板", "Fake forum"] for x in work["streams"][0]["sources"]), work["streams"][0]["sources"]
+    assert not any(k.startswith("_") for k in work["streams"][0]), "内部の値は公開しない"
     day = public_document.get_document(conn, f"day/{DAY.isoformat()}")
     assert day["dashboard"]["works_today"] == 1
 

@@ -1031,8 +1031,9 @@ def work_detail(ctx: Ctx, w: int, hist: list[date], pg_on: dict) -> dict:
     srcs = sorted((ctx.map_sources.get("sources") or {}).items(), key=lambda x: x[1].get("order", 99))
     by_day = _obs_index(ctx, hist).get(w, {})
     have = [(k, p) for k, p in srcs if any(by_day.get(d, {}).get(k, {}).get("*") for d in hist)] or srcs[:1]
-    streams = [_stream(ctx, w, hist, k, p) for k, p in have]
-    lead = max(range(len(streams)), key=lambda i: ((streams[i]["summary"]["recent"] or {}).get("people", 0), -i)) if streams else 0
+    per = [_stream(ctx, w, hist, k, p) for k, p in have]
+    streams = [_stream_all(ctx, w, hist, per)] if per else []   # 出典の切り替えはしない: 作品全体の 1 つの系列（#7 2026-11-09）
+    lead = 0
     meta = ctx.meta[w]
     return {**meta, "alt": [t for t in (cur.get("title"), cur.get("title_en")) if t],
             "credit": prof.get("provider_name"), "credit_url": prof.get("site_url"),
@@ -1130,9 +1131,67 @@ def _stream(ctx: Ctx, w: int, hist: list[date], src: str, sprof: dict) -> dict:
                           **({k: latest[k] for k in ("kind", "base", "ratio", "streak")} if latest else {"kind": None}), "langs": (latest or {}).get("new_langs") or []},
                "new_langs": [lg for lg, i in first_seen.items() if i > 0 and i >= len(window) - rd],
                "peak": (lambda i: {"day": window[i].isoformat(), "n": ser[i]["a"]})(max(range(len(ser)), key=lambda i: ser[i]["a"])) if ser else None}
-    return {"label": sprof.get("label") or [src, src], "persons_days": sum(x["a"] for x in hser), "observed": observed, "series": ser,
+    return {"_hser": hser, "_hobs": hobs, "_cands": cands, "_latest": latest, "_marks_all": dict(marks),
+            "label": sprof.get("label") or [src, src], "persons_days": sum(x["a"] for x in hser), "observed": observed, "series": ser,
             "marks": {k: v for k, v in marks.items() if k >= window[0].isoformat()}, "ranges": ranges, "summary": summary, "points": points,
             "point_sets": {k: [x[1].isoformat() for x in sorted(xs, key=lambda x: x[1], reverse=True)] for k, xs in sets.items()}}
+
+
+def _stream_all(ctx: Ctx, w: int, hist: list[date], per: list[dict]) -> dict:
+    """作品詳細の話題の動き（#7 2026-11-09 オーナー: 出典の切り替えをやめ、作品全体の動きを 1 つの系列で）。
+    人数 = 出典ごとに数えた投稿者の数の合計（出典の中では同じ人を 1 人に数える。別の出典の同じ人は見分けられないので別に数える。
+    作品 × 日の共通の系列 observations.common_series と同じ数え方）。観測の状態 = すべての出典がそろった日 c、一部 p、どれもない日 n。
+    変化の印と転換点は、出典ごとの既存の変化の発見から（新しい分析は足さない）。転換点の人数・普段・倍率は、変化を見つけた出典の中の数（scope = source）。
+    sources = 出典ごとの延べ人数（グラフの下の出典の説明。選ぶ部品にはしない）。"""
+    nd, wp = int(ctx.pages["common"]["detail_days"]), ctx.pages["work"]
+    rd = int(wp["recent_days"])
+    window = hist[-nd:]
+    hser = []
+    for i in range(len(hist)):
+        langs: dict[str, int] = {}
+        for st in per:
+            for lg, n in st["_hser"][i]["l"].items():
+                langs[lg] = langs.get(lg, 0) + n
+        hser.append({"a": sum(st["_hser"][i]["a"] for st in per), "l": langs})
+    hobs = "".join("c" if all(st["_hobs"][i] == "c" for st in per) else "n" if all(st["_hobs"][i] == "n" for st in per) else "p" for i in range(len(hist)))
+    marks: dict[str, list[str]] = {}
+    for st in per:
+        for d, ks in (st.get("_marks_all") or st["marks"]).items():
+            for k in ks:
+                if k not in marks.setdefault(d, []):
+                    marks[d].append(k)
+    ser, observed = hser[-nd:], hobs[-nd:]
+    ranges = chart_ranges(ctx, hist, [x["a"] for x in hser], hobs, marks)
+    cands = sorted([x for st in per for x in st["_cands"]], key=lambda x: (-x[0], x[1]))
+    best: dict = {}
+    for x in cands:            # 同じ日は、いちばん強い変化の 1 つ
+        best.setdefault(x[1], x)
+    top = lambda span: sorted((x for x in best.values() if x[1] >= span[0]), key=lambda x: (-x[0], x[1]))[:int(wp["max_points"])]   # noqa: E731
+    sets = {"base": top(window), **{r["key"]: top(hist[-r["days"]:]) for r in ranges if r["unit"] != "day"}}
+    chosen = {x[1]: x for xs in sets.values() for x in xs}
+    quotes = work_quotes(ctx, w, sorted(chosen)) if chosen else {}
+    points = [{"day": d.isoformat(), "kind": kind, "n": c["n"], "base": c["base"], "ratio": c["ratio"], "prev": c["prev"], "langs": c.get("new_langs") or [], "scope": "source",
+               "quiet": (e or {}).get("quiet") if kind == "resurgence" else None, "quotes": quotes.get(d, [])[:int(wp["quotes_per_point"])]}
+              for _, d, kind, c, e in sorted(chosen.values(), key=lambda x: x[1], reverse=True)]
+    obs_idx = [i for i in range(len(window)) if observed[i] != "n"]
+    span = lambda idx: ({"from": window[idx[0]].isoformat(), "to": window[idx[-1]].isoformat(), "people": sum(ser[i]["a"] for i in idx), "days": len(idx)}  # noqa: E731
+                        if idx else None)
+    lat = [st["_latest"] for st in per if st.get("_latest")]
+    strong = max(lat, key=lambda c: (c.get("kind") in ("surge", "emergence", "new_language", "continuing"), c.get("n") or 0), default=None)
+    first_seen: dict[str, int] = {}
+    for i in range(len(window)):
+        for lg in ser[i]["l"]:
+            first_seen.setdefault(lg, i)
+    summary = {"recent": span(obs_idx[-rd:]), "before": span(obs_idx[-2 * rd:-rd]),
+               "latest": {"day": window[-1].isoformat(), "observed": observed[-1] != "n", "n": ser[-1]["a"], "scope": "source",
+                          **({k: strong[k] for k in ("kind", "base", "ratio", "streak")} | {"src_n": strong.get("n")} if strong else {"kind": None}),
+                          "langs": (strong or {}).get("new_langs") or []},
+               "new_langs": [lg for lg, i in first_seen.items() if i > 0 and i >= len(window) - rd],
+               "peak": (lambda i: {"day": window[i].isoformat(), "n": ser[i]["a"]})(max(range(len(ser)), key=lambda i: ser[i]["a"])) if ser else None}
+    srcs = sorted(({"label": st["label"], "persons_days": st["persons_days"]} for st in per if st["persons_days"]), key=lambda x: -x["persons_days"])
+    return {"label": ["すべての出典", "All sources"], "all": True, "persons_days": sum(x["a"] for x in hser), "observed": observed, "series": ser,
+            "marks": {k: v for k, v in marks.items() if k >= window[0].isoformat()}, "ranges": ranges, "summary": summary, "points": points,
+            "point_sets": {k: [x[1].isoformat() for x in sorted(xs, key=lambda x: x[1], reverse=True)] for k, xs in sets.items()}, "sources": srcs}
 
 
 def _extra(ctx: Ctx, aid) -> dict | None:

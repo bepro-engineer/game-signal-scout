@@ -117,14 +117,14 @@
   // 期間の読み方（いちばん多い日・区切り）と、斜線・— の意味
   const noteOf = (S, r) => { if (r.unit === "day") { const k = Math.max(0, S.days.length - r.days), ix = S.days.map((d, i) => i).slice(k);
       const top = ix.reduce((b, i) => (S.vals[i] || 0) > (S.vals[b] || 0) ? i : b, ix[0]);
-      return tr(`${fromTo(S.days[k], S.days.at(-1))}でいちばん多い日は${md(S.days[top])}の${S.vals[top] || 0}人。${S.what[0]}斜線の日は一部の時間しか観測できなかった日で、数が実際より少ないことがあります。—は観測できなかった日、0人の日は観測はできていて該当がなかった日です。`,
+      return tr(`${fromTo(S.days[k], S.days.at(-1))}でいちばん多い日は${md(S.days[top])}の${S.vals[top] || 0}人。${S.what[0]}斜線の日は${(ST[0] || {}).all ? "一部の出典・時間" : "一部の時間"}しか観測できなかった日で、数が実際より少ないことがあります。—は観測できなかった日、0人の日は観測はできていて該当がなかった日です。`,
         `Busiest day between ${fromTo(S.days[k], S.days.at(-1))}: ${md(S.days[top])} with ${S.who(S.vals[top] || 0)}. ${S.what[1]}Hatched days were only partly observed, so counts may be low. — means not observed; 0 means observed with nothing found.`); }
     const full = r.items.filter(p => p.obs === p.len && !p.part), pool = full.length ? full : r.items, u = UNIT[r.unit];   // いちばん多い区切りは、すべての日を観測できた区切りから
     const top = pool.reduce((b, p) => (p.avg || 0) > (b.avg || 0) ? p : b, pool[0]);
     return tr(`${span(r)}を${u}ごとにまとめ、棒は観測できた日の1日平均の人数です。1日平均がいちばん多い${u}は${pname(top, r.unit)}の${top.avg || 0}人（延べ${top.sum}人${full.length ? `。斜線の${u}を除く` : ""}）。${S.what[0]}斜線は観測していない日がある${u}、—は1日も観測できなかった${u}で、0人とは分けています。`,
       `${span(r)}, grouped by ${u}; each bar is the daily average over observed days. Highest: ${pname(top, r.unit)} with ${top.avg || 0} a day (${top.sum} in total${full.length ? `; hatched ${u}s excluded` : ""}). ${S.what[1]}Hatched ${u}s include days not observed; — means not observed at all (not zero).`); };
   const keyOf = r => { const u = UNIT[r.unit]; return `<span><i class="ev"></i>${tr(`変化が見つかった${u}`, `${r.unit === "day" ? "Day" : "Period"} with a change`)}</span><span><i></i>${tr(`それ以外の${u}`, "Others")}</span>
-      <span><i class="pt"></i>${tr(r.unit === "day" ? "一部の時間だけ観測できた日" : `観測していない日がある${u}`, "Partly observed")}</span><span><i class="na"></i>${tr(`観測できなかった${u}（—）`, "Not observed (—)")}</span>`; };
+      <span><i class="pt"></i>${tr(r.unit === "day" ? ((ST[0] || {}).all ? "一部の出典・時間だけ観測できた日" : "一部の時間だけ観測できた日") : `観測していない日がある${u}`, "Partly observed")}</span><span><i class="na"></i>${tr(`観測できなかった${u}（—）`, "Not observed (—)")}</span>`; };
   const BOX = [];   // 棒の部品の一覧（id = wk-c<番号>）
   const rangeBox = (S, k = BOX.length, cur = 0) => { BOX[k] = { ...S, cur }; const id = `wk-c${k}`, r = S.ranges[cur];
     return `${S.ranges.length > 1 ? `<p class="wk-rng" role="group" aria-label="${tr("期間", "Range")}">${S.ranges.map((x, i) => `<button type="button" data-box="${k}" data-r="${i}" aria-pressed="${i === cur}">${RLABEL[x.key] || esc(x.key)}</button>`).join("")}<span class="u" id="${id}-u">${unitText(r)}</span></p>` : ""}
@@ -137,12 +137,13 @@
   const summaryOf = st => { const SM = st.summary || {}, L = SM.latest || {}, sent = [];
     const notable = ["surge", "emergence", "new_language", "continuing"].includes(L.kind) || ((st.point_sets || {}).base || []).length > 0 || (SM.new_langs || []).length > 0;
     if (!notable) sent.push(tr("顕著な変化は観測されていません。", "No notable change has been observed."));
-    if (SM.recent) sent.push(tr(`直近の観測${SM.recent.days}日（${md(SM.recent.from)}〜${md(SM.recent.to)}）に話題にした人は延べ${SM.recent.people}人${SM.before ? `、その前の${SM.before.days}日は${SM.before.people}人` : ""}です。`,
+    if (SM.recent) sent.push(tr(`直近の観測${SM.recent.days}日（${md(SM.recent.from)}〜${md(SM.recent.to)}）に話題にした人は${st.all ? "出典ごとの合計で" : ""}延べ${SM.recent.people}人${SM.before ? `、その前の${SM.before.days}日は${SM.before.people}人` : ""}です。`,
       `Over the last ${SM.recent.days} observed days (${md(SM.recent.from)}–${md(SM.recent.to)}) ${SM.recent.people} people talked about it${SM.before ? `, versus ${SM.before.people} in the ${SM.before.days} days before` : ""}.`));
-    if (L.kind === "surge") sent.push(tr(`${md(L.day)}は${L.n}人で、普段（中央値${L.base}人）の${L.ratio}倍に急に増えました。`, `On ${md(L.day)}, ${A.ppl(L.n)} — ${L.ratio}× the usual (median ${L.base}).`));
+    if (L.kind === "surge" && L.scope === "source") sent.push(tr(`${md(L.day)}は${L.n}人でした。変化を見つけた出典の中では、普段（中央値${L.base}人）の${L.ratio}倍に急に増えました。`, `${A.ppl(L.n)} on ${md(L.day)}. On the source where the change was found, it was ${L.ratio}× the usual (median ${L.base}).`));
+    else if (L.kind === "surge") sent.push(tr(`${md(L.day)}は${L.n}人で、普段（中央値${L.base}人）の${L.ratio}倍に急に増えました。`, `On ${md(L.day)}, ${A.ppl(L.n)} — ${L.ratio}× the usual (median ${L.base}).`));
     else if (L.kind === "emergence") sent.push(tr(`${md(L.day)}に初めて話題になりました（${L.n}人）。`, `It was first talked about on ${md(L.day)} (${A.ppl(L.n)}).`));
     else if (L.kind === "new_language") sent.push(tr(`${md(L.day)}に新しい言語圏（${lnames(L.langs)}）でも話題になりました（${L.n}人）。`, `On ${md(L.day)} it was also talked about in a new language area (${lnames(L.langs)}; ${A.ppl(L.n)}).`));
-    else if (L.kind === "continuing") sent.push(tr(`${md(L.day)}も${L.n}人で、${L.streak}日続いています。`, `${A.ppl(L.n)} on ${md(L.day)} — ${L.streak} days in a row.`));
+    else if (L.kind === "continuing") sent.push(tr(`${md(L.day)}も${L.n}人で、増加が${L.streak}日続いています。`, `${A.ppl(L.n)} on ${md(L.day)} — growth for ${L.streak} days in a row.`));
     else if (L.kind === "steady") sent.push(tr(`${md(L.day)}は${L.n}人で普段どおりです。`, `${A.ppl(L.n)} on ${md(L.day)}, about the usual.`));
     else if (L.observed === false) sent.push(tr(`${md(L.day)}は観測できていません。`, `${md(L.day)} was not observed.`));
     else if (L.n != null) sent.push(tr(`${md(L.day)}に話題にした人は${L.n}人です。`, `${A.ppl(L.n)} on ${md(L.day)}.`));
@@ -151,7 +152,8 @@
   /* ---------- 話題の動き（全幅 1 段）: 出典の切り替え（2 つ以上のとき）→ 要約 → 期間ボタンと棒（左）｜ 凡例・読み方・言語圏・出典（右）。棒は右の列の高さまで伸び、段の中に空きを作らない。
      要約や説明の長さで棒の幅は変わらない（2026-10-18 Issue #7: 左右の段に分けると要約の下が大きく空き、説明の折り返しで左だけが縦に伸びた） ---------- */
   const streamS = st => ({ days, vals: st.series.map((x, i) => (st.observed[i] || "n") === "n" ? null : x.a), obs: st.observed, marks: st.marks || {},
-    ranges: st.ranges || fallback(days.length), who: n => A.ppl(n || 0), what: ["", ""] });
+    ranges: st.ranges || fallback(days.length), who: n => A.ppl(n || 0),
+    what: st.all ? ["人数は出典ごとに数えた人数の合計です。", "Counts are added across sources. "] : ["", ""] });
   const trendBody = (st, cur = 0) => { const S = streamS(st), r = S.ranges[cur], langTot = {};
     st.series.forEach(x => Object.entries(x.l).forEach(([c, n]) => { langTot[c] = Math.max(langTot[c] || 0, n); }));
     return `${ST.length > 1 ? `<p class="wk-rng wk-srcsel" role="group" aria-label="${tr("出典", "Source")}"><span class="u">${tr("出典", "Source")}</span>${ST.map((x, i) => `<button type="button" data-stream="${i}" aria-pressed="${i === SI}">${slabel(x)}${tr(`（延べ${x.persons_days}人）`, ` (${x.persons_days})`)}</button>`).join("")}</p>` : ""}
@@ -161,7 +163,12 @@
         <p class="wk-note" id="wk-c0-n">${noteOf(S, r)}</p>
         ${Object.keys(langTot).length ? (ls => `<p class="wk-langs"><span>${tr("話題になった言語圏", "Language areas")}</span>${ls.slice(0, LMAX).map(([c]) => chip(c)).join("")}</p>${ls.length > LMAX
           ? `<details class="wk-lx"><summary>${tr(`ほか${ls.length - LMAX}の言語圏を表示`, `Show ${ls.length - LMAX} more language areas`)}</summary><p class="wk-langs">${ls.slice(LMAX).map(([c]) => chip(c)).join("")}</p></details>` : ""}`)(Object.entries(langTot).sort((a, b) => b[1] - a[1])) : ""}
-        <p class="wk-langs wk-src"><span>${tr("出典", "Source")}</span>${slabel(st)}${ST.length > 1 ? tr("（出典ごとに数え、ほかの出典の人数とは足していません）", " (counted per source; never added across sources)") : ""}</p></div>`; };
+        ${st.all ? srcNote(st) : `<p class="wk-langs wk-src"><span>${tr("出典", "Source")}</span>${slabel(st)}</p>`}</div>`; };
+  // 出典の説明（#7: 選ぶ部品にはしない）: 出典の数と、開くと出典ごとの延べ人数。人数の数え方（出典をまたぐ同じ人は見分けられない）を添える
+  const srcNote = st => { const xs = st.sources || [];
+    return `<details class="wk-lx wk-srcs"><summary>${tr(`出典 ${xs.length}件（人数は出典ごとに数えた人数の合計）`, `${xs.length} sources (counts are added across sources)`)}</summary>
+      <p class="wk-note">${tr("同じ出典の中では同じ人を 1 人に数えます。別の出典に同じ人が書いた場合は見分けられないため、別に数えています。", "Within a source each person counts once. The same person writing on different sources can't be matched, so they are counted separately.")}</p>
+      <ul class="wk-srcl">${xs.map(x => `<li>${esc(tr(x.label[0], x.label[1]))}<small>${tr(`延べ${x.persons_days}人`, `${x.persons_days} total`)}</small></li>`).join("")}</ul></details>`; };
   // 話題になった言語圏は人数の多い順に LMAX まで出し、残りは「ほか N の言語圏を表示」で開く（#7-B: 長い一覧が右の段を伸ばし、棒もその高さまで伸びていた。消さない）
   const LMAX = 8;
   const trend = ST.length ? `<section class="wk-sec" id="wk-trend"><div class="sec-h"><h2>${tr("話題の動き", "Buzz over time")}</h2><p>${tr("この作品を話題にした人の数です。上の札は、見つかった変化です。棒に触れると期間・人数・観測の状態が出ます。", "People who talked about this title. Tags show changes found. Hover or tap a bar for the period, count and observation status.")}</p></div>
@@ -172,7 +179,8 @@
   const point = p => `<li><b class="d">${md(p.day)}</b><span class="k">${KNAME[p.kind] || esc(p.kind)}</span><span class="n">${tr(`${p.n}人`, A.ppl(p.n))}${p.base != null && p.kind !== "resurgence" ? tr(`（普段${p.base}人・${p.ratio}倍）`, ` (usual ${p.base}, ${p.ratio}×)`) : ""}${p.kind === "resurgence" && p.quiet ? tr(`（${p.quiet}日ぶり）`, ` (after ${p.quiet} quiet days)`) : ""}</span>${p.langs.map(c => chip(c)).join("")}
     ${p.quotes.length ? `<ul class="qs">${p.quotes.map(q => `<li><q>${esc(q.quote)}</q><small class="qg">${tr("自動分類", "Auto type")}: ${esc(QG[q.kind] || "")}</small><a href="${esc(q.url)}" target="_blank" rel="noopener noreferrer">${tr("原文", "Original")} ↗</a></li>`).join("")}</ul>` : ""}</li>`;
   const pHead = r => { const sp = r.unit === "day" ? fromTo(days[0], last) : span(r);
-    return tr(`${sp}の中で、データで裏づけのある転換点だけです（最大3件）。原文は、公開してよい投稿の一部です。`, `Only turning points the data supports in ${sp} (up to 3). Quotes are excerpts from posts that may be shown.`); };
+    return tr(`${sp}の中で、データで裏づけのある転換点だけです（最大3件）。${(ST[0] || {}).all ? "人数・普段・倍率は、変化を見つけた出典の中で数えた数です。" : ""}原文は、公開してよい投稿の一部です。`,
+      `Only turning points the data supports in ${sp} (up to 3). ${(ST[0] || {}).all ? "Counts, usual levels and ratios are from the source where the change was found. " : ""}Quotes are excerpts from posts that may be shown.`); };
   const pset = r => { const st = ST[SI] || {}, by = Object.fromEntries((st.points || []).map(p => [p.day, p]));   // 期間ごとに選んだ日（point_sets。日ごとの期間は base。#52）
     return (((st.point_sets || {})[r.unit === "day" ? "base" : r.key]) || []).map(d => by[d]).filter(Boolean); };
   const pBody = r => { const ps = pset(r); return ps.length ? `<ul class="wk-tp wk-tp3">${ps.map(point).join("")}</ul>` : `<p class="wk-note">${tr("この期間に、裏づけのある転換点はありません。", "No supported turning point in this range.")}</p>`; };

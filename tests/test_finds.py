@@ -254,3 +254,13 @@ def test_llm_lengths_come_from_the_config_not_the_code():
         assert '"num_ctx": 8192' not in t and '"num_predict": 2048' not in t
     ic = load_daily_config()["insight"]
     assert int(ic["num_ctx"]) > 0 and int(ic["num_predict"]) > 0
+
+
+def test_work_trend_is_one_series_without_source_switch():
+    """作品詳細の話題の動き（#7 2026-11-09）: 出典の切り替えはなく、作品全体の 1 つの系列。人数は出典ごとの合計と明記し、出典はグラフの下の説明に残す。"""
+    from pathlib import Path
+    root = Path(__file__).parents[1] / "src/game_signal_scout"
+    c = (root / "signal/content.py").read_text()
+    assert "streams = [_stream_all(ctx, w, hist, per)] if per else []" in c and '"scope": "source"' in c
+    js = (root / "web/static/work.js").read_text()
+    assert "st.all ? srcNote(st)" in js and "人数は出典ごとに数えた人数の合計" in js and "変化を見つけた出典の中で数えた数" in js

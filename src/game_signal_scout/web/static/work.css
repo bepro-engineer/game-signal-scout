@@ -154,3 +154,7 @@ main.wk #wk-finds > .sec-h.wkf-wh { --ico: url("data:image/svg+xml,%3Csvg xmlns=
 @media (max-width: 1100px) { .wk-tr .wk-ch .bar { height: 140px; } }
 .wk-lx { margin: 4px 0 0; } .wk-lx summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--accent); list-style: none; } .wk-lx summary::-webkit-details-marker { display: none; }
 .wk-lx summary::after { content: " ▾"; } .wk-lx[open] summary::after { content: " ▴"; } .wk-lx .wk-langs { margin-top: 6px; }
+
+/* 話題の動きの出典の説明（#7: 出典の切り替えをやめ、グラフの下に小さく。開くと出典ごとの延べ人数） */
+.wk-srcs .wk-note { margin: 6px 0; } .wk-srcl { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 13px; color: var(--ink-2); }
+.wk-srcl small { margin-left: 8px; color: var(--ink-3); }
