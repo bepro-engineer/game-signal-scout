@@ -209,10 +209,9 @@ def translate_missing(conn, ic: dict, budget: int, failed: list) -> int:
 
 
 def insight_ask(ic: dict):
-    """読み取りと同じ共有の LLM の枠での 1 回の問い合わせ（JSON で返す）。"""
-    from game_signal_scout import llm
-    return lambda p: llm.chat(ic["model"], "", p, format="json", think=False, options={"temperature": 0.1, "num_ctx": 8192, "num_predict": 2048},
-                              timeout=float(ic.get("timeout_seconds", 1800))).content
+    """読み取りと同じ共有の LLM の枠での問い合わせ（設定は services/insight.ask_for が読む）。"""
+    from game_signal_scout.services import insight
+    return insight.ask_for(ic)
 
 
 def job_observe(ctx: Context) -> JobResult:

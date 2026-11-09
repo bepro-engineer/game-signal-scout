@@ -242,3 +242,15 @@ def test_attributes_are_rebuilt_when_the_item_is_fetched_again(conn):
     conn.execute("INSERT INTO game_attribute (appid, key, source, item_id, value, fetched_at) VALUES "
                  "('1', 'k', 's', 'old', '[]', now() - interval '2 days'), ('2', 'k', 's', 'new', '[]', now() - interval '2 days')")
     assert sorted(r[0] for r in catalog.attribute_rows(conn, "s", 10)) == ["new", "none"]
+
+
+def test_llm_lengths_come_from_the_config_not_the_code():
+    """共有の LLM に渡す文脈の長さ・出力の長さは設定から読む（#3: Anime と交互に枠を取るたびにモデルを読み直していた。コードに数字を書かない）。"""
+    from pathlib import Path
+    from game_signal_scout.config import load_daily_config
+    root = Path(__file__).parents[1] / "src/game_signal_scout"
+    for f in ("services/insight.py", "ops/runner.py"):
+        t = (root / f).read_text()
+        assert '"num_ctx": 8192' not in t and '"num_predict": 2048' not in t
+    ic = load_daily_config()["insight"]
+    assert int(ic["num_ctx"]) > 0 and int(ic["num_predict"]) > 0

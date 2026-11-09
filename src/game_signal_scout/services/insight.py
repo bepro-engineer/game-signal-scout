@@ -229,6 +229,13 @@ def translate_en(ask, title: str, texts: list[str], known: dict | None = None, l
     return out
 
 
+def ask_for(cfg: dict):
+    """共有の LLM の枠での 1 回の問い合わせ（JSON で返す）。文脈の長さ・出力の長さ・温度は設定（config/daily.toml [insight]）から読む（#3: コードに数字を書かない）。"""
+    from game_signal_scout import llm
+    opts = {"temperature": float(cfg["temperature"]), "num_ctx": int(cfg["num_ctx"]), "num_predict": int(cfg["num_predict"])}
+    return lambda p: llm.chat(cfg["model"], "", p, format="json", think=False, options=opts, timeout=float(cfg.get("timeout_seconds", 1800))).content
+
+
 def input_hash(rows: list[dict]) -> str:
     return hashlib.sha256("|".join(sorted(r["item_id"] for r in rows)).encode()).hexdigest()[:16]
 
@@ -246,7 +253,7 @@ def read_game(conn, appid: str, title: str, model: str, cfg: dict, prev_body: di
         return None
     if ask is None:
         from game_signal_scout import llm
-        ask = lambda p: llm.chat(model, "", p, format="json", think=False, options={"temperature": 0.1, "num_ctx": 8192, "num_predict": 2048}, timeout=float(cfg.get("timeout_seconds", 1800))).content
+        ask = ask_for({**cfg, "model": model})
     reads = {k: v for k, v in ((prev_body or {}).get("reads") or {}).items() if k in {r["item_id"] for r in rows}}
     todo = [r for r in rows if r["item_id"] not in reads][: int(cfg.get("max_reads_per_run", 60))]
     reads.update(read_statements(ask, title, todo))
