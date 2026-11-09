@@ -232,3 +232,13 @@ def test_public_documents_carry_english_only_when_translated():
     assert 'const tx = (o, k) => (o ? (lang === "en" && o[`${k}_en`]) || o[k] || "" : "");' in (root / "common.js").read_text()
     for f in ("finds.js", "work.js", "dashboard.js"):
         assert 'tx(' in (root / f).read_text()
+
+
+def test_attributes_are_rebuilt_when_the_item_is_fetched_again(conn):
+    """取り直した項目（受け取った時刻が属性より新しい）は属性を作り直す（開発元の英語の名前が入らなかった: #2 2026-11-09）。新しくない項目は作り直さない。"""
+    from game_signal_scout.repositories import catalog
+    conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES "
+                 "('s', 'old', now(), now() - interval '2 days', '{}'), ('s', 'new', now(), now(), '{}'), ('s', 'none', now(), now(), '{}')")
+    conn.execute("INSERT INTO game_attribute (appid, key, source, item_id, value, fetched_at) VALUES "
+                 "('1', 'k', 's', 'old', '[]', now() - interval '2 days'), ('2', 'k', 's', 'new', '[]', now() - interval '2 days')")
+    assert sorted(r[0] for r in catalog.attribute_rows(conn, "s", 10)) == ["new", "none"]

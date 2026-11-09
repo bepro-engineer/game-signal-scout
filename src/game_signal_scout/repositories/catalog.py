@@ -161,9 +161,9 @@ def upsert_assets(conn, rows: list[tuple]) -> int:
 
 
 def attribute_rows(conn, source: str, limit: int):
-    """まだ属性にしていない項目（項目が置き換われば、属性も一緒に消えて作り直す）。"""
+    """まだ属性にしていない項目と、属性にした後で取り直した項目（受け取った時刻が属性より新しい。取り直しても属性が古いままだった: #2 2026-11-09）。"""
     return conn.execute("SELECT s.item_id, s.received_at, s.payload FROM source_item s "
-                        "WHERE s.source = %s AND NOT EXISTS (SELECT 1 FROM game_attribute a WHERE a.source = s.source AND a.item_id = s.item_id) "
+                        "WHERE s.source = %s AND NOT EXISTS (SELECT 1 FROM game_attribute a WHERE a.source = s.source AND a.item_id = s.item_id AND a.fetched_at >= s.received_at) "
                         "AND NOT (s.payload ? 'no_attributes') ORDER BY s.item_id LIMIT %s", (source, limit)).fetchall()
 
 
