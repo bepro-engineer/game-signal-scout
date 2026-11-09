@@ -143,3 +143,39 @@ def test_finds_document_uses_only_public_keys():
     doc = {"finds": {"items": [{"id": "w1", "finds": [{"title": "t", "examples": [ev]}], "singles": [ev], "since": "2026-11-01"}]}}
     assert content.audit_public(doc, "pages") == []
     assert ev["act"] and ev["result"] and "did" not in ev and "happened" not in ev
+
+
+def test_work_finds_split_fun_and_frustration_and_stay_public(monkeypatch):
+    """作品詳細とダッシュボードに添える面白さ（good）と買う前に知っておきたいこと（warn）: 不満だけを warn に、公開しない項目名を使わない（#2）。"""
+    from game_signal_scout.signal import content
+    from game_signal_scout.repositories import insight as insight_repo
+    ex = lambda d, h: {"did": d, "happened": h}  # noqa: E731
+    body = {"kind": "finds", "read_people": 40, "experiences": 9, "window_days": 7, "since": "2026-11-02T00:00:00",
+            "finds": [{"appeal": "仲間と作戦が決まる", "appeal_kind": "team", "verdict": "fun", "people": 3, "frustration": 1, "examples": [ex("拠点を作った", "守り切れた")]},
+                      {"appeal": "", "verdict": "frustration", "people": 2, "caution": "bugs", "examples": [ex("起動した", "落ちた")]},
+                      {"appeal": "賛否のある体験", "verdict": "mixed", "people": 2, "caution": "time", "examples": [ex("長く遊んだ", "時間が溶けた")]}],
+            "singles": [{"appeal": "予想外の展開", "appeal_kind": "surprise", "verdict": "fun", "did": "橋を渡った", "happened": "崩れた"}]}
+    monkeypatch.setattr(insight_repo, "all_insights", lambda conn: {"123": body, "456": {"kind": "other"}})
+    ctx = type("C", (), {"conn": type("K", (), {"rollback": lambda self: None})()})()
+    wf = content.work_finds(ctx)
+    assert list(wf) == [123]
+    f = wf[123]
+    assert [x["appeal"] for x in f["good"]] == ["仲間と作戦が決まる", "賛否のある体験", "予想外の展開"]   # 不満を除き、人数の多い順
+    assert [x["act"] for x in f["warn"]] == ["起動した"]                                                     # 不満だけ（賛否の注意は入れない）
+    assert f["good"][0]["against"] == 1 and f["read_people"] == 40
+    assert content.audit_public({"finds": f, "lead": {"finds": {"good": f["good"][:3]}}}, "work") == []
+    assert content.work_finds(ctx) is wf                                                                   # 1 回の事前計算で 1 度だけ読む
+
+
+def test_work_and_dashboard_show_finds_only_when_read():
+    """作品詳細は W.finds があるときだけ面白さと買う前に知っておきたいことを出し、ダッシュボードは今日の兆しの作品の上位 3 件を兆しの下に出す（#2）。並びは変えない。"""
+    from pathlib import Path
+    root = Path(__file__).parents[1] / "src/game_signal_scout"
+    wj = (root / "web/static/work.js").read_text()
+    assert 'const finds = WF && (WF.good.length || WF.warn.length)' in wj and "${finds}${score}" in wj
+    assert "この作品でプレイヤーが見つけた面白さ" in wj and "買う前に知っておきたいこと" in wj
+    dj = (root / "web/static/dashboard.js").read_text()
+    lead = dj[dj.index('$("lead").innerHTML'):dj.index('<ul class="g-row">')]
+    assert "LF ?" in lead and "この作品で、プレイヤーがしたこと・起きたこと" in lead
+    c = (root / "signal/content.py").read_text()
+    assert 'd == ctx.pdays[-1]' in c and 'wf["good"][:3]' in c                                              # 読み取りは直近の発言なので最新の日だけ

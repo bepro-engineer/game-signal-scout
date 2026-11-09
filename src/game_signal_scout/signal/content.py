@@ -380,6 +380,9 @@ def dashboard(ctx: Ctx, d: date) -> dict:
         if w not in feat_ids:
             feat_ids.append(w)
     featured = [ctx.ref(w, n=m.get(w, 0)) for w in feat_ids[:7]]
+    # 今日の兆しの作品で、プレイヤーがしたこと・起きたこと（読み取りは直近の発言なので、最新の日だけ。面白さの上位 3 件）
+    if lead.get("work") and ctx.pdays and d == ctx.pdays[-1] and (wf := work_finds(ctx).get(int(lead["work"][1:]))) and wf["good"]:
+        lead["finds"] = {"good": wf["good"][:3], "window_days": wf["window_days"]}
     if lead.get("work"):   # 「今日の注目」（大カード）も見出しの作品に（一覧にあるときだけ。docs/TODAYS-SIGNAL-PAGES.md §1）
         cks.sort(key=lambda c: 0 if c["id"] == lead["work"] else 1)
     return {"day": d.isoformat(), "label": dlabel(d), "complete": _complete(ctx, d), "obs_status": ctx.gobs.get(d, "none"),
@@ -791,6 +794,35 @@ def finds_page(ctx: Ctx) -> dict:
     return {"items": items}
 
 
+def work_finds(ctx: Ctx) -> dict[int, dict]:
+    """作品ごとの プレイヤーが見つけた面白さ と 買う前に知っておきたいこと（注目の作品のページと同じ読み取りの結果。作品詳細とダッシュボードの今日の兆しに添える）。
+    good = 面白さの一文のある体験（不満を除く。書いた人の多い順）、warn = AI が不満と判断した体験だけ（賛否の体験の注意の印は良い体験にも付くので使わない）。
+    1 回の事前計算で 1 度だけ読む。原文は出さない。"""
+    if (got := getattr(ctx, "_work_finds", None)) is not None:
+        return got
+    from game_signal_scout.repositories import insight as insight_repo
+    rows = {a: b for a, b in insight_repo.all_insights(ctx.conn).items() if b.get("kind") == "finds" and (b.get("finds") or b.get("singles"))}
+    ctx.conn.rollback()
+    out: dict[int, dict] = {}
+    for a, b in rows.items():
+        xs = []
+        for f in b.get("finds") or []:
+            ev = (f.get("examples") or [{}])[0]
+            xs.append({"appeal": f.get("appeal"), "kind": f.get("appeal_kind"), "verdict": f.get("verdict"), "act": ev.get("did"), "result": ev.get("happened"),
+                       "people": f.get("people") or 1, "against": (f.get("frustration") or 0) if f.get("verdict") == "fun" else 0, "caution": f.get("caution")})
+        for e in b.get("singles") or []:
+            xs.append({"appeal": e.get("appeal"), "kind": e.get("appeal_kind"), "verdict": e.get("verdict"), "act": e.get("did"), "result": e.get("happened"),
+                       "people": 1, "against": 0, "caution": e.get("caution")})
+        xs = [x for x in xs if x["act"] and x["result"]]
+        good = sorted([x for x in xs if x["appeal"] and x["verdict"] != "frustration"], key=lambda x: -x["people"])
+        warn = sorted([x for x in xs if x["verdict"] == "frustration"], key=lambda x: -x["people"])
+        if good or warn:
+            out[int(a)] = {"good": good, "warn": warn, "read_people": b.get("read_people"), "experiences": b.get("experiences"),
+                           "window_days": b.get("window_days"), "since": (b.get("since") or "")[:10]}
+    ctx._work_finds = out
+    return out
+
+
 # ---------------------------------------------------------------- 作品を探す
 def _work_kinds(ctx: Ctx, w: int, days: list[date]) -> list[str]:
     """作品のその期間の共通の Signal 発見の種類（登録の順の Source。作品の変化を見つけた Source ごと）。
@@ -999,7 +1031,7 @@ def work_detail(ctx: Ctx, w: int, hist: list[date], pg_on: dict) -> dict:
             "days": [d.isoformat() for d in window], "streams": streams, "lead": lead,
             "pages": pg_on.get(meta["id"], []), **({"creation": cr} if (cr := [{"label": c["label"], "o": c["o"][-nd:], "n": c["n"][-nd:], "ranges": chart_ranges(ctx, hist, c["n"], c["o"], {})}
                                                                                 for c in creation_series(ctx, hist).get(w, [])]) else {}),
-            "extra": _extra(ctx, cur.get("id"))}
+            "extra": _extra(ctx, cur.get("id")), **({"finds": f} if (f := work_finds(ctx).get(w)) else {})}
 
 
 def _obs_index(ctx: Ctx, window: list[date]) -> dict:

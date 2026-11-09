@@ -24,6 +24,8 @@
   // 先頭の組（G.lead。ADR 0052）: 見出し・本文・引用と作品の列の先頭は、サーバーが 1 つの発見から作った組だけを使う（言語ごとに別の文を選ばない）。
   // kind = finding（今日の兆しの発見の文章）/ aggregate（集計の見出し: 作品自身の普段と比べた変化）。組のない日は集計の要約の文
   const LD = G.lead && G.lead[L] ? G.lead[L] : null;
+  // 今日の兆しの作品で、プレイヤーがしたこと・起きたこと（G.lead.finds。読めた作品で最新の日だけ。面白さの上位 3 件。注目の作品のページと同じ読み取り）
+  const LF = G.lead && G.lead.finds && G.lead.finds.good.length ? G.lead.finds : null;
   const ss = LD && G.lead.kind === "finding" && LD.body.length ? LD.body : null;
   const head = LD ? LD.head : S.head[L];
   // 大見出しは作品名の短い句（#2: AI の長い文を大見出しにしない。文は見出しの下の詳細に）
@@ -37,6 +39,9 @@
     ${shortHead ? `<h1 class="g-short">${esc(shortHead)}</h1><p class="g-headline">${esc(head)}</p>` : `<h1>${esc(head)}</h1>`}
     <p class="lede"${ss ? ` data-sents="${esc(JSON.stringify(ss))}"` : ""}>${lede}</p>
     ${LD ? A.cites(LD.cites) : ""}
+    ${LF ? `<div class="g-did"><p>${tr("この作品で、プレイヤーがしたこと・起きたこと", "What players did and what happened")}<small>${tr(`直近 ${LF.window_days || 7} 日の発言から`, `From posts in the last ${LF.window_days || 7} days`)}</small></p>
+      <ul style="--n:${LF.good.length}">${LF.good.map(x => `<li><b>${esc(x.appeal)}</b><span>${esc(x.act)} → ${esc(x.result)}</span><small>${x.people > 1 ? tr(`${x.people}人が同じことを書いた`, `${x.people} players wrote the same`) : tr("1人の体験", "1 player")}</small></li>`).join("")}</ul>
+      <a href="${A.workUrl(G.lead.work)}">${tr("この作品の面白さと、買う前に知っておきたいこと →", "Fun and things to know about this title →")}</a></div>` : ""}
     <ul class="g-row">${G.featured.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}</li>`).join("")}</ul>
     <div class="g-foot"><span>${tr(`話題になった${G.works_today}作品から${G.featured.length}作品（人数の順ではありません）。`, `${G.featured.length} of the ${G.works_today} titles talked about (not in order of people). `)}${G.movement ? tr(`作品それぞれの普段と比べて目立って動いた作品は${G.movement.q1.changes}作品でした。`, `${G.movement.q1.changes} titles moved notably from their usual level.`) : ""}</span>
       <a href="#trend">${tr("「いつもより話題が増えた作品」で確かめる ↓", "See “Titles talked about more than usual” ↓")}</a></div>`;

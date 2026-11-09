@@ -127,3 +127,19 @@ main.wk .wk-grid > .wk-sec > .sec-h p { grid-column: 2; margin: 2px 0 0; font-si
 /* ゲーム内容は枠の幅いっぱいの行に（右の列は日本語の対応・開発元・機種の欄が使うので、そこに入れると表紙の下の細い列に押し出されていた。2026-11-09） */
 .wk-story { grid-column: 1 / -1; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--line); }
 .wk-story .wk-syn { max-width: 52em; }
+
+/* この作品でプレイヤーが見つけた面白さ ／ 買う前に知っておきたいこと（#2。注目の作品のページと同じ色と形） */
+.wk-fd .wkf-g { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.wk-fd .wkf-g[data-n="1"] { grid-template-columns: minmax(0, 1fr); }
+.wkf-c { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 14px; align-items: start; padding: 12px; border-radius: 14px; background: var(--soft); }
+.wkf-c img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 10px; display: block; }
+.wkf-c b { display: block; font-size: 16px; line-height: 1.45; color: var(--ink); }
+.wkf-c span { display: block; margin-top: 4px; font-size: 13px; line-height: 1.6; color: var(--ink-2); }
+.wkf-c small { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 12px; color: var(--ink-3); } .wkf-c small em { font-style: normal; font-weight: 700; color: #A8402F; }
+.wk-fd .wkf-wh { margin-top: 20px; }
+.wkf-w { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.wkf-w li { padding: 10px 14px; border-radius: 12px; background: #FCF3F1; font-size: 14px; line-height: 1.6; color: var(--ink); }
+.wkf-w li b { color: #A8402F; margin-right: 8px; } .wkf-w li small { margin-left: 8px; color: var(--ink-3); font-size: 12px; }
+.wkf-src { margin: 14px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink-3); } .wkf-src a { margin-left: 8px; font-weight: 700; color: var(--accent); text-decoration: none; }
+@media (max-width: 900px) { .wk-fd .wkf-g { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 480px) { .wkf-c { grid-template-columns: minmax(0, 1fr); } }
