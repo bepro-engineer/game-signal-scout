@@ -159,8 +159,11 @@
       <div class="wk-trc">${rangeBox(S, 0, cur)}</div>
       <div class="wk-trt"><p class="wk-key" id="wk-c0-k">${keyOf(r)}</p>
         <p class="wk-note" id="wk-c0-n">${noteOf(S, r)}</p>
-        ${Object.keys(langTot).length ? `<p class="wk-langs"><span>${tr("話題になった言語圏", "Language areas")}</span>${Object.entries(langTot).sort((a, b) => b[1] - a[1]).map(([c]) => chip(c)).join("")}</p>` : ""}
+        ${Object.keys(langTot).length ? (ls => `<p class="wk-langs"><span>${tr("話題になった言語圏", "Language areas")}</span>${ls.slice(0, LMAX).map(([c]) => chip(c)).join("")}</p>${ls.length > LMAX
+          ? `<details class="wk-lx"><summary>${tr(`ほか${ls.length - LMAX}の言語圏を表示`, `Show ${ls.length - LMAX} more language areas`)}</summary><p class="wk-langs">${ls.slice(LMAX).map(([c]) => chip(c)).join("")}</p></details>` : ""}`)(Object.entries(langTot).sort((a, b) => b[1] - a[1])) : ""}
         <p class="wk-langs wk-src"><span>${tr("出典", "Source")}</span>${slabel(st)}${ST.length > 1 ? tr("（出典ごとに数え、ほかの出典の人数とは足していません）", " (counted per source; never added across sources)") : ""}</p></div>`; };
+  // 話題になった言語圏は人数の多い順に LMAX まで出し、残りは「ほか N の言語圏を表示」で開く（#7-B: 長い一覧が右の段を伸ばし、棒もその高さまで伸びていた。消さない）
+  const LMAX = 8;
   const trend = ST.length ? `<section class="wk-sec" id="wk-trend"><div class="sec-h"><h2>${tr("話題の動き", "Buzz over time")}</h2><p>${tr("この作品を話題にした人の数です。上の札は、見つかった変化です。棒に触れると期間・人数・観測の状態が出ます。", "People who talked about this title. Tags show changes found. Hover or tap a bar for the period, count and observation status.")}</p></div>
     <div class="wk-card wk-tr" id="wk-tr0">${trendBody(ST[SI])}</div></section>` : "";
 

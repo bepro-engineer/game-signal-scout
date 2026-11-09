@@ -179,3 +179,25 @@ def test_work_and_dashboard_show_finds_only_when_read():
     assert "LF ?" in lead and "この作品で、プレイヤーがしたこと・起きたこと" in lead
     c = (root / "signal/content.py").read_text()
     assert 'd == ctx.pdays[-1]' in c and 'wf["good"][:3]' in c                                              # 読み取りは直近の発言なので最新の日だけ
+
+
+def test_finds_filter_keeps_kinds_and_counts_and_shows_the_result():
+    """注目の作品の絞り込み（#7-A）: 種類と件数は実データ（体験のある種類だけ・作品数）、押すと ?k= で絞り、選んだ結果と解除を出す。日本語の凡例は絞り込みと別の枠。"""
+    from pathlib import Path
+    js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/finds.js").read_text()
+    for k in ("conquer", "explore", "story", "grow", "team", "versus", "feel", "surprise"):
+        assert f"{k}: [" in js                                                                        # 分類は変えない
+    assert 'href="finds.html?k=${k}"' in js and 'aria-current="true"' in js and 'class="fk-now" role="status"' in js
+    assert '<div class="fk-box">' in js and '<div class="flg">' in js and js.index('<div class="fk-box">') < js.index('<div class="flg">')
+    assert "filter(xs => xs.some(x => x.kind === k)).length" in js                                    # 件数は実データの作品数
+
+
+def test_work_chart_does_not_stretch_to_the_side_column():
+    """作品詳細の話題の動き（#7-B）: 棒は右の段の高さまで伸ばさない（PC 200px・狭い幅 140px）。言語圏は多い順に 8 まで、残りは開いて見られる（消さない）。"""
+    from pathlib import Path
+    root = Path(__file__).parents[1] / "src/game_signal_scout/web/static"
+    css = (root / "work.css").read_text()
+    tail = css[css.index("/* 話題の動きの棒の大きさ（#7-B）"):]
+    assert ".wk-tr { align-items: start; }" in tail and "height: 200px" in tail and "height: 140px" in tail and "overflow: hidden" not in tail
+    js = (root / "work.js").read_text()
+    assert "const LMAX = 8;" in js and '<details class="wk-lx">' in js and "ls.slice(LMAX)" in js

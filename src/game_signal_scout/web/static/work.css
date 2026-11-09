@@ -146,3 +146,11 @@ main.wk #wk-finds > .sec-h.wkf-wh { --ico: url("data:image/svg+xml,%3Csvg xmlns=
 .wkf-src { margin: 14px 0 0; font-size: 12px; line-height: 1.6; color: var(--ink-3); } .wkf-src a { margin-left: 8px; font-weight: 700; color: var(--accent); text-decoration: none; }
 @media (max-width: 900px) { .wkf-g { grid-template-columns: minmax(0, 1fr); } .wkf-g .wkf-c { display: grid; grid-template-columns: 180px minmax(0, 1fr); } .wkf-g .wkf-c img { height: 100%; aspect-ratio: auto; min-height: 110px; } }
 @media (max-width: 480px) { .wkf-g .wkf-c { display: flex; flex-direction: column; } .wkf-g .wkf-c img { height: auto; aspect-ratio: 16 / 9; min-height: 0; } }
+
+/* 話題の動きの棒の大きさ（#7-B）: 棒は右の段（凡例・言語圏）の高さに合わせて伸ばさない。PC は 200px、1100px 以下は 140px（従来どおり）。数・期間・目盛は変えない */
+.wk-tr { align-items: start; }
+.wk-trc .wk-chart { flex: none; }
+.wk-tr .wk-ch { grid-template-rows: auto; align-items: end; } .wk-tr .wk-ch .bar { flex: none; height: 200px; min-height: 0; }
+@media (max-width: 1100px) { .wk-tr .wk-ch .bar { height: 140px; } }
+.wk-lx { margin: 4px 0 0; } .wk-lx summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--accent); list-style: none; } .wk-lx summary::-webkit-details-marker { display: none; }
+.wk-lx summary::after { content: " ▾"; } .wk-lx[open] summary::after { content: " ▴"; } .wk-lx .wk-langs { margin-top: 6px; }

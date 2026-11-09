@@ -38,9 +38,16 @@
     .filter(Boolean).sort((a, b) => order(a.top, b.top));
   const kinds = Object.keys(KIND).map(k => [k, [...byWork.values()].filter(xs => xs.some(x => x.kind === k)).length]).filter(([, n]) => n);
   const ppl = n => n > 1 ? tr(`${num(n)}人が同じことを書いた`, `${num(n)} players wrote the same`) : tr("1人の体験", "1 player");
-  $("fd-note").innerHTML = good.length ? `<div class="fk"><a href="finds.html"${!K ? ' class="on" aria-current="true"' : ""}>${tr("すべての面白さ", "All")}<small>${tr(`${num(byWork.size)}作品`, `${num(byWork.size)}`)}</small></a>
-      ${kinds.map(([k, n]) => `<a href="finds.html?k=${k}"${K === k ? ' class="on" aria-current="true"' : ""}>${esc(tr(...KIND[k]))}<small>${tr(`${num(n)}作品`, `${num(n)}`)}</small></a>`).join("")}</div>
-    <div class="flg"><b>${tr("凡例", "Legend")}</b><span>${jp("voice")} ${tr("声・字幕・UI が日本語", "audio, subtitles and UI")}</span><span>${jp("sub")} ${tr("字幕・UI が日本語（声は外国語）", "subtitles and UI")}</span>
+  // 絞り込み（#7-A）: 見出しと補助文 → 「すべて」と件数 → 体験の種類（体験のある種類だけ・実際の作品数。段がそろう列数）→ いま表示している結果と解除。
+  // 日本語の印の凡例は絞り込みと混ぜず、カードの一覧の説明として下に置く。分類・件数・押したときの動きは変えない
+  const nK = kinds.length, cols = nK <= 4 ? nK : [4, 3].sort((x, y) => (Math.ceil(nK / x) * x - nK) - (Math.ceil(nK / y) * y - nK) || y - x)[0];
+  const shown = cardsOf.length;
+  $("fd-note").innerHTML = good.length ? `<div class="fk-box"><div class="fk-h"><div><h3>${tr("どんな体験を探す？", "What kind of fun are you looking for?")}</h3>
+        <p>${tr("選ぶと、その面白さをプレイヤーが書いた作品だけを表示します。", "Pick one to show only titles where players wrote about it.")}</p></div>
+        <a href="finds.html" class="fk-all${!K ? " on" : ""}"${!K ? ' aria-current="true"' : ""}>${tr("すべての面白さ", "All kinds of fun")}<small>${tr(`${num(byWork.size)}作品`, `${num(byWork.size)} titles`)}</small></a></div>
+      <div class="fk" style="--c:${cols}" data-n="${nK}">${kinds.map(([k, n]) => `<a href="finds.html?k=${k}"${K === k ? ' class="on" aria-current="true"' : ""}><span>${esc(tr(...KIND[k]))}</span><small>${tr(`${num(n)}作品`, `${num(n)} titles`)}</small></a>`).join("")}</div>
+      ${K && KIND[K] ? `<p class="fk-now" role="status">${tr(`「${KIND[K][0]}」を書いた作品 ${num(shown)}作品を表示しています`, `Showing ${num(shown)} titles where players wrote about “${KIND[K][1]}”`)}<a href="finds.html">${tr("選択を解除してすべて表示", "Clear and show all")} ×</a></p>` : ""}</div>
+    <div class="flg"><b>${tr("カードの日本語の印", "Japanese support on cards")}</b><span>${jp("voice")} ${tr("声・字幕・UI が日本語", "audio, subtitles and UI")}</span><span>${jp("sub")} ${tr("字幕・UI が日本語（声は外国語）", "subtitles and UI")}</span>
       <span>${jp("ui")} ${tr("メニュー等のみ日本語", "menus only")}</span><span>${jp("none")}</span><small>${tr("出典: 販売元のストアの対応言語", "Source: publisher's store listing")}</small></div>` : "";
   const card = ({ top: x, rest }) => `<a class="fc" href="${A.workUrl(x.w.id)}"><img class="fc-i" src="${esc(img(x.w))}" alt="" referrerpolicy="no-referrer" loading="lazy">
       <div><span class="fc-t">${x.w.cover ? `<img src="${esc(x.w.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}${esc(nm(x.w.name))}</span><b>${esc(x.appeal)}</b>
