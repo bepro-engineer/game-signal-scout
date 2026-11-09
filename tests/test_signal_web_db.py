@@ -82,6 +82,20 @@ def test_menu_keeps_anime_names_and_adds_play_styles():
     assert "放送後も熱い" not in js                                                  # Game にない放送のページは置かない
 
 
+def test_todays_pick_card_has_no_language_area_list():
+    """今日の注目の代表カード（ck1）に話題の言語圏の一覧を出さない（#7）。注目の理由・その後・初検知と人数は残す。並び（今日の兆し → 地図 → 今日の注目 → もっと見る）は変えない。"""
+    from pathlib import Path
+    root = Path(__file__).parents[1] / "src/game_signal_scout/web"
+    js = (root / "static/dashboard.js").read_text()
+    ck1 = js[js.index('<article class="ck1"'):js.index("</article>", js.index('<article class="ck1"'))]
+    assert "spread" not in ck1 and '"広がり"' not in ck1
+    for keep in ("ck1-line", '"その後"', '"初検知"', "grow(top)", "art(top)", "wn(top.name"):
+        assert keep in ck1
+    html = (root / "templates/pages/index.html").read_text()
+    order = [html.index(f'id="{i}"') for i in ("intro", "lead", "world", "others", "more")]
+    assert order == sorted(order)
+
+
 def test_search_items_carry_play_modes_for_menu_pages(client):
     c, last, docs = client
     works = {w["id"]: w for w in c.get("/api/search").json()["works"]}

@@ -187,6 +187,7 @@
   }
 
   /* ---------- 今チェックしておきたい作品（本番のその日のカード。並びも本番のまま。順位ではない） ---------- */
+  // 代表カード（ck1）には話題の言語圏の一覧（spread）を出さない（#7: 言語圏の多い作品でカードが縦長になる。言語圏ごとの反応は作品詳細・言語圏の広がりのページにある）
   { const CK = G.checks;
     const first = c => String((c.first || {})[L] || "").replace(/\s*\d+〜\d+時/, "").replace(/,\s*\d+–\d+h/, "");
     const grow = c => c.grow && c.grow[0] != null && c.grow[1] != null ? tr(`${c.grow[0]}人→${c.grow[1]}人`, `${c.grow[0]}→${c.grow[1]} people`) : "";
@@ -206,7 +207,7 @@
             <div class="ck1-k"><span class="pick">${tr("今日の注目", "Today's pick")}</span><span class="lab">${esc((top.label || {})[L] || "")}</span></div>
             ${wn(top.name, 2, "h3")}
             <p class="ck1-line">${esc((top.line || {})[L] || "")}</p>
-            <div class="ck1-chips"><span><em>${tr("その後", "After")}</em>${esc((top.after || {})[L] || "")}</span><span><em>${tr("広がり", "Spread")}</em>${esc((top.spread || {})[L] || "—")}</span><span><em>${tr("初検知", "First seen")}</em>${esc(first(top))}${grow(top) ? `・${esc(grow(top))}` : ""}</span></div>
+            <div class="ck1-chips"><span><em>${tr("その後", "After")}</em>${esc((top.after || {})[L] || "")}</span><span><em>${tr("初検知", "First seen")}</em>${esc(first(top))}${grow(top) ? `・${esc(grow(top))}` : ""}</span></div>
           </div>
           <div class="ck1-im">${art(top)}</div>
         </article>
