@@ -17,7 +17,7 @@
 
   /* ---------- この期間の広がり ---------- */
   const lead = grew.find(w => w.e.status === "continuing") || grew[0];
-  $("ls-sum").innerHTML = `<div class="g-kick"><b>${tr("今日の兆し", "Today's signal")}</b><span class="g-day">${tr("この期間の広がり", "Spread in this period")}・${md(first)}〜${md(day)}</span></div>
+  $("ls-sum").innerHTML = `<div class="g-kick"><b>${tr("今日の兆し", "Today's signal")}</b><span class="g-day">${tr("この期間の広がり", "Spread in this period")}${tr("・", " · ")}${md(first)}${tr("〜", "–")}${md(day)}</span></div>
     <p class="dg-t">${tr(`${md(first)}から${md(day)}までに、${items.length}作品が新しい言語圏で話題になり始めました。そのうち${grew.length}作品は、ほかの言語圏で話題だった作品がさらに広がったものです。`,
       `From ${md(first)} to ${md(day)}, ${items.length} title(s) started being talked about in a new language area; ${grew.length} of them had already been talked about in another language area.`)}
     ${lead ? tr(`<b class="nb">『${esc(nm(lead.name))}』</b>は${lead.priorL.map(ln).join("・")}に加えて、${md(lead.e.first_day)}から<b class="nb">${esc(ln(lead.top.code))}圏</b>でも話題になっています。`,

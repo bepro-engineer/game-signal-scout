@@ -3,7 +3,7 @@
 // → その作品の買う前に知っておきたいこと（AI が不満と判断した体験だけ。賛否の体験の注意の印は良い体験にも付くので使わない。カードの中に）。カードは日本語で遊べる作品を先、その中は話題（直近 7 日の発言）の多い順。
 // 人数はこちら（services/insight）で数えたもの。1 人の体験はそう書く。原文は出さない。
 (() => {
-  const A = window.ASS, { tr, esc, num, nm } = A, FI = ((A.P || {}).finds || {}).items || [];
+  const A = window.ASS, { tr, esc, num, nm, tx } = A, FI = ((A.P || {}).finds || {}).items || [];
   const $ = id => document.getElementById(id);
   const K = (() => { try { return new URLSearchParams(location.search).get("k") || ""; } catch (e) { return ""; } })();
   const KIND = { conquer: ["強敵を自力で乗り越える手応え", "Overcoming tough challenges"], explore: ["探して、見つける喜び", "The joy of exploring"],
@@ -19,10 +19,10 @@
   const img = w => { const xs = w.shots || []; const i = nth[w.id] = (nth[w.id] || 0) + 1; return xs.length ? xs[(i - 1) % xs.length] : (w.banner || w.header || w.cover || ""); };
   const good = [], warn = [];
   FI.forEach(w => {
-    w.finds.forEach(f => { const ev = (f.examples || [])[0] || {}, x = { w, appeal: f.appeal, kind: f.appeal_kind, verdict: f.verdict, act: ev.act, result: ev.result, people: f.people,
+    w.finds.forEach(f => { const ev = (f.examples || [])[0] || {}, x = { w, appeal: tx(f, "appeal"), kind: f.appeal_kind, verdict: f.verdict, act: tx(ev, "act"), result: tx(ev, "result"), people: f.people,
       against: f.verdict === "fun" ? f.frustration || 0 : 0, caution: f.caution };
       if (f.appeal && f.verdict !== "frustration") good.push(x); if (f.verdict === "frustration") warn.push(x); });
-    w.singles.forEach(e => { const x = { w, appeal: e.appeal, kind: e.appeal_kind, verdict: e.verdict, act: e.act, result: e.result, people: 1, against: 0, caution: e.caution };
+    w.singles.forEach(e => { const x = { w, appeal: tx(e, "appeal"), kind: e.appeal_kind, verdict: e.verdict, act: tx(e, "act"), result: tx(e, "result"), people: 1, against: 0, caution: e.caution };
       if (e.appeal && e.verdict !== "frustration") good.push(x); if (e.verdict === "frustration") warn.push(x); });
   });
   // 並び（2026-11-09 オーナー）: 日本語で遊べる作品（UI 以上）を先、その中は話題（直近 7 日の発言）の多い順。同じ作品の中は書いた人の多い順
@@ -52,8 +52,8 @@
   const card = ({ top: x, rest }) => `<a class="fc" href="${A.workUrl(x.w.id)}"><img class="fc-i" src="${esc(img(x.w))}" alt="" referrerpolicy="no-referrer" loading="lazy">
       <div><span class="fc-t">${x.w.cover ? `<img src="${esc(x.w.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}${esc(nm(x.w.name))}</span><b>${esc(x.appeal)}</b>
         <span class="fc-e">${esc(x.act)} → ${esc(x.result)}</span>
-        ${rest.length ? `<ul class="fc-r">${rest.slice(0, 2).map(r => `<li>${esc(r.appeal)}<small>${r.people > 1 ? tr(`${num(r.people)}人`, `${num(r.people)}`) : tr("1人", "1")}</small></li>`).join("")}</ul>` : ""}
-        ${(WB.get(x.w.id) || []).length ? `<div class="fc-n"><span>${tr("買う前に知っておきたいこと", "Good to know before buying")}</span><ul>${WB.get(x.w.id).slice(0, 2).map(r => `<li>${r.caution ? `<em>${esc(tr(...CJ[r.caution]))}</em>` : ""}${esc(r.act)} → ${esc(r.result)}<small>${r.people > 1 ? tr(`${num(r.people)}人`, `${num(r.people)}`) : tr("1人", "1")}</small></li>`).join("")}</ul></div>` : ""}
+        ${rest.length ? `<ul class="fc-r">${rest.slice(0, 2).map(r => `<li>${esc(r.appeal)}<small>${r.people > 1 ? tr(`${num(r.people)}人`, `${num(r.people)} players`) : tr("1人", "1 player")}</small></li>`).join("")}</ul>` : ""}
+        ${(WB.get(x.w.id) || []).length ? `<div class="fc-n"><span>${tr("買う前に知っておきたいこと", "Good to know before buying")}</span><ul>${WB.get(x.w.id).slice(0, 2).map(r => `<li>${r.caution ? `<em>${esc(tr(...CJ[r.caution]))}</em>` : ""}${esc(r.act)} → ${esc(r.result)}<small>${r.people > 1 ? tr(`${num(r.people)}人`, `${num(r.people)} players`) : tr("1人", "1 player")}</small></li>`).join("")}</ul></div>` : ""}
         <small><span>${ppl(x.people)}</span>${x.against ? `<span class="fc-w">${tr(`反対の声 ${num(x.against)}人`, `${num(x.against)} disagreed`)}</span>` : ""}${rest.length > 2 ? `<span>${tr(`ほかに${num(rest.length - 2)}件の面白さ`, `+${num(rest.length - 2)} more`)}</span>` : ""}${jp(lv(x.w))}</small></div></a>`;
   $("fd-list").innerHTML = !good.length
     ? `<div class="rv-empty"><div><b>${tr("まだプレイヤーの発言を読んだ作品がありません", "No titles have been read yet")}</b></div></div>`

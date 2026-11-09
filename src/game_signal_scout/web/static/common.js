@@ -10,6 +10,8 @@
   document.documentElement.lang = lang;
   const tr = (ja, en) => (lang === "en" ? en : ja);
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  // 読み取りの文（面白さ・したこと・起きたこと）を表示言語で: 英語の表示で英訳（k_en）があればそれ、なければ元の文（#2）
+  const tx = (o, k) => (o ? (lang === "en" && o[`${k}_en`]) || o[k] || "" : "");
   const nm = n => (n == null ? "" : typeof n === "string" ? n : (n[lang] || n.ja || n.en || ""));
   const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const md = s => { if (!s) return ""; const m = +s.slice(5, 7), d = +s.slice(8, 10); return lang === "en" ? `${MON[m - 1]} ${d}` : `${m}/${d}`; };
@@ -26,7 +28,8 @@
   // 開発元と国・地域（出典の記載のとおり。記載がなければ「国・地域は未確認」）
   // 多いときは max 社まで（残りは「ほか N 社」。作品詳細はすべて）
   const devLine = (w, max = 2) => { const ds = (w && w.dev) || []; if (!ds.length) return tr("開発元は未確認", "Developer unknown");
-    const one = d => `${esc(d.n)}${d.c ? `（${esc(d.c.join("・"))}）` : tr("（国・地域は未確認）", " (country unknown)")}`;
+    const one = d => lang === "en" ? `${esc(d.n_en || d.n)}${d.c ? ` (${esc((d.c_en || d.c).join(", "))})` : " (country unknown)"}`   // 英語の名前（#2）。なければ元の名前
+      : `${esc(d.n)}${d.c ? `（${esc(d.c.join("・"))}）` : "（国・地域は未確認）"}`;
     return ds.slice(0, max).map(one).join(tr("、", ", ")) + (ds.length > max ? tr(`ほか${ds.length - max}社`, ` +${ds.length - max} more`) : ""); };
   const workUrl = id => `work.html?id=${encodeURIComponent(id)}`;
   // 遊ぶ目的（#2 の入口。services/insight の intent と同じ鍵）
@@ -71,7 +74,11 @@
   const GENRE = L2({ action: ["アクション", "Action"], adventure: ["冒険", "Adventure"], comedy: ["コメディ", "Comedy"], drama: ["ドラマ", "Drama"], ecchi: ["お色気", "Ecchi"],
     fantasy: ["プレイヤータジー", "Fantasy"], horror: ["ホラー", "Horror"], mahou_shoujo: ["魔法少女", "Magical girl"], mecha: ["ロボット", "Mecha"], music: ["音楽", "Music"],
     mystery: ["ミステリー", "Mystery"], psychological: ["心理", "Psychological"], romance: ["恋愛", "Romance"], sci_fi: ["SF", "Sci-fi"], slice_of_life: ["日常", "Slice of life"],
-    sports: ["スポーツ", "Sports"], supernatural: ["超常", "Supernatural"], thriller: ["スリラー", "Thriller"] });
+    sports: ["スポーツ", "Sports"], supernatural: ["超常", "Supernatural"], thriller: ["スリラー", "Thriller"],
+    // 販売元のストアのジャンル（日本語のストアの表記 → 表示。英語の表示のため。#2）
+    "アクション": ["アクション", "Action"], "アドベンチャー": ["アドベンチャー", "Adventure"], "インディー": ["インディー", "Indie"], "RPG": ["RPG", "RPG"],
+    "シミュレーション": ["シミュレーション", "Simulation"], "カジュアル": ["カジュアル", "Casual"], "ストラテジー": ["ストラテジー", "Strategy"], "無料プレイ": ["無料プレイ", "Free to Play"],
+    "早期アクセス": ["早期アクセス", "Early Access"], "レース": ["レース", "Racing"], "MM（Massively Multiplayer）": ["MM（Massively Multiplayer）", "Massively Multiplayer"], "スポーツ": ["スポーツ", "Sports"] });
   // 変化の種類（本番の Viewer の TYPES と同じ名前。日ごとの記録の種類 → 名前）
   const KIND = L2({ surge: ["急に増えた", "Sudden jump"], cont: ["増加が続いている", "Keeps growing"], persist: ["増加が続いている", "Keeps growing"],
     new: ["新しく出始めた", "Newly appearing"], emergence: ["新しく出始めた", "Newly appearing"], overseas: ["言語圏が広がった", "New language areas"],
@@ -296,7 +303,7 @@
       else { add(step); row.querySelector("button")?.focus(); } });
     add(first);
   };
-  window.ASS = Object.assign(window.ASS || {}, { moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, workUrl, INTENTS, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
+  window.ASS = Object.assign(window.ASS || {}, { tx, moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, workUrl, INTENTS, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
     renderNav, store, sstore, dayBar, restoreScroll, fromPage, goBack, restoring });
   renderNav();
   // まもなく発売（メニューの下の枠。Anime の「まもなく放送」に当たる。signal/upcoming.py・接続口 api/soon）:

@@ -40,7 +40,7 @@
     <p class="lede"${ss ? ` data-sents="${esc(JSON.stringify(ss))}"` : ""}>${lede}</p>
     ${LD ? A.cites(LD.cites) : ""}
     ${LF ? `<div class="g-did"><p>${tr("この作品で、プレイヤーがしたこと・起きたこと", "What players did and what happened")}<small>${tr(`直近 ${LF.window_days || 7} 日の発言から`, `From posts in the last ${LF.window_days || 7} days`)}</small></p>
-      <ul style="--n:${LF.good.length}">${LF.good.map(x => `<li><b>${esc(x.appeal)}</b><span>${esc(x.act)} → ${esc(x.result)}</span><small>${x.people > 1 ? tr(`${x.people}人が同じことを書いた`, `${x.people} players wrote the same`) : tr("1人の体験", "1 player")}</small></li>`).join("")}</ul>
+      <ul style="--n:${LF.good.length}">${LF.good.map(x => `<li><b>${esc(A.tx(x, "appeal"))}</b><span>${esc(A.tx(x, "act"))} → ${esc(A.tx(x, "result"))}</span><small>${x.people > 1 ? tr(`${x.people}人が同じことを書いた`, `${x.people} players wrote the same`) : tr("1人の体験", "1 player")}</small></li>`).join("")}</ul>
       <a href="${A.workUrl(G.lead.work)}">${tr("この作品の面白さと、買う前に知っておきたいこと →", "Fun and things to know about this title →")}</a></div>` : ""}
     <ul class="g-row">${G.featured.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}</li>`).join("")}</ul>
     <div class="g-foot"><span>${tr(`話題になった${G.works_today}作品から${G.featured.length}作品（人数の順ではありません）。`, `${G.featured.length} of the ${G.works_today} titles talked about (not in order of people). `)}${G.movement ? tr(`作品それぞれの普段と比べて目立って動いた作品は${G.movement.q1.changes}作品でした。`, `${G.movement.q1.changes} titles moved notably from their usual level.`) : ""}</span>
@@ -132,7 +132,7 @@
       const tip = document.createElement("div"); tip.className = "lo-tip"; mapEl.appendChild(tip);
       const diffText = l => !O.comparable ? tr("比較データなし", "No comparison") : l.n === l.prev ? tr("前日比 ±0", "±0 vs. prev.") : tr(`前日比 ${dd(l)}作品`, `${dd(l)} vs. prev.`);
       const one = l => { const ex = l.works.slice(0, 3).map(w => esc(nm(w.name)));
-        return `<b style="--lc:${lcol(l.code)}"><i></i>${esc(ln(l.code))}</b><span class="tn"><em>${l.n}</em>${tr("作品", " titles")}・${diffText(l)}</span>${ex.length ? `<span class="te">${tr("例: ", "e.g. ")}${ex.join(tr("、", ", "))}</span>` : ""}`; };
+        return `<b style="--lc:${lcol(l.code)}"><i></i>${esc(ln(l.code))}</b><span class="tn"><em>${l.n}</em>${tr("作品", " titles")}${tr("・", " · ")}${diffText(l)}</span>${ex.length ? `<span class="te">${tr("例: ", "e.g. ")}${ex.join(tr("、", ", "))}</span>` : ""}`; };
       const roleLabel = (code, cc) => (RO[code] || {})[cc] === "s" ? tr("共通語・第二言語として", "as a common or second language") : tr("主に使われる言語", "main language");
       const why = (code, cc) => cc && (WHY[code] || {})[cc] ? `<span class="twhy">${esc(WHY[code][cc])}</span>` : "";
       const on = (code, ev, codes, cc) => {
@@ -197,8 +197,8 @@
     const first = c => String((c.first || {})[L] || "").replace(/\s*\d+〜\d+時/, "").replace(/,\s*\d+–\d+h/, "");
     const grow = c => c.grow && c.grow[0] != null && c.grow[1] != null ? tr(`${c.grow[0]}人→${c.grow[1]}人`, `${c.grow[0]}→${c.grow[1]} people`) : "";
     const nl = c => (c.new_langs || []).map(x => x[L]).join(tr("・", ", "));
-    const meta = c => [`${tr("初検知", "First seen")} ${first(c)}${grow(c) ? `・${grow(c)}` : ""}`, `${tr("その後", "After")}: ${(c.after || {})[L] || ""}`,
-      ...(nl(c) ? [`${tr("新しい言語圏", "New language areas")}: ${nl(c)}`] : [])].join(" ・ ");
+    const meta = c => [`${tr("初検知", "First seen")} ${first(c)}${grow(c) ? `${tr("・", " · ")}${grow(c)}` : ""}`, `${tr("その後", "After")}: ${(c.after || {})[L] || ""}`,
+      ...(nl(c) ? [`${tr("新しい言語圏", "New language areas")}: ${nl(c)}`] : [])].join(tr(" ・ ", " · "));
     const small = c => `<li class="ck2" data-cls="${esc(c.cls || "")}">${link(c)}${art(c)}<div class="ck2-t">${wn(c.name, 1)}<span class="ck2-l"><i>${esc((c.label || {})[L] || "")}</i>${esc((c.line || {})[L] || "")}</span><span class="ck2-m" title="${esc(meta(c))}">${esc(meta(c))}</span></div></li>`;
     if (!CK.length) {
       $("others").innerHTML = `<h2 class="g-h">${tr("今チェックしておきたい作品", "Worth a look now")}</h2><div class="rv-empty"><div><b>${tr("この日に動き始めた作品は見つかりませんでした", "No title started moving on this day")}</b></div></div>`;
@@ -212,7 +212,7 @@
             <div class="ck1-k"><span class="pick">${tr("今日の注目", "Today's pick")}</span><span class="lab">${esc((top.label || {})[L] || "")}</span></div>
             ${wn(top.name, 2, "h3")}
             <p class="ck1-line">${esc((top.line || {})[L] || "")}</p>
-            <div class="ck1-chips"><span><em>${tr("その後", "After")}</em>${esc((top.after || {})[L] || "")}</span><span><em>${tr("初検知", "First seen")}</em>${esc(first(top))}${grow(top) ? `・${esc(grow(top))}` : ""}</span></div>
+            <div class="ck1-chips"><span><em>${tr("その後", "After")}</em>${esc((top.after || {})[L] || "")}</span><span><em>${tr("初検知", "First seen")}</em>${esc(first(top))}${grow(top) ? `${tr("・", " · ")}${esc(grow(top))}` : ""}</span></div>
           </div>
           <div class="ck1-im">${art(top)}</div>
         </article>

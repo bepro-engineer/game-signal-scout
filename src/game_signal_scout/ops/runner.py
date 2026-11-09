@@ -163,13 +163,56 @@ def job_insight(ctx: Context) -> JobResult:
             failed.append({"appid": appid, "error": f"{type(e).__name__}: {str(e)[:160]}"})
             continue
         if x and prev.get("kind") == insight.KIND and repo.get_hash(ctx.conn, appid) == x["input_hash"]:
+            if len(x["body"].get("en") or {}) > len(prev.get("en") or {}):   # 材料は同じでも、訳せた文が増えたら訳だけ残す（#2）
+                repo.set_en(ctx.conn, appid, x["body"]["en"])
+                ctx.conn.commit()
             skipped += 1
             continue
         if x:
             repo.upsert(ctx.conn, x)
             ctx.conn.commit()
             done.append(appid)
-    return JobResult(input_count=len(todo), output_count=len(done), detail={"done": done, "unchanged": skipped, "failed": failed})
+    translated = translate_missing(ctx.conn, ic, int(ic.get("max_translate_per_run", 400)), failed)
+    return JobResult(input_count=len(todo), output_count=len(done), detail={"done": done, "unchanged": skipped, "failed": failed, "translated": translated})
+
+
+def translate_missing(conn, ic: dict, budget: int, failed: list) -> int:
+    """英語の表示（#2）: 読み取り済みの作品で、まだ英訳のない文を訳す（読み直さない。1 回に budget 文まで。訳せなかった文は次の回に）。訳した文の数を返す。"""
+    from game_signal_scout.repositories import catalog, insight as repo
+    from game_signal_scout.services import insight
+    rows = repo.all_insights(conn)
+    names = {a: p["title"] for a, p in catalog.profiles(conn, list(rows)).items()}
+    conn.rollback()
+    translated = 0
+    for appid, body in rows.items():
+        if budget <= 0:
+            break
+        if body.get("kind") != insight.KIND:
+            continue
+        texts = insight.public_texts(body)
+        have = {t: v for t, v in (body.get("en") or {}).items() if t in texts and v}
+        missing = [t for t in texts if t not in have]
+        if not missing:
+            continue
+        try:
+            en = insight.translate_en(insight_ask(ic), names.get(appid) or appid, texts, have, limit=budget)
+        except Exception as e:  # noqa: BLE001 — 1 作品の失敗で止めない
+            conn.rollback()
+            failed.append({"appid": appid, "error": f"translate: {type(e).__name__}: {str(e)[:120]}"})
+            continue
+        budget -= len(missing)
+        if len(en) > len(have):
+            repo.set_en(conn, appid, en)
+            conn.commit()
+            translated += len(en) - len(have)
+    return translated
+
+
+def insight_ask(ic: dict):
+    """読み取りと同じ共有の LLM の枠での 1 回の問い合わせ（JSON で返す）。"""
+    from game_signal_scout import llm
+    return lambda p: llm.chat(ic["model"], "", p, format="json", think=False, options={"temperature": 0.1, "num_ctx": 8192, "num_predict": 2048},
+                              timeout=float(ic.get("timeout_seconds", 1800))).content
 
 
 def job_observe(ctx: Context) -> JobResult:

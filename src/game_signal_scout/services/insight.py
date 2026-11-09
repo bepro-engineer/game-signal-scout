@@ -173,6 +173,62 @@ def singles(posts: dict[str, dict], exps: dict[str, dict], finds_members: set[st
     return out[:limit]
 
 
+EN_BATCH = 16
+JA_CHARS = re.compile(r"[\u3040-\u30ff\u3400-\u9fff]")
+EN_PROMPT = """Translate each Japanese line about the video game "{title}" into natural, concise English for an English-speaking player.
+Keep the exact meaning: do not add, drop or soften anything. Keep every number, unit, negation and uncertainty. Keep game, item and place names as they are.
+Lines are short notes of what a player did, what happened, or what was fun. Keep the same short note style (no quotation marks).
+Return only JSON: {{"items": [{{"id": number, "en": "English"}}, ...]}}
+
+Lines:
+{lines}"""
+
+
+def public_texts(body: dict) -> list[str]:
+    """画面に出す日本語の文（面白さの一文・したこと・起きたこと）。英語の表示のために訳す対象。"""
+    out: list[str] = []
+    for f in (body or {}).get("finds") or []:
+        ex = (f.get("examples") or [{}])[0]
+        out += [f.get("appeal") or "", ex.get("did") or "", ex.get("happened") or ""]
+    for e in (body or {}).get("singles") or []:
+        out += [e.get("appeal") or "", e.get("did") or "", e.get("happened") or ""]
+    return list(dict.fromkeys(t for t in out if t))
+
+
+def _en_ok(ja: str, en: str) -> bool:
+    """訳文の検査: 空でない・日本語の文字が残っていない・長すぎない・元の数字を落としていない。"""
+    if not en or JA_CHARS.search(en) or len(en) > max(160, len(ja) * 6):
+        return False
+    return set(re.findall(r"\d+", ja)) <= set(re.findall(r"\d+", en))
+
+
+def translate_en(ask, title: str, texts: list[str], known: dict | None = None, limit: int | None = None) -> dict[str, str]:
+    """日本語の文 → 英語の訳（同じ文は訳し直さない: known）。検査に通らなかった文・読めなかった束は入れない（次の回に訳し直す）。
+    返すのは今の texts の分だけ（もう出さない文の訳は持たない）。limit = 1 回に訳す文の数の上限（共有の LLM の枠を長く使わない）。"""
+    known = known or {}
+    out = {t: known[t] for t in texts if known.get(t)}
+    todo = [t for t in texts if t not in out][: limit if limit is not None else None]
+    for i in range(0, len(todo), EN_BATCH):
+        b = todo[i:i + EN_BATCH]
+        lines = "\n".join(f"[{j}] {t}" for j, t in enumerate(b))
+        try:
+            raw = ask(EN_PROMPT.format(title=title, lines=lines))
+            arr = json.loads(raw[raw.find("{"):raw.rfind("}") + 1]).get("items") or []
+        except Exception:  # noqa: BLE001 — 一時的な失敗・壊れた応答: この束は次の回に訳す
+            continue
+        for it in arr if isinstance(arr, list) else []:
+            if not isinstance(it, dict):
+                continue
+            try:
+                j = int(it.get("id"))
+            except (TypeError, ValueError):
+                continue
+            en = str(it.get("en") or "").strip().strip('"「」')
+            if 0 <= j < len(b) and _en_ok(b[j], en):
+                out[b[j]] = en
+    return out
+
+
 def input_hash(rows: list[dict]) -> str:
     return hashlib.sha256("|".join(sorted(r["item_id"] for r in rows)).encode()).hexdigest()[:16]
 
@@ -206,9 +262,12 @@ def read_game(conn, appid: str, title: str, model: str, cfg: dict, prev_body: di
     # 段ごとの件数（#2: どの段で減ったかを確かめられるように）
     stages = {"statements": len(rows), "statements_recent": sum(1 for r in rows if r["at"] >= since), "read_now": len(todo), "read": len(reads),
               "experiences": len(exps), "experiences_recent": cur_exps, "groups": len(groups), "below_min_people": len(groups) - len(finds), "finds": len(finds)}
+    body_public = {"finds": finds, "singles": singles(posts, exps, members, since)}
+    # 英語の表示（#2 2026-11-09 オーナー）: 画面に出す日本語の文の英訳。前の回に訳した文は訳し直さない
+    en = translate_en(ask, title, public_texts(body_public), (prev_body or {}).get("en"))
     return {"appid": appid, "generated_at": now, "model": model, "input_hash": input_hash(rows),
-            "body": {"kind": KIND, "window_days": days, "since": since.isoformat(), "read_people": n_cur, "min_people": mp,
-                     "experiences": cur_exps, "finds": finds, "singles": singles(posts, exps, members, since), "stages": stages, "reads": reads}}
+            "body": {"kind": KIND, "en": en, "window_days": days, "since": since.isoformat(), "read_people": n_cur, "min_people": mp,
+                     "experiences": cur_exps, "finds": finds, "singles": body_public["singles"], "stages": stages, "reads": reads}}
 
 
 def phenomena(body: dict, ranked: bool) -> list[str]:

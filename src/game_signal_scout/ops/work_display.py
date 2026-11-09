@@ -34,7 +34,9 @@ def work_attrs(attrs: dict) -> dict:
     named = lambda n: bool(n) and not re.fullmatch(r"Q\d+", str(n))   # 名前（日本語・英語）の記載がない開発元は、識別子を名前として出さない
     with_country = [d for d in next((x["value"] for x in attrs.get("developer_countries") or [] if x.get("value")), []) if named(d.get("developer"))]
     if with_country:
-        out["dev"] = [{"n": d["developer"], "c": d.get("countries") or None, "ref": d.get("ref")} for d in with_country]
+        out["dev"] = [{"n": d["developer"], "c": d.get("countries") or None, "ref": d.get("ref"),   # 英語の名前（n_en・c_en。英語の表示。#2）
+                       **({"n_en": d["developer_en"]} if d.get("developer_en") else {}), **({"c_en": d["countries_en"]} if d.get("countries_en") else {})}
+                      for d in with_country]
     else:
         names = next((x["value"] for x in attrs.get("developers") or [] if x.get("value")), [])
         out["dev"] = [{"n": n, "c": None} for n in names if named(n)]

@@ -60,7 +60,7 @@
   // 日本人が最初に判断すること（#2）: 日本語で遊べるか（UI・字幕・音声を分けて）→ 開発元と国・地域 → 機種。出典と確かめた日を添える
   const yn = v => v == null ? `<span class="jq">${tr("未確認", "Unknown")}</span>` : v ? `<span class="jy">${tr("あり", "Yes")}</span>` : `<span class="jn">${tr("なし", "No")}</span>`;
   const J = W.jp;
-  const PLAT = { "Windows": "Windows", "Mac": "Mac", "Linux・Steam Deck": "Linux・Steam Deck" };
+  const PLAT = { "Windows": "Windows", "Mac": "Mac", "Linux・Steam Deck": tr("Linux・Steam Deck", "Linux / Steam Deck") };
   const judge = `<div class="wk-judge" id="wk-judge">
       <p class="wkj-jp">${A.jpTag(W)}<span class="wkj-d">${tr("UI", "Interface")} ${yn(J && J.ui)}　${tr("字幕", "Subtitles")} ${yn(J && J.sub)}　${tr("音声", "Voice")} ${yn(J && J.voice)}</span>
         <small class="wkj-s">${J ? tr(`ストアの表記（${esc(W.jp_at || "")} 確認）`, `Store listing (checked ${esc(W.jp_at || "")})`) : tr("ストアの表記を確かめられていません", "Not checked yet")}</small></p>
@@ -314,10 +314,10 @@
   const GN = !WF ? 0 : WF.good.length >= 6 ? 6 : WF.good.length >= 3 ? 3 : WF.good.length;
   const finds = WF && (WF.good.length || WF.warn.length) ? `<section class="wk-sec wk-fd" id="wk-finds">
       ${WF.good.length ? `<div class="sec-h"><h2>${tr("この作品でプレイヤーが見つけた面白さ", "What players found fun")}</h2><p>${tr("この作品を遊んだ世界のプレイヤーが書いた、何をして、何が起きて、何が面白かったのか。", "What players did, what happened, and what was fun.")}</p></div>
-      <div class="wkf-g" data-n="${GN}" style="--n:${Math.min(3, GN)}">${WF.good.slice(0, GN).map((x, i) => `<div class="wkf-c">${wfImg(i) ? `<img src="${esc(wfImg(i))}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}<div><b>${esc(x.appeal)}</b><span>${esc(x.act)} → ${esc(x.result)}</span>
+      <div class="wkf-g" data-n="${GN}" style="--n:${Math.min(3, GN)}">${WF.good.slice(0, GN).map((x, i) => `<div class="wkf-c">${wfImg(i) ? `<img src="${esc(wfImg(i))}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}<div><b>${esc(A.tx(x, "appeal"))}</b><span>${esc(A.tx(x, "act"))} → ${esc(A.tx(x, "result"))}</span>
         <small>${pp(x.people)}${x.against ? `<em>${tr(`反対の声 ${x.against}人`, `${x.against} disagreed`)}</em>` : ""}</small></div></div>`).join("")}</div>` : ""}
       ${WF.warn.length ? `<div class="sec-h wkf-wh"><h2>${tr("買う前に知っておきたいこと", "Good to know before buying")}</h2><p>${tr("プレイヤーが書いた不満です。", "Frustrations players wrote about.")}</p></div>
-      <ul class="wkf-w">${WF.warn.slice(0, 6).map(x => `<li>${x.caution && CJ[x.caution] ? `<b>${esc(tr(...CJ[x.caution]))}</b>` : ""}${esc(x.act)} → ${esc(x.result)}<small>${x.people > 1 ? tr(`${x.people}人`, `${x.people}`) : tr("1人", "1")}</small></li>`).join("")}</ul>` : ""}
+      <ul class="wkf-w">${WF.warn.slice(0, 6).map(x => `<li>${x.caution && CJ[x.caution] ? `<b>${esc(tr(...CJ[x.caution]))}</b>` : ""}${esc(A.tx(x, "act"))} → ${esc(A.tx(x, "result"))}<small>${x.people > 1 ? tr(`${x.people}人`, `${x.people} players`) : tr("1人", "1 player")}</small></li>`).join("")}</ul>` : ""}
       <p class="wkf-src">${tr(`直近 ${WF.window_days || 7} 日に、この作品について書いた ${WF.read_people || 0}人の発言を AI が読み、具体的な体験 ${WF.experiences || 0}件を取り出しました。人数はこちらで数えています（同じ人の複数の発言は 1 人）。原文は載せていません。`,
         `AI read posts by ${WF.read_people || 0} players from the last ${WF.window_days || 7} days and extracted ${WF.experiences || 0} concrete experiences. Counts are done separately. Original posts are not shown.`)}
         <a href="finds.html">${tr("ほかの作品は「注目の作品」へ →", "More on Titles worth a look →")}</a></p></section>` : "";

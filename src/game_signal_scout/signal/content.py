@@ -762,9 +762,15 @@ def pages(ctx: Ctx) -> dict:
     return out
 
 
-def _pub_ev(e: dict) -> dict:
-    """体験の公開の形: したこと（act）・起きたこと（result）。did は公開しない項目名（FORBIDDEN_KEYS。内部の識別子の名前）なので名前を変える。"""
-    return {**{k: v for k, v in e.items() if k not in ("did", "happened")}, "act": e.get("did"), "result": e.get("happened")}
+def _pub_ev(e: dict, en: dict | None = None) -> dict:
+    """体験の公開の形: したこと（act）・起きたこと（result）。did は公開しない項目名（FORBIDDEN_KEYS。内部の識別子の名前）なので名前を変える。
+    en = 読み取りの英訳（日本語の文 → 英語。#2）。訳があれば act_en・result_en・appeal_en を添える（なければ付けない。画面は日本語の文を出す）。"""
+    en = en or {}
+    out = {**{k: v for k, v in e.items() if k not in ("did", "happened")}, "act": e.get("did"), "result": e.get("happened")}
+    for k, src in (("act_en", e.get("did")), ("result_en", e.get("happened")), ("appeal_en", e.get("appeal"))):
+        if src and en.get(src):
+            out[k] = en[src]
+    return out
 
 
 def finds_page(ctx: Ctx) -> dict:
@@ -786,8 +792,9 @@ def finds_page(ctx: Ctx) -> dict:
         if not m:
             continue
         items.append({**{k: m.get(k) for k in ("id", "name", "cover", "banner", "header", "shots")}, **_judge(m), "talk": talk.get(a, 0),
-                      "finds": [{**f, "examples": [_pub_ev(x) for x in f.get("examples") or []]} for f in b.get("finds") or []],
-                      "singles": [_pub_ev(e) for e in b.get("singles") or []],
+                      "finds": [{**f, **({"appeal_en": (b.get("en") or {})[f["appeal"]]} if f.get("appeal") and (b.get("en") or {}).get(f["appeal"]) else {}),
+                                 "examples": [_pub_ev(x, b.get("en")) for x in f.get("examples") or []]} for f in b.get("finds") or []],
+                      "singles": [_pub_ev(e, b.get("en")) for e in b.get("singles") or []],
                       "read_people": b.get("read_people"), "experiences": b.get("experiences"), "window_days": b.get("window_days"),
                       "since": (b.get("since") or "")[:10]})   # 作った時刻（generated_at）は公開しない項目
     items.sort(key=lambda x: (-max([f["people"] for f in x["finds"]] or [1]), x["id"]))
@@ -814,6 +821,11 @@ def work_finds(ctx: Ctx) -> dict[int, dict]:
             xs.append({"appeal": e.get("appeal"), "kind": e.get("appeal_kind"), "verdict": e.get("verdict"), "act": e.get("did"), "result": e.get("happened"),
                        "people": 1, "against": 0, "caution": e.get("caution")})
         xs = [x for x in xs if x["act"] and x["result"]]
+        en = b.get("en") or {}
+        for x in xs:   # 英訳（#2）。訳のない文には付けない
+            for k in ("appeal", "act", "result"):
+                if x[k] and en.get(x[k]):
+                    x[f"{k}_en"] = en[x[k]]
         good = sorted([x for x in xs if x["appeal"] and x["verdict"] != "frustration"], key=lambda x: -x["people"])
         warn = sorted([x for x in xs if x["verdict"] == "frustration"], key=lambda x: -x["people"])
         if good or warn:

@@ -201,3 +201,34 @@ def test_work_chart_does_not_stretch_to_the_side_column():
     assert ".wk-tr { align-items: start; }" in tail and "height: 200px" in tail and "height: 140px" in tail and "overflow: hidden" not in tail
     js = (root / "work.js").read_text()
     assert "const LMAX = 8;" in js and '<details class="wk-lx">' in js and "ls.slice(LMAX)" in js
+
+
+def test_english_translation_keeps_numbers_and_drops_bad_answers():
+    """英語の表示（#2）: 画面に出す日本語の文だけを訳す。数字を落とした訳・日本語の残る訳・壊れた応答は入れず、次の回に訳し直す。訳した文は訳し直さない。"""
+    body = {"finds": [{"appeal": "仲間と作戦が決まる", "examples": [{"did": "4500kmを走った", "happened": "配送が消えた"}]}],
+            "singles": [{"appeal": "", "did": "橋を渡った", "happened": "崩れた"}]}
+    texts = insight.public_texts(body)
+    assert texts == ["仲間と作戦が決まる", "4500kmを走った", "配送が消えた", "橋を渡った", "崩れた"]
+    asked = []
+
+    def ask(p):
+        asked.append(p)
+        return json.dumps({"items": [{"id": 0, "en": "Plans with friends click"}, {"id": 1, "en": "Drove a long way"},    # 数字を落とした → 入れない
+                                     {"id": 2, "en": "配送 vanished"}, {"id": 3, "en": "Crossed the bridge"}]})               # 日本語が残る → 入れない（4 は答えなし）
+    en = insight.translate_en(ask, "T", texts, {"崩れた": "It collapsed"})
+    assert en == {"崩れた": "It collapsed", "仲間と作戦が決まる": "Plans with friends click", "橋を渡った": "Crossed the bridge"}
+    assert "崩れた" not in asked[0]                                                                            # 訳した文は訳し直さない
+    assert insight.translate_en(lambda p: "壊れた応答", "T", ["配送が消えた"]) == {}
+
+
+def test_public_documents_carry_english_only_when_translated():
+    """公開の文書（#2）: 訳のある文にだけ act_en・result_en・appeal_en を添える。訳がなければ付けない（画面は元の文を出す）。"""
+    from game_signal_scout.signal import content
+    ev = content._pub_ev({"did": "橋を渡った", "happened": "崩れた", "appeal": "予想外"}, {"橋を渡った": "Crossed the bridge", "崩れた": "It collapsed"})
+    assert ev["act_en"] == "Crossed the bridge" and ev["result_en"] == "It collapsed" and "appeal_en" not in ev
+    assert content.audit_public({"finds": {"items": [{"id": "w1", "singles": [ev]}]}}, "pages") == []
+    from pathlib import Path
+    root = Path(__file__).parents[1] / "src/game_signal_scout/web/static"
+    assert 'const tx = (o, k) => (o ? (lang === "en" && o[`${k}_en`]) || o[k] || "" : "");' in (root / "common.js").read_text()
+    for f in ("finds.js", "work.js", "dashboard.js"):
+        assert 'tx(' in (root / f).read_text()

@@ -38,6 +38,11 @@ def upsert(conn, x: dict) -> None:
                  (x["appid"], x["generated_at"], x["model"], x["input_hash"], json.dumps(x["body"], ensure_ascii=False, default=str)))
 
 
+def set_en(conn, appid: str, en: dict) -> None:
+    """読み取りの結果の英訳（body の en）だけを置き換える（読み直さない。#2）。"""
+    conn.execute("UPDATE game_insight SET body = jsonb_set(body, '{en}', %s::jsonb) WHERE appid = %s", (json.dumps(en, ensure_ascii=False), appid))
+
+
 def all_insights(conn) -> dict[str, dict]:
     return {a: {"generated_at": g, "model": m, **b} for a, g, m, b in conn.execute("SELECT appid, generated_at, model, body FROM game_insight")}
 
@@ -45,7 +50,9 @@ def all_insights(conn) -> dict[str, dict]:
 def newest_generated_at(conn):
     """発見の表の版: 行の数・作品ごとの材料の hash と作った時刻の指紋。どの作品が足されても・作り直されても変わる
     （いちばん新しい時刻だけでは、読み始めの時刻で記録された作品が足されても変わらなかった。2026-11-09）。"""
-    return conn.execute("SELECT count(*)::text || ':' || coalesce(md5(string_agg(appid || '|' || input_hash || '|' || generated_at::text, ',' ORDER BY appid)), '') "
+    # 英訳だけを足したとき（body の en。#2）も変わるように、訳の数も入れる
+    return conn.execute("SELECT count(*)::text || ':' || coalesce(md5(string_agg(appid || '|' || input_hash || '|' || generated_at::text || '|' || "
+                        "coalesce((SELECT count(*) FROM jsonb_object_keys(coalesce(body->'en', '{}'::jsonb)))::text, '0'), ',' ORDER BY appid)), '') "
                         "FROM game_insight").fetchone()[0]
 
 
