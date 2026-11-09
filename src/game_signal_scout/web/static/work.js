@@ -307,16 +307,18 @@
   const WF = W.finds, CJ = { time: ["時間がかかる", "Takes time"], price: ["価格・課金", "Price"], performance: ["動作が重い", "Performance"], bugs: ["不具合", "Bugs"], difficulty: ["難しい", "Difficult"], online: ["接続・対戦相手", "Online"] };
   const pp = n => n > 1 ? tr(`${n}人が同じことを書いた`, `${n} players wrote the same`) : tr("1人の体験", "1 player");
   const wfImg = i => (W.shots || []).length ? W.shots[(i + 1) % W.shots.length] : "";
+  // 面白さのカードは段がそろう数だけ（3 列で 1・2・3・6 件。4・5 件のときは 3 件。左に寄った段を作らない）
+  const GN = !WF ? 0 : WF.good.length >= 6 ? 6 : WF.good.length >= 3 ? 3 : WF.good.length;
   const finds = WF && (WF.good.length || WF.warn.length) ? `<section class="wk-sec wk-fd" id="wk-finds">
       ${WF.good.length ? `<div class="sec-h"><h2>${tr("この作品でプレイヤーが見つけた面白さ", "What players found fun")}</h2><p>${tr("この作品を遊んだ世界のプレイヤーが書いた、何をして、何が起きて、何が面白かったのか。", "What players did, what happened, and what was fun.")}</p></div>
-      <div class="wkf-g" data-n="${Math.min(WF.good.length, 6)}">${WF.good.slice(0, 6).map((x, i) => `<div class="wkf-c">${wfImg(i) ? `<img src="${esc(wfImg(i))}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}<div><b>${esc(x.appeal)}</b><span>${esc(x.act)} → ${esc(x.result)}</span>
+      <div class="wkf-g" data-n="${GN}" style="--n:${Math.min(3, GN)}">${WF.good.slice(0, GN).map((x, i) => `<div class="wkf-c">${wfImg(i) ? `<img src="${esc(wfImg(i))}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}<div><b>${esc(x.appeal)}</b><span>${esc(x.act)} → ${esc(x.result)}</span>
         <small>${pp(x.people)}${x.against ? `<em>${tr(`反対の声 ${x.against}人`, `${x.against} disagreed`)}</em>` : ""}</small></div></div>`).join("")}</div>` : ""}
       ${WF.warn.length ? `<div class="sec-h wkf-wh"><h2>${tr("買う前に知っておきたいこと", "Good to know before buying")}</h2><p>${tr("プレイヤーが書いた不満です。", "Frustrations players wrote about.")}</p></div>
       <ul class="wkf-w">${WF.warn.slice(0, 6).map(x => `<li>${x.caution && CJ[x.caution] ? `<b>${esc(tr(...CJ[x.caution]))}</b>` : ""}${esc(x.act)} → ${esc(x.result)}<small>${x.people > 1 ? tr(`${x.people}人`, `${x.people}`) : tr("1人", "1")}</small></li>`).join("")}</ul>` : ""}
       <p class="wkf-src">${tr(`直近 ${WF.window_days || 7} 日に、この作品について書いた ${WF.read_people || 0}人の発言を AI が読み、具体的な体験 ${WF.experiences || 0}件を取り出しました。人数はこちらで数えています（同じ人の複数の発言は 1 人）。原文は載せていません。`,
         `AI read posts by ${WF.read_people || 0} players from the last ${WF.window_days || 7} days and extracted ${WF.experiences || 0} concrete experiences. Counts are done separately. Original posts are not shown.`)}
         <a href="finds.html">${tr("ほかの作品は「注目の作品」へ →", "More on Titles worth a look →")}</a></p></section>` : "";
-  $("wk").innerHTML = `${head.replace("<!--tags-->", tags).replace("<!--cr-->", cr)}${finds}${score}<div class="wk-grid">${trend}${points}${creation}</div>${air}${voices}${cast}${rel}${altrend}`;
+  $("wk").innerHTML = `${head.replace("<!--tags-->", tags).replace("<!--cr-->", cr)}${score}<div class="wk-grid">${finds}${trend}${points}${creation}</div>${air}${voices}${cast}${rel}${altrend}`;
   // もっと見る: 隠した行を出す（もう一度押すと戻す）。内側のスクロールは使わない
   document.querySelectorAll(".ex-more").forEach(b => b.addEventListener("click", () => {
     const box = b.dataset.more === "wk-tg" ? b.closest(".wk-tg") : $(b.dataset.more), open = b.getAttribute("aria-expanded") !== "true", lim = ["wk-tg", "ex-st", "ex-ch"].includes(b.dataset.more) ? 8 : 6;
