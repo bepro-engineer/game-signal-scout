@@ -498,7 +498,7 @@ normalizer = "game_signal_scout.services.normalize:attributes"
 min_interval_hours = 20
 country = "jp"
 batch_size = 50
-max_detail = 300
+max_detail = 500
 
 [wikidata_works]
 adapter = "game_signal_scout.sources.wikidata_works:WikidataWorks"
