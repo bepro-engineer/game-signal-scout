@@ -33,17 +33,32 @@
   const body = LD ? LD.body.join(L === "ja" ? "" : " ") : null;
   const lede = body ? `<span class="lede-t" id="lede-t">${esc(body).replace(/『([^』]+)』/g, (_, n) => `<b class="nb">『${n}』</b>`)}</span>`
     : `${esc(S.lede[L])}${S.basis === "movement" ? "" : tr("たとえば、こんな作品です。", " For example:")}`;
+  // 主役とほかの作品（#2 2026-11-10 オーナー: 見出しの作品がどれか、ほかの作品は何なのかを分ける）。役割はサーバーが付けた選んだ理由のとおり
+  //   lead = 見出しの作品（大きな表紙を見出しの横に。押すとその作品の詳細）/ moved = 普段と比べて動いた作品（変化の名前つき）/ talked = この日話題にした人の多い作品（人数つき）
+  //   役割のない文書（古い日）は前の並びのまま
+  const FT = G.featured || [], HASR = FT.some(w => w.role), MAIN = HASR ? FT.find(w => w.role === "lead") : null;
+  const MOV = FT.filter(w => w.role === "moved"), TAL = FT.filter(w => w.role === "talked");
+  const grp = (h, why, ws, tag) => `<div class="g-og"><p class="g-oh">${h}<small>${why}</small></p>
+      <ul class="g-orow">${ws.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}${tag(w)}</li>`).join("")}</ul></div>`;
+  const others = !HASR ? `<ul class="g-row">${FT.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}</li>`).join("")}</ul>`
+    : (MOV.length || TAL.length) ? `<div class="g-oth">
+      ${MOV.length ? grp(tr("ほかに、普段より話題が動いた作品", "Other titles that moved from their usual level"),
+        tr("作品それぞれの普段と比べて動いた作品です（「今チェックしておきたい作品」と同じ選び方）", "Each compared with its own usual level (same as “Titles to check now”)"), MOV,
+        w => `<span class="g-lb">${esc((w.label || {})[L] || "")}</span>`) : ""}
+      ${TAL.length ? grp(tr("ほかに、この日話題にした人が多かった作品", "Other titles many players talked about that day"),
+        tr("話題にした人の多い順です", "In order of people"), TAL, w => `<span class="g-lb g-lb-n">${esc(A.ppl(w.n || 0))}</span>`) : ""}</div>` : "";
   $("lead").innerHTML = `
     <div class="g-kick"><b>${tr("今日の兆し", "Today's signal")}</b><span class="g-day">${esc(today[L])}</span>
       ${body ? `<button type="button" class="lede-more" aria-controls="lede-t" aria-expanded="false" hidden>${tr("続きを読む", "Read more")}</button>` : ""}</div>
-    ${shortHead ? `<h1 class="g-short">${esc(shortHead)}</h1><p class="g-headline">${esc(head)}</p>` : `<h1>${esc(head)}</h1>`}
+    <div class="g-main${MAIN ? "" : " nocov"}">${MAIN ? `<a class="g-cov" href="${A.workUrl(MAIN.id)}" aria-label="${esc(nm(MAIN.name))}">${art(MAIN)}<span>${tr("この作品の詳細 →", "About this title →")}</span></a>` : ""}
+      <div class="g-txt">${shortHead ? `<h1 class="g-short">${esc(shortHead)}</h1><p class="g-headline">${esc(head)}</p>` : `<h1>${esc(head)}</h1>`}
     <p class="lede"${ss ? ` data-sents="${esc(JSON.stringify(ss))}"` : ""}>${lede}</p>
-    ${LD ? A.cites(LD.cites) : ""}
+    ${LD ? A.cites(LD.cites) : ""}</div></div>
     ${LF ? `<div class="g-did"><p>${tr("この作品で、プレイヤーがしたこと・起きたこと", "What players did and what happened")}<small>${tr(`直近 ${LF.window_days || 7} 日の発言から`, `From posts in the last ${LF.window_days || 7} days`)}</small></p>
       <ul style="--n:${LF.good.length}">${LF.good.map(x => `<li><b>${esc(A.tx(x, "appeal"))}</b><span>${esc(A.tx(x, "act"))} → ${esc(A.tx(x, "result"))}</span><small>${x.people > 1 ? tr(`${x.people}人が同じことを書いた`, `${x.people} players wrote the same`) : tr("1人の体験", "1 player")}</small></li>`).join("")}</ul>
       <a href="${A.workUrl(G.lead.work)}">${tr("この作品の面白さと、買う前に知っておきたいこと →", "Fun and things to know about this title →")}</a></div>` : ""}
-    <ul class="g-row">${G.featured.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}</li>`).join("")}</ul>
-    <div class="g-foot"><span>${tr(`話題になった${G.works_today}作品から${G.featured.length}作品（人数の順ではありません）。`, `${G.featured.length} of the ${G.works_today} titles talked about (not in order of people). `)}${G.movement ? tr(`作品それぞれの普段と比べて目立って動いた作品は${G.movement.q1.changes}作品でした。`, `${G.movement.q1.changes} titles moved notably from their usual level.`) : ""}</span>
+    ${others}
+    <div class="g-foot"><span>${HASR ? tr(`この日話題になった作品は${G.works_today}作品でした。`, `${G.works_today} titles were talked about that day. `) : tr(`話題になった${G.works_today}作品から${G.featured.length}作品（人数の順ではありません）。`, `${G.featured.length} of the ${G.works_today} titles talked about (not in order of people). `)}${G.movement ? tr(`作品それぞれの普段と比べて目立って動いた作品は${G.movement.q1.changes}作品でした。`, `${G.movement.q1.changes} titles moved notably from their usual level.`) : ""}</span>
       <a href="#trend">${tr("「いつもより話題が増えた作品」で確かめる ↓", "See “Titles talked about more than usual” ↓")}</a></div>`;
 
   { const t = $("lede-t"), b = document.querySelector(".lede-more");

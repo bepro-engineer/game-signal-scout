@@ -379,7 +379,12 @@ def dashboard(ctx: Ctx, d: date) -> dict:
             break
         if w not in feat_ids:
             feat_ids.append(w)
-    featured = [ctx.ref(w, n=m.get(w, 0)) for w in feat_ids[:7]]
+    # 作品ごとの役割（#2 2026-11-10 オーナー: 見出しの主役とほかの作品を混ぜない）: lead = 見出しの作品 / moved = 普段と比べて動いた作品（今チェックしておきたい作品と同じ発見。
+    # label はその変化の名前）/ talked = この日話題にした人の多い作品（人数の多い順）。選んだ理由と違う札は付けない
+    ck_of = {int(c["id"][1:]): c for c in cks}
+    lead_w = int(lead["work"][1:]) if lead.get("work") else None
+    role = lambda w: ({"role": "lead"} if w == lead_w else {"role": "moved", "label": ck_of[w]["label"]} if w in ck_of else {"role": "talked"})
+    featured = [ctx.ref(w, n=m.get(w, 0), **role(w)) for w in feat_ids[:7]]
     # 今日の兆しの作品で、プレイヤーがしたこと・起きたこと（読み取りは直近の発言なので、最新の日だけ。面白さの上位 3 件）
     if lead.get("work") and ctx.pdays and d == ctx.pdays[-1] and (wf := work_finds(ctx).get(int(lead["work"][1:]))) and wf["good"]:
         lead["finds"] = {"good": wf["good"][:3], "window_days": wf["window_days"]}

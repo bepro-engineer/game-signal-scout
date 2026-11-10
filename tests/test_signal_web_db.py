@@ -158,3 +158,20 @@ def test_public_documents_do_not_quote_posts_unless_terms_allow(client):
     assert all(not p.get("quotes") for s in w.get("streams") or [] for p in s.get("points") or [])
     d = _json.dumps(c.get(f"/api/days/{last.isoformat()}").json(), ensure_ascii=False)
     assert '"quote":' not in d
+
+
+def test_todays_signal_separates_the_lead_title_from_the_others(client):
+    """今日の兆し（#2 2026-11-10 オーナー）: 作品の列の作品は選んだ理由の役割を持つ。主役（lead）は見出しの作品だけで 1 つまで、
+    普段より動いた作品（moved）は今チェックしておきたい作品にあり変化の名前を持ち、残りは話題にした人の多い作品（talked）。作品は重ならず、消えない。"""
+    c, last, docs = client
+    d = c.get(f"/api/days/{last.isoformat()}").json()["dashboard"]
+    ft, ck = d["featured"], {x["id"]: x for x in d["checks"]}
+    assert ft and all(w["role"] in ("lead", "moved", "talked") for w in ft) and len({w["id"] for w in ft}) == len(ft)
+    leads = [w for w in ft if w["role"] == "lead"]
+    assert len(leads) <= 1 and (not leads or leads[0]["id"] == d["lead"].get("work"))
+    assert all(w["id"] in ck and w["label"] == ck[w["id"]]["label"] for w in ft if w["role"] == "moved")
+    assert all(w["id"] not in ck or w["role"] == "lead" for w in ft if w["role"] != "moved")
+    from pathlib import Path
+    js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/dashboard.js").read_text()
+    for s_ in ('MAIN ? `<a class="g-cov" href="${A.workUrl(MAIN.id)}"', "ほかに、普段より話題が動いた作品", "ほかに、この日話題にした人が多かった作品"):
+        assert s_ in js

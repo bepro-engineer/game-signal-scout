@@ -175,7 +175,7 @@ def test_work_and_dashboard_show_finds_only_when_read():
     assert "const finds = WF && (WF.good.length || WF.warn.length)" in wj and "<div class=\"wk-grid\">${finds}${trend}" in wj
     assert "この作品でプレイヤーが見つけた面白さ" in wj and "買う前に知っておきたいこと" in wj
     dj = (root / "web/static/dashboard.js").read_text()
-    lead = dj[dj.index('$("lead").innerHTML'):dj.index('<ul class="g-row">')]
+    lead = dj[dj.index('$("lead").innerHTML'):dj.index('${others}')]
     assert "LF ?" in lead and "この作品で、プレイヤーがしたこと・起きたこと" in lead
     c = (root / "signal/content.py").read_text()
     assert 'd == ctx.pdays[-1]' in c and 'wf["good"][:3]' in c                                              # 読み取りは直近の発言なので最新の日だけ

@@ -11,6 +11,24 @@ main.g { gap: 14px; }
 .g-row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 18px; }   /* 1 枚が読める幅（120px）を下回らない列の数（#2）*/
 .g-row .art { aspect-ratio: 3 / 4; border-radius: 12px; box-shadow: 0 2px 10px rgba(40,30,80,.14); }
 .g-row .wn { margin-top: 10px; font-size: 16px; line-height: 1.45; }
+/* 今日の兆しの主役とほかの作品（#2 2026-11-10）: 主役の表紙は見出しの横（押すと作品詳細）。ほかの作品は選んだ理由ごとの組で、主役より小さく */
+.g-main { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 0 28px; align-items: start; }
+.g-main.nocov { grid-template-columns: minmax(0, 1fr); }
+.g-cov { display: block; margin-top: 14px; text-decoration: none; }
+.g-cov .art { aspect-ratio: 3 / 4; border-radius: 14px; box-shadow: 0 4px 16px rgba(40,30,80,.18); }
+.g-cov span { display: block; margin-top: 8px; font-size: 14px; font-weight: 700; color: var(--accent); }
+.g-oth { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px 28px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.g-oh { margin: 0 0 10px; font-size: 15px; font-weight: 800; color: var(--ink); } .g-oh small { display: block; font-size: 12px; font-weight: 400; color: var(--ink-3); margin-top: 2px; }
+.g-orow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 12px; }
+.g-orow li { position: relative; min-width: 0; } .g-orow .art { aspect-ratio: 3 / 4; border-radius: 10px; box-shadow: 0 2px 8px rgba(40,30,80,.12); }
+.g-orow .wn { margin-top: 6px; font-size: 13px; line-height: 1.4; }
+.g-lb { display: inline-block; margin-top: 4px; padding: 0 6px; border-radius: 6px; font-size: 11px; font-weight: 700; line-height: 1.7; background: var(--accent-soft, #EFEEFC); color: var(--accent, #5B55D6); }
+.g-lb-n { background: #F1F2F6; color: var(--ink-3); }
+@media (max-width: 600px) {   /* スマホ: 見出しだけを表紙の横に、本文・根拠は下に全幅で */
+  .g-main { grid-template-columns: 88px minmax(0, 1fr); gap: 0 14px; } .g-main .g-txt { display: contents; }
+  .g-main .g-cov { grid-row: 1 / span 2; } .g-main .g-txt > * { grid-column: 1 / -1; } .g-main .g-txt > h1, .g-main .g-txt > .g-headline { grid-column: 2; }
+  .g-main.nocov .g-txt > * { grid-column: 1 / -1; }
+  .g-main .g-txt > h1 { font-size: 24px; line-height: 1.4; margin-top: 14px; } .g-cov span { font-size: 12px; } .g-orow { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .g-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
 .g-foot span { font-size: 14px; color: var(--ink-3); }
 .g-foot a { font-size: 16px; font-weight: 700; color: var(--accent); text-decoration: none; }
