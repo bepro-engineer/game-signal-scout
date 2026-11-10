@@ -34,7 +34,20 @@
   const NOTE = W.synopsis_kind === "note", SYN = tr("ゲーム内容", "About the game");
   const synNote = A.lang === "en" || !W.synopsis_mt ? "" : `英語の${NOTE ? "説明" : "あらすじ"}を機械翻訳しています。`;
   const row = (label, body, cls = "") => `<div${cls ? ` class="${cls}"` : ""}><dt>${label}</dt><dd>${body}</dd></div>`;
-  const STORY = syn ? `<div class="wk-story"><h3>${SYN}</h3><p class="wk-syn" id="wk-syn">${esc(syn).replace(/\n{2,}/g, A.lang === "en" ? " <br><br>" : "<br><br>").replace(/\n/g, A.lang === "en" ? " " : "")}</p>
+  // ゲーム内容の文（#7 2026-11-09）: 空行で段落に分け、「・」で始まる行が続くところは 1 つの詰めた一覧にする（機体名などの長い列挙を 1 行ずつ空行を挟んで並べない）。
+  // 文は消さず・変えず、描き方だけ。折りたたみ中は一覧も続けて読み、開くと段組みの一覧になる
+  // 段落の中の見出し: 短く（40 字まで）句点で終わらない行が段落の先頭にあり、後に文が続くときは見出しとして分ける（次の文とつなげない）
+  const para = ls => { const h = ls.length > 1 && ls[0].length <= 40 && !/[。．.!！?？:：]$/.test(ls[0]);
+    return (h ? `<b class="wk-sh">${esc(ls[0])}</b><br>` : "") + esc((h ? ls.slice(1) : ls).join(A.lang === "en" ? " " : "")); };
+  const synHtml = t => { const out = []; let list = [];
+    const flush = () => { if (list.length) { out.push(`<span class="wk-ul">${list.map(x => `<span class="wk-li">${esc(x)}</span>`).join("")}</span>`); list = []; } };
+    t.split(/\n{2,}/).forEach(b => { const ps = [];
+      b.split("\n").forEach(l => { const m = l.match(/^\s*[・•]\s*(.+)$/); if (m) { if (ps.length) { flush(); out.push(para(ps)); ps.length = 0; } list.push(m[1]); }
+        else if (l.trim()) { flush(); ps.push(l.trim()); } });
+      if (ps.length) { flush(); out.push(para(ps)); } });
+    flush();
+    return out.map((x, i) => i && !x.startsWith('<span class="wk-ul">') && !out[i - 1].startsWith('<span class="wk-ul">') ? `<br><br>${x}` : x).join(" "); };
+  const STORY = syn ? `<div class="wk-story"><h3>${SYN}</h3><p class="wk-syn" id="wk-syn">${synHtml(syn)}</p>
     <p class="wk-sf"><button type="button" class="wk-more" id="wk-more" aria-controls="wk-syn" aria-expanded="false" hidden>${tr("続きを読む", "Read more")}</button>${synNote ? `<span class="wk-mt">${synNote}</span>` : ""}</p></div>` : "";
   const when = W.year && W.season ? tr(`${W.year}年${SEASON[W.season]}`, `${SEASON[W.season]} ${W.year}`) : W.year ? tr(`${W.year}年`, `${W.year}`) : "";
   const meta = [FMT[W.fmt], when, AIR[W.status], W.episodes ? tr(`全${W.episodes}話`, `${W.episodes} episodes`) : ""].filter(Boolean).join(tr("・", " · "));

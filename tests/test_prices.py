@@ -88,3 +88,4 @@ def test_screens_show_price_without_making_up_values():
     assert 'tr(`日本のストアの価格（${esc(W.price.at)} 確認。変わることがあります）`' in work and 'tr("未確認", "Unknown")' in work   # 日付・地域・ストアへの道。なければ未確認
     assert "A.priceTag(x.w)" in (root / "finds.js").read_text() and "A.priceTag(w)" in (root / "search.js").read_text()
     assert "税込" not in common + work                                                            # 根拠のない税込の断定をしない
+

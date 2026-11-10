@@ -37,6 +37,7 @@ def about_text(html: str | None) -> str | None:
     t = h.unescape(re.sub(r"<[^>]+>", "", t)).replace("\u00a0", " ")
     t = "\n".join(x.strip() for x in t.splitlines())
     t = re.sub(r"\n{3,}", "\n\n", t).strip()
+    t = re.sub(r"(?m)^(・[^\n]*)\n\n(?=・)", r"\1\n", t)   # 箇条書きの項目の間の空行（li と br の重なり）を詰める（#7）
     if len(t) > ABOUT_MAX:
         t = t[:ABOUT_MAX].rsplit("\n", 1)[0].rstrip() + "…"
     return t or None
