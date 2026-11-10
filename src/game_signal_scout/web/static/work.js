@@ -80,6 +80,8 @@
       <p class="wkj-dev"><b>${tr("開発元", "Developer")}</b> ${A.devLine(W, 99)}${(W.dev || []).some(d => d.ref) ? ` <small class="wkj-s">${tr("国・地域の出典: ", "Country source: ")}${W.dev.filter(d => d.ref).map(d => `<a href="${esc(d.ref)}" rel="noopener" target="_blank">${esc(d.n)} ↗</a>`).join(" ")}</small>` : ""}</p>
       <p class="wkj-pr"><b>${tr("価格", "Price")}</b> ${W.price && A.priceText(W.price) ? A.priceText(W.price) : `<span class="jq">${tr("未確認", "Unknown")}</span>`}
         <small class="wkj-s">${W.price ? tr(`日本のストアの価格（${esc(W.price.at)} 確認。変わることがあります）`, `Japan store price (checked ${esc(W.price.at)}; may change)`) : tr("日本のストアの価格を確かめられていません", "Japan store price not checked")}${W.price && W.price.url ? ` <a href="${esc(W.price.url)}" rel="noopener" target="_blank">${tr("ストアで確認", "Check the store")} ↗</a>` : ""}</small></p>
+      ${W.rating && W.rating.all ? `<p class="wkj-rt"><b>${tr("評価", "Reviews")}</b> ${W.rating.all.label ? `<span class="rt-l">${esc(A.lang === "en" ? W.rating.all.label.en : W.rating.all.label.ja)}</span> ` : ""}${tr(`${A.num(W.rating.all.pct)}% が好評（全期間 ${A.num(W.rating.all.n)}件）`, `${A.num(W.rating.all.pct)}% positive (${A.num(W.rating.all.n)} all-time)`)}
+        <a class="wkj-s" href="#wk-rating">${tr("詳しく ↓", "Details ↓")}</a></p>` : ""}
       ${(W.plat || []).length ? `<p class="wkj-pl"><b>${tr("機種", "Platforms")}</b> ${W.plat.map(p => esc(PLAT[p] || p)).join(tr("・", ", "))}</p>` : ""}
     </div>`;
   const head = `${back}
@@ -344,7 +346,22 @@
       <p class="wkf-src">${tr(`直近 ${WF.window_days || 7} 日に、この作品について書いた ${WF.read_people || 0}人の発言を AI が読み、具体的な体験 ${WF.experiences || 0}件を取り出しました。人数はこちらで数えています（同じ人の複数の発言は 1 人）。原文は載せていません。`,
         `AI read posts by ${WF.read_people || 0} players from the last ${WF.window_days || 7} days and extracted ${WF.experiences || 0} concrete experiences. Counts are done separately. Original posts are not shown.`)}
         <a href="finds.html">${tr("ほかの作品は「注目の作品」へ →", "More on Titles worth a look →")}</a></p></section>` : "";
-  $("wk").innerHTML = `${head.replace("<!--tags-->", tags).replace("<!--cr-->", cr)}${score}<div class="wk-grid">${finds}${trend}${points}${creation}</div>${air}${voices}${cast}${rel}${altrend}`;
+  /* ストアのユーザー評価（#2 2026-11-10。作品の属性 rating）: ストアの利用者の「おすすめする・しない」の集計をそのまま（換算・推定なし）。
+     全期間と日本語のレビューを分けて示す。このサイトの観測人数・プレイヤーの体験の読み取りとは別。最近 30 日の集計は持たないので、ストアのページへの道を置く */
+  if (!score && W.rating) {
+    const R = W.rating;
+    const rcard = (h, x, why) => x ? `<div class="wk-card ex-c rt-c"><h3>${h}</h3>
+        <p class="rt-big">${x.label ? `<b>${esc(A.lang === "en" ? x.label.en : x.label.ja)}</b>` : `<b>${tr("評価の段階なし", "Not enough reviews")}</b>`}</p>
+        <p class="rt-pct">${tr(`<b>${num(x.pct)}%</b> が好評`, `<b>${num(x.pct)}%</b> positive`)}<span>${tr(`${num(x.n)}件のレビュー`, `${num(x.n)} reviews`)}</span></p>
+        <p class="rt-bar" role="img" aria-label="${esc(tr(`好評 ${x.pct}%・不評 ${100 - x.pct}%`, `${x.pct}% positive, ${100 - x.pct}% negative`))}"><i style="width:${x.pct}%"></i></p>
+        <p class="ex-cap">${why}</p></div>` : "";
+    const cards = [rcard(tr("全期間のレビュー", "All reviews"), R.all, tr("ストアの既定の表示と同じ集計です", "Same as the store's default summary")),
+      rcard(tr("日本語のレビュー", "Japanese-language reviews"), R.lang, tr("日本語で書かれたレビューだけの集計です", "Only reviews written in Japanese"))].filter(Boolean);
+    score = sec("wk-rating", "ストアのユーザー評価", "Store user reviews", `<div class="ex-cards n${cards.length}">${cards.join("")}</div>
+      <p class="ex-src">${tr("ストアの利用者が「おすすめする・しない」を選んだレビューの集計です。このサイトが数えた人数や、プレイヤーの体験の読み取りとは別の数です。", "Totals of store users' recommend / not recommend reviews. Separate from this site's counts and readings.")}
+        ${tr(`最近 30 日の評価は、ストアのページで確かめられます。${esc(R.at)} 確認。`, `Recent 30-day reviews are on the store page. Checked ${esc(R.at)}.`)} ${R.url ? `<a class="ex-ext" href="${esc(R.url)}" target="_blank" rel="noopener noreferrer">${tr("ストアのレビューを見る", "See reviews on the store")} ↗</a>` : ""}</p>`);
+  }
+  $("wk").innerHTML = `${head.replace("<!--tags-->", tags).replace("<!--cr-->", cr)}<div class="wk-grid">${score}${finds}${trend}${points}${creation}</div>${air}${voices}${cast}${rel}${altrend}`;
   // もっと見る: 隠した行を出す（もう一度押すと戻す）。内側のスクロールは使わない
   document.querySelectorAll(".ex-more").forEach(b => b.addEventListener("click", () => {
     const box = b.dataset.more === "wk-tg" ? b.closest(".wk-tg") : $(b.dataset.more), open = b.getAttribute("aria-expanded") !== "true", lim = ["wk-tg", "ex-st", "ex-ch"].includes(b.dataset.more) ? 8 : 6;

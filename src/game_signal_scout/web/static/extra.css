@@ -108,3 +108,10 @@ main.wk .wk-grid + .wk-x { margin-top: 0; }
 .sr-note { flex: 1 1 100%; margin-left: calc(7em + 12px); font-size: 13px; color: var(--ink-3); }
 .sr-sc { margin-left: 8px; font-size: 14px; color: var(--ink-3); white-space: nowrap; } .sr-sc b { font-family: var(--round); font-size: 15px; color: var(--accent); }
 @media (max-width: 760px) { .sr-note { margin-left: 0; } }
+
+/* ストアのユーザー評価（#2 2026-11-10）: 評価の名前を大きく、好評の割合と件数、好評・不評の帯 */
+.rt-big { margin: 0; } .rt-big b { font-size: 24px; font-weight: 800; color: var(--ink); }
+.rt-pct { margin: 0; font-size: 15px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; } .rt-pct b { font-size: 18px; color: var(--ink); } .rt-pct span { font-size: 13px; color: var(--ink-3); }
+.rt-bar { margin: 0; height: 8px; border-radius: 999px; background: #E9C9C2; overflow: hidden; } .rt-bar i { display: block; height: 100%; background: #3A8A4F; }
+.wkj-rt .rt-l { font-weight: 800; color: var(--ink); } .wkj-rt a.wkj-s { text-decoration: none; color: var(--accent); }
+@media (max-width: 600px) { #wk-rating .ex-cards.n2 { grid-template-columns: minmax(0, 1fr); } }

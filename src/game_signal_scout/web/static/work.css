@@ -135,6 +135,7 @@ main.wk .wk-grid > .wk-sec > .sec-h p { grid-column: 2; margin: 2px 0 0; font-si
 .wk-story .wk-syn { max-width: 52em; }
 
 /* この作品でプレイヤーが見つけた面白さ ／ 買う前に知っておきたいこと（#2。注目の作品のページと同じ色。ほかの節と同じ枠と見出しの印） */
+main.wk #wk-rating > .sec-h { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B55D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 10v11M15 5.9L14 10h5.8a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 18.4 21H7V10l4-8a3 3 0 0 1 4 3.9z'/%3E%3Cpath d='M3 10h4v11H3z'/%3E%3C/svg%3E"); }
 main.wk #wk-finds > .sec-h { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B55D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l2.3 5.2L20 9l-4.2 3.9L17 19l-5-3-5 3 1.2-6.1L4 9l5.7-.8z'/%3E%3C/svg%3E"); }
 main.wk #wk-finds > .sec-h.wkf-wh { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B55D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l9 16H3z'/%3E%3Cpath d='M12 10v4M12 17h.01'/%3E%3C/svg%3E"); margin-top: 22px; }
 .wkf-g { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 12px; }

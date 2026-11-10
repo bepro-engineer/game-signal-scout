@@ -64,7 +64,7 @@ def test_corrupt_local_dump_is_not_retryable(tmp_path):
 
 def test_factory_reads_adapter_from_config():
     got = factory.sources()
-    assert got == ["protondb", "steam_charts", "steam_upcoming", "steam_assets", "steam_store", "steam_attributes", "steam_prices", "wikidata_works"]   # 日次で読むのは作品の情報など。声の取得元はどれも常駐   
+    assert got == ["protondb", "steam_charts", "steam_upcoming", "steam_assets", "steam_store", "steam_attributes", "steam_prices", "steam_ratings", "wikidata_works"]   # 日次で読むのは作品の情報など。声の取得元はどれも常駐   
     assert "steam_discussions" not in got and "blizzard_forums" not in got       # Steam の掲示板は保留（2026-11-08 オーナー）
     assert factory.reader_class("protondb") is protondb.ProtonDBDump
     with pytest.raises(ValueError):

@@ -12,13 +12,15 @@ def work_meta(conn, work_ids: list[int]) -> dict[int, dict]:
     conn.rollback()
     attrs = catalog.attributes_of(conn, list(rows))
     from game_signal_scout import config
-    stale = int((config.load_daily_config().get("prices") or {}).get("stale_days", 3))
+    dcfg = config.load_daily_config()
+    stale = int((dcfg.get("prices") or {}).get("stale_days", 3))
+    rstale = int((dcfg.get("ratings") or {}).get("stale_days", 7))
     plats = catalog.platforms_of(conn, list(rows))
     conn.rollback()
     # 画像: 縦長の枠には縦長の表紙（なければストアのヘッダー）、作品詳細の帯には横長の帯（なければヘッダー）
     # 日本人が最初に判断する属性（#2）: 日本語の UI・字幕・音声（jp）、開発元と国・地域（dev）、遊べる機種（plat）。どの画面のカードにも同じ値
     return {int(a): {"id": f"w{a}", "name": {"ja": t, "en": en or t}, "cover": (art.get(a) or (None, None))[0] or img,
-                     "banner": (art.get(a) or (None, None))[1] or img, **work_attrs(attrs.get(a) or {}, stale), "plat": plats.get(a) or [], "shots": next((x["value"] for x in (attrs.get(a) or {}).get("shots") or [] if x.get("value")), []), "header": img}
+                     "banner": (art.get(a) or (None, None))[1] or img, **work_attrs(attrs.get(a) or {}, stale), **rating_of(attrs.get(a) or {}, rstale), "plat": plats.get(a) or [], "shots": next((x["value"] for x in (attrs.get(a) or {}).get("shots") or [] if x.get("value")), []), "header": img}
             for a, (t, en, img) in rows.items()}
 
 
@@ -60,6 +62,21 @@ def price_of(attrs: dict, stale_days: int, now=None) -> dict:
     if v["status"] == "paid":
         out.update(cur=v["currency"], fin=v["final"], **({"ini": v["initial"], "off": v["discount"]} if v.get("discount") else {}))
     return {"price": out}
+
+
+def rating_of(attrs: dict, stale_days: int, now=None) -> dict:
+    """作品のユーザー評価（属性 rating のいちばん新しい値）→ 画面の値 rating: {all: {n, pct, score, label}, lang: {…, code}, at: 確かめた日, url: ストアのレビューの場所}。
+    ストアの集計そのまま（換算・推定なし）。属性がない・stale_days 日を超えた値は出さない（rating なし = 画面は評価の欄を出さない）。"""
+    from datetime import datetime, timedelta, timezone
+    x = next((x for x in attrs.get("rating") or [] if isinstance(x.get("value"), dict) and x["value"].get("all")), None)
+    if not x:
+        return {}
+    at = datetime.fromisoformat(x["fetched_at"])
+    if (now or datetime.now(timezone.utc)) - at > timedelta(days=stale_days):
+        return {}
+    v = x["value"]
+    return {"rating": {"all": v["all"], **({"lang": v["lang"]} if v.get("lang") else {}), "url": v.get("url"),
+                       "at": at.astimezone(timezone(timedelta(hours=9))).date().isoformat()}}
 
 
 def display_names(conn, work_ids: list[int]) -> dict[int, dict]:

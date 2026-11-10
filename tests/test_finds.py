@@ -172,7 +172,7 @@ def test_work_and_dashboard_show_finds_only_when_read():
     from pathlib import Path
     root = Path(__file__).parents[1] / "src/game_signal_scout"
     wj = (root / "web/static/work.js").read_text()
-    assert "const finds = WF && (WF.good.length || WF.warn.length)" in wj and "<div class=\"wk-grid\">${finds}${trend}" in wj
+    assert "const finds = WF && (WF.good.length || WF.warn.length)" in wj and "<div class=\"wk-grid\">${score}${finds}${trend}" in wj
     assert "この作品でプレイヤーが見つけた面白さ" in wj and "買う前に知っておきたいこと" in wj
     dj = (root / "web/static/dashboard.js").read_text()
     lead = dj[dj.index('$("lead").innerHTML'):dj.index('${others}')]

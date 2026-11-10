@@ -501,6 +501,15 @@ country = "jp"
 batch_size = 50
 max_detail = 500
 
+[steam_ratings]
+adapter = "game_signal_scout.sources.steam_ratings:SteamRatings"
+normalizer = "game_signal_scout.services.normalize:attributes"
+# 役割: 作品のユーザー評価（作品の属性 rating。ストアが示す全期間の集計と、日本語のレビューだけの集計: 件数・好評の割合・評価の段階と名前。#2 2026-11-10）。
+# 最近 30 日の集計はこの問い合わせ先にないので持たない。換算・推定はしない。間隔は価格と同じ 6 時間（毎朝の回で取り直し、再試行では取り直さない）
+min_interval_hours = 6
+country = "JP"
+batch_size = 50
+
 [wikidata_works]
 adapter = "game_signal_scout.sources.wikidata_works:WikidataWorks"
 normalizer = "game_signal_scout.services.normalize:attributes"

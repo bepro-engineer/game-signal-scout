@@ -727,6 +727,24 @@ analyze_aggregate = "対象外"
 public_quote = "対象外（価格の数値を表示する。原文ではない）"
 commercial = "prohibited: SSA §2.A は非商用に限る（このサイトは非営利）"
 
+[sources.steam_ratings]
+category = "conditional"
+permission_required = "unknown"
+conditions = "sources.steam_attributes と同じ API（GetItems）。ユーザーレビューの集計（件数・好評の割合・評価の名前）だけを、1 日 1 回、50 作品ずつ問い合わせる"
+robots = "api.steampowered.com の robots.txt は未確認（sources.steam_attributes と同じ）"
+notes = "レビューの本文は読まない。画面ではストアの集計をそのまま示し、確かめた日とストアへの道を添える。このサイトの観測人数・読み取りとは混ぜない"
+checked_at = "2026-11-10"
+evidence = [
+  { url = "https://steamcommunity.com/dev/apiterms", clause = "API の呼び出しは 1 日 10 万回まで。Valve の公認を装わない", checked = "2026-11-08" },
+  { url = "https://store.steampowered.com/subscriber_agreement/", clause = "§4.C 人間以外が操作するシステムでの操作の禁止、§2.A 個人の非商用の利用に限る", checked = "2026-11-08" },
+]
+[sources.steam_ratings.uses]
+collect = "conditional: sources.steam_attributes と同じ"
+store = "conditional: 集計の数値と評価の名前だけ"
+analyze_aggregate = "対象外（このサイトの分析には使わない）"
+public_quote = "対象外（集計の数値を表示する。原文ではない）"
+commercial = "prohibited: SSA §2.A は非商用に限る（このサイトは非営利）"
+
 [sources.wikidata_works]
 category = "explicitly_allowed"
 permission_required = false
