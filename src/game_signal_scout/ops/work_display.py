@@ -11,20 +11,22 @@ def work_meta(conn, work_ids: list[int]) -> dict[int, dict]:
     art = catalog.covers(conn, list(rows))
     conn.rollback()
     attrs = catalog.attributes_of(conn, list(rows))
+    from game_signal_scout import config
+    stale = int((config.load_daily_config().get("prices") or {}).get("stale_days", 3))
     plats = catalog.platforms_of(conn, list(rows))
     conn.rollback()
     # 画像: 縦長の枠には縦長の表紙（なければストアのヘッダー）、作品詳細の帯には横長の帯（なければヘッダー）
     # 日本人が最初に判断する属性（#2）: 日本語の UI・字幕・音声（jp）、開発元と国・地域（dev）、遊べる機種（plat）。どの画面のカードにも同じ値
     return {int(a): {"id": f"w{a}", "name": {"ja": t, "en": en or t}, "cover": (art.get(a) or (None, None))[0] or img,
-                     "banner": (art.get(a) or (None, None))[1] or img, **work_attrs(attrs.get(a) or {}), "plat": plats.get(a) or [], "shots": next((x["value"] for x in (attrs.get(a) or {}).get("shots") or [] if x.get("value")), []), "header": img}
+                     "banner": (art.get(a) or (None, None))[1] or img, **work_attrs(attrs.get(a) or {}, stale), "plat": plats.get(a) or [], "shots": next((x["value"] for x in (attrs.get(a) or {}).get("shots") or [] if x.get("value")), []), "header": img}
             for a, (t, en, img) in rows.items()}
 
 
-def work_attrs(attrs: dict) -> dict:
+def work_attrs(attrs: dict, stale_days: int = 3) -> dict:
     """作品の属性（game_attribute。取得元ごとの値）から、画面の値を作る。取得元の名前で分けない。
     jp: {ui, sub, voice}（true / false。属性がなければ null = 未確認）、jp_at: 取得の時刻。
     dev: [{n: 開発元, c: [国・地域]（記載がなければ null = 未確認）, ref: 出典の URL}]。国の記載のある取得元の値を先に使い、推定しない。"""
-    out: dict = {"jp": None, "dev": []}
+    out: dict = {"jp": None, "dev": [], **price_of(attrs, stale_days)}
     ja = (attrs.get("ja") or [None])[0]
     if ja:
         v = ja["value"]
@@ -41,6 +43,23 @@ def work_attrs(attrs: dict) -> dict:
         names = next((x["value"] for x in attrs.get("developers") or [] if x.get("value")), [])
         out["dev"] = [{"n": n, "c": None} for n in names if named(n)]
     return out
+
+
+def price_of(attrs: dict, stale_days: int, now=None) -> dict:
+    """作品の価格（属性 price のいちばん新しい値）→ 画面の値 price: {s: paid / free / coming_soon / unknown, cc: 国, cur: 通貨, ini: 通常価格, fin: 現在価格,
+    off: 割引率（割引中だけ）, at: 確かめた日, url: ストアの作品のページ}。属性がない・確かめてから stale_days 日を超えた値は出さない（price なし = 画面は未確認）。
+    0 円・架空の値は作らない（無料はストアが無料と示した作品だけ）。"""
+    from datetime import datetime, timedelta, timezone
+    x = next((x for x in attrs.get("price") or [] if isinstance(x.get("value"), dict) and x["value"].get("status")), None)
+    if not x:
+        return {}
+    v, at = x["value"], datetime.fromisoformat(x["fetched_at"])
+    if (now or datetime.now(timezone.utc)) - at > timedelta(days=stale_days):
+        return {}
+    out = {"s": v["status"], "cc": v.get("country"), "at": at.astimezone(timezone(timedelta(hours=9))).date().isoformat(), "url": v.get("url")}
+    if v["status"] == "paid":
+        out.update(cur=v["currency"], fin=v["final"], **({"ini": v["initial"], "off": v["discount"]} if v.get("discount") else {}))
+    return {"price": out}
 
 
 def display_names(conn, work_ids: list[int]) -> dict[int, dict]:

@@ -490,6 +490,16 @@ normalizer = "game_signal_scout.services.normalize:attributes"
 min_interval_hours = 20
 refresh_days = 14
 
+[steam_prices]
+adapter = "game_signal_scout.sources.steam_prices:SteamPrices"
+normalizer = "game_signal_scout.services.normalize:attributes"
+# 役割: 作品の日本向けの販売価格（作品の属性 price。通常価格・現在価格・割引率・通貨・確かめた時刻。無料・発売前・未確認を区別。#2 2026-11-10）。
+# 価格は変わりやすいので毎日、作品の情報のあるすべての作品を問い合わせる（価格は batch_size 件ずつ 1 回。価格が返らない作品だけ 1 作品ずつ max_detail 件まで）
+min_interval_hours = 20
+country = "jp"
+batch_size = 50
+max_detail = 300
+
 [wikidata_works]
 adapter = "game_signal_scout.sources.wikidata_works:WikidataWorks"
 normalizer = "game_signal_scout.services.normalize:attributes"

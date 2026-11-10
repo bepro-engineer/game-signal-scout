@@ -65,6 +65,8 @@
       <p class="wkj-jp">${A.jpTag(W)}<span class="wkj-d">${tr("UI", "Interface")} ${yn(J && J.ui)}　${tr("字幕", "Subtitles")} ${yn(J && J.sub)}　${tr("音声", "Voice")} ${yn(J && J.voice)}</span>
         <small class="wkj-s">${J ? tr(`ストアの表記（${esc(W.jp_at || "")} 確認）`, `Store listing (checked ${esc(W.jp_at || "")})`) : tr("ストアの表記を確かめられていません", "Not checked yet")}</small></p>
       <p class="wkj-dev"><b>${tr("開発元", "Developer")}</b> ${A.devLine(W, 99)}${(W.dev || []).some(d => d.ref) ? ` <small class="wkj-s">${tr("国・地域の出典: ", "Country source: ")}${W.dev.filter(d => d.ref).map(d => `<a href="${esc(d.ref)}" rel="noopener" target="_blank">${esc(d.n)} ↗</a>`).join(" ")}</small>` : ""}</p>
+      <p class="wkj-pr"><b>${tr("価格", "Price")}</b> ${W.price && A.priceText(W.price) ? A.priceText(W.price) : `<span class="jq">${tr("未確認", "Unknown")}</span>`}
+        <small class="wkj-s">${W.price ? tr(`日本のストアの価格（${esc(W.price.at)} 確認。変わることがあります）`, `Japan store price (checked ${esc(W.price.at)}; may change)`) : tr("日本のストアの価格を確かめられていません", "Japan store price not checked")}${W.price && W.price.url ? ` <a href="${esc(W.price.url)}" rel="noopener" target="_blank">${tr("ストアで確認", "Check the store")} ↗</a>` : ""}</small></p>
       ${(W.plat || []).length ? `<p class="wkj-pl"><b>${tr("機種", "Platforms")}</b> ${W.plat.map(p => esc(PLAT[p] || p)).join(tr("・", ", "))}</p>` : ""}
     </div>`;
   const head = `${back}

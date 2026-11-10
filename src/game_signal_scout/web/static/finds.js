@@ -48,13 +48,14 @@
       <div class="fk" style="--c:${cols}" data-n="${nK}">${kinds.map(([k, n]) => `<a href="finds.html?k=${k}"${K === k ? ' class="on" aria-current="true"' : ""}><span>${esc(tr(...KIND[k]))}</span><small>${tr(`${num(n)}作品`, `${num(n)} titles`)}</small></a>`).join("")}</div>
       ${K && KIND[K] ? `<p class="fk-now" role="status">${tr(`「${KIND[K][0]}」を書いた作品 ${num(shown)}作品を表示しています`, `Showing ${num(shown)} titles where players wrote about “${KIND[K][1]}”`)}<a href="finds.html">${tr("選択を解除してすべて表示", "Clear and show all")} ×</a></p>` : ""}</div>
     <div class="flg"><b>${tr("カードの日本語の印", "Japanese support on cards")}</b><span>${jp("voice")} ${tr("声・字幕・UI が日本語", "audio, subtitles and UI")}</span><span>${jp("sub")} ${tr("字幕・UI が日本語（声は外国語）", "subtitles and UI")}</span>
-      <span>${jp("ui")} ${tr("メニュー等のみ日本語", "menus only")}</span><span>${jp("none")}</span><small>${tr("出典: 販売元のストアの対応言語", "Source: publisher's store listing")}</small></div>` : "";
+      <span>${jp("ui")} ${tr("メニュー等のみ日本語", "menus only")}</span><span>${jp("none")}</span><small>${tr("出典: 販売元のストアの対応言語", "Source: publisher's store listing")}</small>
+      <small>${tr("価格は日本のストアの価格（円）。確かめた日はカードの価格に触れると表示。割引中は通常価格に線", "Prices are Japan store prices in yen; hover for the date checked. Discounts show the regular price struck through")}</small></div>` : "";
   const card = ({ top: x, rest }) => `<a class="fc" href="${A.workUrl(x.w.id)}"><img class="fc-i" src="${esc(img(x.w))}" alt="" referrerpolicy="no-referrer" loading="lazy">
       <div><span class="fc-t">${x.w.cover ? `<img src="${esc(x.w.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}${esc(nm(x.w.name))}</span><b>${esc(x.appeal)}</b>
         <span class="fc-e">${esc(x.act)} → ${esc(x.result)}</span>
         ${rest.length ? `<ul class="fc-r">${rest.slice(0, 2).map(r => `<li>${esc(r.appeal)}<small>${r.people > 1 ? tr(`${num(r.people)}人`, `${num(r.people)} players`) : tr("1人", "1 player")}</small></li>`).join("")}</ul>` : ""}
         ${(WB.get(x.w.id) || []).length ? `<div class="fc-n"><span>${tr("買う前に知っておきたいこと", "Good to know before buying")}</span><ul>${WB.get(x.w.id).slice(0, 2).map(r => `<li>${r.caution ? `<em>${esc(tr(...CJ[r.caution]))}</em>` : ""}${esc(r.act)} → ${esc(r.result)}<small>${r.people > 1 ? tr(`${num(r.people)}人`, `${num(r.people)} players`) : tr("1人", "1 player")}</small></li>`).join("")}</ul></div>` : ""}
-        <small><span>${ppl(x.people)}</span>${x.against ? `<span class="fc-w">${tr(`反対の声 ${num(x.against)}人`, `${num(x.against)} disagreed`)}</span>` : ""}${rest.length > 2 ? `<span>${tr(`ほかに${num(rest.length - 2)}件の面白さ`, `+${num(rest.length - 2)} more`)}</span>` : ""}${jp(lv(x.w))}</small></div></a>`;
+        <small><span>${ppl(x.people)}</span>${x.against ? `<span class="fc-w">${tr(`反対の声 ${num(x.against)}人`, `${num(x.against)} disagreed`)}</span>` : ""}${rest.length > 2 ? `<span>${tr(`ほかに${num(rest.length - 2)}件の面白さ`, `+${num(rest.length - 2)} more`)}</span>` : ""}${jp(lv(x.w))}${A.priceTag(x.w)}</small></div></a>`;
   $("fd-list").innerHTML = !good.length
     ? `<div class="rv-empty"><div><b>${tr("まだプレイヤーの発言を読んだ作品がありません", "No titles have been read yet")}</b></div></div>`
     : `<div class="fcs" data-n="${cardsOf.length}" style="--n:${Math.min(3, cardsOf.length)}">${cardsOf.map(card).join("")}</div>

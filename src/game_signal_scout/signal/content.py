@@ -171,8 +171,8 @@ class Ctx:
 
 
 def _judge(m: dict) -> dict:
-    """日本人が作品を選ぶときに最初に見る属性（#2）: 日本語の UI・字幕・音声（jp。null = 未確認）、開発元と国・地域（dev）、機種（plat）。"""
-    return {k: m.get(k) for k in ("jp", "jp_at", "dev", "plat") if k in m}
+    """日本人が作品を選ぶときに最初に見る属性（#2）: 日本語の UI・字幕・音声（jp。null = 未確認）、開発元と国・地域（dev）、機種（plat）、日本向けの価格（price。なければ未確認）。"""
+    return {k: m.get(k) for k in ("jp", "jp_at", "dev", "plat", "price") if k in m}
 
 
 # ---------------------------------------------------------------- ダッシュボード（公開した日ごと）

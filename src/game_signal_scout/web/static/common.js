@@ -25,6 +25,12 @@
   const JPL = { voice: ["日本語音声", "JP voice"], sub: ["日本語字幕", "JP subtitles"], ui: ["日本語UI", "JP interface"], none: ["日本語なし", "No Japanese"], unknown: ["日本語 未確認", "JP unknown"] };
   const jpTag = w => { const k = jpLevel(w); return `<span class="jp jp-${k}">${esc(tr(...JPL[k]))}</span>`; };
   const art = (w, alt) => `<div class="art">${w && w.cover ? `<img src="${esc(w.cover)}" alt="${esc(nm(alt || (w && w.name)))}" referrerpolicy="no-referrer" loading="lazy">` : ""}${w && "jp" in w ? jpTag(w) : ""}</div>`;
+  // 日本向けの販売価格（#2 2026-11-10。作品の属性 price。確かめてから日が経った値は文書に来ない）。表示の言語を変えても国・通貨・数値は変えない（言葉だけ訳す）
+  // 割引中だけ通常価格と割引率を添える。無料・発売前はストアがそう示した作品だけ。価格がなければ priceTag は空（カードに空欄を作らない）
+  const money = (v, cur) => cur === "JPY" ? tr(`${num(v)}円`, `¥${num(v)}`) : `${num(v)} ${esc(cur || "")}`;
+  const priceText = p => !p ? "" : p.s === "paid" ? (p.off ? `<s>${money(p.ini, p.cur)}</s> <b>${money(p.fin, p.cur)}</b> <em>-${num(p.off)}%</em>` : `<b>${money(p.fin, p.cur)}</b>`)
+    : p.s === "free" ? `<b>${tr("無料", "Free")}</b>` : p.s === "coming_soon" ? tr("発売前", "Not yet released") : "";
+  const priceTag = w => { const t = priceText(w && w.price); return t ? `<span class="pr${w.price.off ? " pr-off" : ""}" title="${esc(tr(`日本のストアの価格（${w.price.at} 確認）`, `Japan store price (checked ${w.price.at})`))}">${t}</span>` : ""; };
   // 開発元と国・地域（出典の記載のとおり。記載がなければ「国・地域は未確認」）
   // 多いときは max 社まで（残りは「ほか N 社」。作品詳細はすべて）
   const devLine = (w, max = 2) => { const ds = (w && w.dev) || []; if (!ds.length) return tr("開発元は未確認", "Developer unknown");
@@ -303,7 +309,7 @@
       else { add(step); row.querySelector("button")?.focus(); } });
     add(first);
   };
-  window.ASS = Object.assign(window.ASS || {}, { tx, moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, devLine, workUrl, INTENTS, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
+  window.ASS = Object.assign(window.ASS || {}, { tx, moreList, cites, srcNote, thinNote, scopeNote, shapeDigest, lang, tr, esc, nm, md, num, ppl, works, wn, art, jpLevel, jpTag, priceTag, priceText, devLine, workUrl, INTENTS, LC, LN, ln, lcol, chip, FMT, SEASON, AIR, SRC, GENRE, KIND, OBSK, page,
     renderNav, store, sstore, dayBar, restoreScroll, fromPage, goBack, restoring });
   renderNav();
   // まもなく発売（メニューの下の枠。Anime の「まもなく放送」に当たる。signal/upcoming.py・接続口 api/soon）:

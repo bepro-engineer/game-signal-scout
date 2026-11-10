@@ -62,7 +62,7 @@
     return ks.length ? `<span class="sr-k">${ks.map(k => `<span class="kt${st.kind === k ? " on" : ""}" data-kind="${esc(k)}">${esc(KIND[k])}</span>`).join("")}</span>` : "";
   };
   const card = w => `<article class="sr-card"><a class="sr-link" href="${A.workUrl(w.id)}" aria-label="${esc(nm(w.name))}"></a>${art(w)}
-    <div class="sr-t">${wn(w.name, 2, "h3")}${meta(w) || w.score != null ? `<span class="sr-meta">${esc(meta(w))}${score(w)}</span>` : ""}<span class="sr-dev">${A.jpTag(w)} ${A.devLine(w)}</span>${kinds(w)}
+    <div class="sr-t">${wn(w.name, 2, "h3")}${meta(w) || w.score != null ? `<span class="sr-meta">${esc(meta(w))}${score(w)}</span>` : ""}<span class="sr-dev">${A.jpTag(w)}${A.priceTag(w)} ${A.devLine(w)}</span>${kinds(w)}
     </div></article>`;
 
   function render() {

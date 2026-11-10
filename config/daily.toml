@@ -50,6 +50,10 @@ languages = ["ja", "en", "es", "pt", "fr", "de", "it", "ko", "zh", "tr", "ru", "
 # それより前の日は、さかのぼって取ったレビューで「普段」を測るためだけに使い、画面の日にしない
 start_day = "2026-11-07"
 
+[prices]
+# 作品の価格（作品の属性 price）を画面に出す期限: 確かめてからこの日数を超えた価格は今の価格として出さない（画面は未確認。#2 2026-11-10）
+stale_days = 3
+
 [web]
 analytics_script_src = ""   # Anime の画面の流用が読む（Game はアクセス解析を入れない）
 # Viewer（web/app）。利用者の入口は VAIO の共通の入口（家の中 http://192.168.11.3/game/・公開 https://game-signal-scout.com/。Anime と同じ）。ここは VAIO が中継する裏の口で、

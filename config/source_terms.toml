@@ -709,6 +709,24 @@ analyze_aggregate = "対象外"
 public_quote = "対象外（言語の対応・開発元の名前を表示する。原文ではない）"
 commercial = "prohibited: SSA §2.A は非商用に限る（このサイトは非営利）"
 
+[sources.steam_prices]
+category = "conditional"
+permission_required = "unknown"
+conditions = "sources.steam_store と同じ経路（appdetails）。価格の項目だけを、1 日 1 回、複数の作品をまとめて問い合わせる"
+robots = "store.steampowered.com/robots.txt の不可に /api/ は含まれない（2026-11-10 に確認）"
+notes = "通常価格・現在価格・割引率・通貨・無料・発売前の印だけを持つ。価格の履歴・通知・換算はしない。画面ではストアの値をそのまま示し、確かめた日とストアへの道を添える"
+checked_at = "2026-11-10"
+evidence = [
+  { url = "https://store.steampowered.com/robots.txt", clause = "不可の一覧に /api/ はない", checked = "2026-11-10" },
+  { url = "https://store.steampowered.com/subscriber_agreement/", clause = "§4.C 人間以外が操作するシステムでの操作の禁止、§2.A 個人の非商用の利用に限る", checked = "2026-11-08" },
+]
+[sources.steam_prices.uses]
+collect = "conditional: sources.steam_store と同じ"
+store = "conditional: 価格の数値と区別だけ"
+analyze_aggregate = "対象外"
+public_quote = "対象外（価格の数値を表示する。原文ではない）"
+commercial = "prohibited: SSA §2.A は非商用に限る（このサイトは非営利）"
+
 [sources.wikidata_works]
 category = "explicitly_allowed"
 permission_required = false
