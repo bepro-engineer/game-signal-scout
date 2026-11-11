@@ -39,7 +39,7 @@
   const FT = G.featured || [], HASR = FT.some(w => w.role), MAIN = HASR ? FT.find(w => w.role === "lead") : null;
   const MOV = FT.filter(w => w.role === "moved"), TAL = FT.filter(w => w.role === "talked");
   const grp = (h, why, ws, tag) => `<div class="g-og"><p class="g-oh">${h}<small>${why}</small></p>
-      <ul class="g-orow">${ws.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}${tag(w)}</li>`).join("")}</ul></div>`;
+      <ul class="g-orow" style="--n:${Math.max(3, ws.length)}">${ws.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}${tag(w)}</li>`).join("")}</ul></div>`;
   const others = !HASR ? `<ul class="g-row">${FT.map(w => `<li>${link(w)}${art(w)}${wn(w.name, 2)}</li>`).join("")}</ul>`
     : (MOV.length || TAL.length) ? `<div class="g-oth">
       ${MOV.length ? grp(tr("ほかに、普段より話題が動いた作品", "Other titles that moved from their usual level"),
