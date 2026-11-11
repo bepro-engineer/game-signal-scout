@@ -31,7 +31,10 @@ def matches(intent: str, x: dict) -> bool:
     if x.get("verdict") == "frustration":
         return False
     r = RULES[intent]
-    return x.get("kind") in r.get("kinds", ()) or x.get("style") in r.get("styles", ()) or x.get("session") in r.get("sessions", ())
+    if x.get("kind") in r.get("kinds", ()):          # 醍醐味（面白さの核心）がその体験: 賛否の混じる体験も根拠にする（醍醐味は面白さが書かれたときだけ付く）
+        return True
+    # 遊び方・1 回の時間だけが合う体験は、面白かった（fun）ときだけ根拠にする（例: 協力で遊んだが味方が無反応だった、は根拠にしない）
+    return x.get("verdict") == "fun" and (x.get("style") in r.get("styles", ()) or x.get("session") in r.get("sessions", ()))
 
 
 def long_voices(xs: list[dict]) -> int:

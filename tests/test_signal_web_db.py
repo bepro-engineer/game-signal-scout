@@ -106,6 +106,7 @@ def test_intents_are_chosen_from_player_experiences_only():
     assert [it["work"] for it in s["friends"]] == [2] and [it["work"] for it in s["novel"]] == [2]
     assert s["short"] == []                                                            # 1 回が短いと書いた体験がない: 空のまま
     assert [it["work"] for it in short_cautions(works)] == [2]
+    assert select({5: {"xs": [x(style="versus", verdict="mixed")]}})["friends"] == []   # 対戦で遊んだが賛否: 根拠にしない
     s2 = select({4: {"xs": [x(session="short", people=2)]}})
     assert [it["work"] for it in s2["short"]] == [4]
 
