@@ -139,7 +139,7 @@ def test_divided_needs_the_same_point_on_both_sides():
     assert DIVIDED_MIN == 1
     from pathlib import Path
     dj = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/divided.js").read_text()
-    assert "で意見が分かれた" in dj and "ほかの注意（上の論点とは別）" in dj and "fun_xs" not in dj
+    assert "で意見が分かれた" in dj and "ほかの不満の声" in dj and "fun_xs" not in dj
 
 
 def test_intents_are_chosen_from_player_experiences_only():

@@ -1,6 +1,6 @@
 // 賛否が分かれる作品（#2 2026-11-11 オーナー: 同じ論点で評価が割れた作品だけ）: 同じ対象（場面・仕組み・要素）について、面白かった人と
 // 不満だった人がいる作品。カードの主見出しは「何について意見が分かれたか」（論点）。その同じ論点の「良かった」と「不満だった」を左右に比べる。
-// 論点に入らない不満は比べる枠に混ぜず、下に「ほかの注意」として小さく出す。人数はこちらで数えた人数（同じ人は 1 人。services/insight.divide）。原文は出さない。
+// 論点の組に入らなかった不満は比べる枠に混ぜず、下に「ほかの不満の声」として小さく出す（別の論点とは言い切らない）。人数はこちらで数えた人数（同じ人は 1 人。services/insight.divide）。原文は出さない。
 (() => {
   const A = window.ASS, { tr, esc, num, nm, tx } = A, D = (A.P || {}).divided || {};
   const $ = id => document.getElementById(id);
@@ -19,7 +19,7 @@
   const card = w => `<a class="dv-c" href="${A.workUrl(w.id)}">
       <span class="dv-t">${w.cover ? `<img src="${esc(w.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}<span><b>${esc(nm(w.name))}</b><span class="dv-m">${jp(lv(w))}${A.priceTag(w)}</span></span></span>
       ${w.points.map(point).join("")}
-      ${(w.other_warn || []).length ? `<span class="dv-o"><em>${tr("ほかの注意（上の論点とは別）", "Other cautions (separate from the above)")}</em>${w.other_warn.map(x => `${esc(tx(x, "act"))} → ${esc(tx(x, "result"))}`).join(tr("／", " / "))}</span>` : ""}</a>`;
+      ${(w.other_warn || []).length ? `<span class="dv-o"><em>${tr("ほかの不満の声", "Other complaints")}</em>${w.other_warn.map(x => `${esc(tx(x, "act"))} → ${esc(tx(x, "result"))}`).join(tr("／", " / "))}</span>` : ""}</a>`;
   $("dv-body").innerHTML = (items.length
     ? `<div class="dv-list">${items.map(card).join("")}</div>`
     : `<div class="rv-empty"><div><b>${tr("いま、同じ点で意見が分かれている作品は見つかっていません", "No title currently has opinions split on the same point")}</b></div></div>`)
