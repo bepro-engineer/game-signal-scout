@@ -43,7 +43,7 @@
         ${fits() ? `<span class="it-f"><em>${tr("向いている人", "Suits")}</em>${esc(fits())}</span>` : ""}
         ${how.length ? `<span class="it-how"><em>${tr("ストアの表示", "Store listing")}</em>${how.map(([ja, en]) => `<span class="hw">${esc(tr(ja, en))}</span>`).join("")}</span>` : ""}
         ${w.warn.length || cs.length || (PAGE === "short" && w.long) ? `<div class="fc-n"><span>${tr("合わないかもしれない点", "Might not suit you if")}</span><ul>
-          ${w.warn.map(r => `<li>${r.caution && CJ[r.caution] ? `<em>${esc(tr(...CJ[r.caution]))}</em>` : ""}${line(r)}<small>${pp(r.people)}</small></li>`).join("")}
+          ${w.warn.slice(0, 1).map(r => `<li>${r.caution && CJ[r.caution] ? `<em>${esc(tr(...CJ[r.caution]))}</em>` : ""}${line(r)}<small>${pp(r.people)}</small></li>`).join("")}
           ${PAGE === "short" && w.long ? `<li><em>${tr("時間", "Time")}</em>${tr(`1 回に時間がかかる・長いと書いた人もいます`, "Some players wrote that sessions run long")}<small>${pp(w.long)}</small></li>` : ""}
           ${cs.length ? `<li class="it-cs">${tr("注意の声", "Cautions")}: ${cs.map(([k, n]) => `${esc(tr(...CJ[k]))} ${pp(n)}`).join(tr("・", ", "))}</li>` : ""}</ul></div>` : ""}
         <small><span>${tr(`この体験を書いた人 ${num(w.why_people)}人`, `${num(w.why_people)} players wrote about this`)}</span>${jp(lv(w))}${A.priceTag(w)}</small></div></a>`;
