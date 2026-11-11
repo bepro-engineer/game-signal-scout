@@ -9,13 +9,13 @@
   const JPL = { voice: ["日本語音声", "Japanese audio"], sub: ["日本語字幕", "Japanese subtitles"], ui: ["日本語UI", "Japanese UI"], none: ["日本語非対応", "No Japanese"], unknown: ["日本語未確認", "Japanese unknown"] };
   const jp = k => `<span class="fj fj-${k}">${esc(tr(...JPL[k]))}</span>`;
   const pp = n => n > 1 ? tr(`${num(n)}人`, `${num(n)} players`) : tr("1人", "1 player");
-  const line = x => `${x.caution && CJ[x.caution] ? `<em>${esc(tr(...CJ[x.caution]))}</em>` : ""}${esc(x.appeal ? tx(x, "appeal") : `${tx(x, "act")} → ${tx(x, "result")}`)}<small>${pp(x.people)}</small>`;
+  const line = (x, warn) => `${warn && x.caution && CJ[x.caution] ? `<em>${esc(tr(...CJ[x.caution]))}</em>` : ""}${esc(x.appeal ? tx(x, "appeal") : `${tx(x, "act")} → ${tx(x, "result")}`)}<small>${pp(x.people)}</small>`;
   const items = D.items || [];
   const card = w => `<a class="dv-c" href="${A.workUrl(w.id)}">
       <span class="dv-t">${w.cover ? `<img src="${esc(w.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}<span><b>${esc(nm(w.name))}</b><span class="dv-m">${jp(lv(w))}${A.priceTag(w)}</span></span></span>
       <span class="dv-bar" role="img" aria-label="${esc(tr(`面白い ${w.fun}人・不満 ${w.against}人`, `${w.fun} enjoyed, ${w.against} frustrated`))}"><i style="flex:${w.fun}"></i><i style="flex:${w.against}"></i></span>
       <span class="dv-s"><span class="dv-g"><span class="dv-h">${tr(`面白いと書いた人 ${num(w.fun)}人`, `${num(w.fun)} enjoyed it`)}</span><ul>${w.fun_xs.map(x => `<li>${line(x)}</li>`).join("")}</ul></span>
-        <span class="dv-b"><span class="dv-h">${tr(`不満を書いた人 ${num(w.against)}人`, `${num(w.against)} were frustrated`)}</span><ul>${w.against_xs.map(x => `<li>${line(x)}</li>`).join("")}</ul></span></span></a>`;
+        <span class="dv-b"><span class="dv-h">${tr(`不満を書いた人 ${num(w.against)}人`, `${num(w.against)} were frustrated`)}</span><ul>${w.against_xs.map(x => `<li>${line(x, true)}</li>`).join("")}</ul></span></span></a>`;
   $("dv-body").innerHTML = (items.length
     ? `<div class="dv-list">${items.map(card).join("")}</div>`
     : `<div class="rv-empty"><div><b>${tr("いま、賛否が分かれている作品は見つかっていません", "No title currently has divided opinions")}</b></div></div>`)

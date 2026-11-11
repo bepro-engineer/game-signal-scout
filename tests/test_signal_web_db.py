@@ -118,6 +118,9 @@ def test_divided_titles_need_both_sides():
              3: {"xs": [x(people=4), x(verdict="mixed", people=3)]},               # 不満がない
              4: {"xs": [x(), x(verdict="frustration", people=4)]}}                # 面白いが 1 人
     got = divided(works)
+    from pathlib import Path
+    dj = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/divided.js").read_text()
+    assert "w.fun_xs.map(x => `<li>${line(x)}</li>`)" in dj and "line(x, true)" in dj                 # 注意の印は不満の側だけ
     assert [it["work"] for it in got] == [2, 1] and got[1]["fun"] == 3 and got[1]["against"] == 2 and got[0]["against"] == 2   # 割れ方が同じなら声の多い順
 
 
