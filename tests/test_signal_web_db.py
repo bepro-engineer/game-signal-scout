@@ -91,6 +91,7 @@ def test_menu_groups_content_and_intents_are_chosen_on_the_finds_page():
         assert (root / f"templates/pages/{k}.html").exists()
     for k in ("deep", "short", "novel", "friends"):
         assert not (root / f"templates/pages/{k}.html").exists()
+        assert f'href="finds.html?i={k}"' in (root / "templates/pages/search.html").read_text()   # 作品を探すからも 4 つの入口へ
     from game_signal_scout.web.pages import PAGES
     assert PAGES["finds"].extra_scripts == ("intent.js",) and PAGES["split"].script == "divided.js" and PAGES["soon"].script == "soon.js"
     from game_signal_scout.services.intents import RULES
