@@ -56,14 +56,14 @@ PAGES: dict[str, Page] = {
     "lang": Page("言語別の作品", "Titles by language", CSS_BASE, "day", "lang.js"),
     # 「再燃」はプレイヤーの発見の「いま変わったこと」（finds.html?view=changed）にまとめた（#2。アニメの放送後の前提は Game に合わない。古い URL は転送）
     "langspread": Page("言語圏の広がり", "Language spread", CSS_PAGE + ["langspread.css"], "pages", "langspread.js"),
-    # 作品詳細・作品を探す: 追加の作品情報の表示の語（タグ・役割・視聴状況の日本語。ADR 0041）は extra.js
-    "search": Page("作品を探す", "Find titles", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js", ("extra.js",)),
+    # 作品詳細・作品を探す（extra.css は作品詳細の追加の段の部品。外部の作品情報のサービスの表示の語は Game にないので持たない。#3 2026-11-11）
+    "search": Page("作品を探す", "Find titles", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js"),
     # Game: 遊び方のページ（作品を探すと同じ部品。ページの名前で遊び方を絞る: search.js の MODE_PAGES）
-    "solo": Page("一人（ソロ）で遊べる", "Single-player", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js", ("extra.js",)),
-    "coop": Page("協力プレイで遊べる", "Co-op", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js", ("extra.js",)),
-    "versus": Page("対戦プレイで遊べる", "Versus", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js", ("extra.js",)),
-    "pad": Page("コントローラで遊べる", "Controller", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js", ("extra.js",)),
-    "work": Page("作品詳細", "Title details", CSS_PAGE + ["work.css", "extra.css"], "work", "work.js", ("extra.js",)),
+    "solo": Page("一人（ソロ）で遊べる", "Single-player", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js"),
+    "coop": Page("協力プレイで遊べる", "Co-op", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js"),
+    "versus": Page("対戦プレイで遊べる", "Versus", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js"),
+    "pad": Page("コントローラで遊べる", "Controller", CSS_PAGE + ["search.css", "extra.css"], "search", "search.js"),
+    "work": Page("作品詳細", "Title details", CSS_PAGE + ["work.css", "extra.css"], "work", "work.js"),
     "about": Page("このサイトについて", "About", CSS_INFO, info=True),
     "guide": Page("データの見方", "How to read the data", CSS_INFO, info=True),
     "rights": Page("出典と権利について", "Sources and rights", CSS_INFO, info=True),

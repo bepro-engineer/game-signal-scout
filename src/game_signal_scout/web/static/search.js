@@ -24,7 +24,7 @@
   }[PAGE];
   const howOf = k => (HOW ? HOW.opts.find(o => o[0] === k) : null);
   const st = { q: "", jp: "", kind: "", lang: "", air: "", genre: "", score: "", year: "", tag: "", sort: "last", how: "", n: PER };
-  const EX = A.EXTRA || { tag: t => t };
+  const EX = { tag: t => t };   // タグの表示の語（Game の作品情報にタグはない。そのまま表示）
   try { st.q = new URLSearchParams(location.search).get("q") || ""; } catch (e) { /* 既定で表示 */ }
   // 作品詳細から戻ったとき（前のページへ・ブラウザの戻る）は、探す条件と表示した件数を戻す
   if (A.restoring && A.restoring.state && A.restoring.state.search) Object.assign(st, A.restoring.state.search);

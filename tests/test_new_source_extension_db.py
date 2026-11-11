@@ -308,3 +308,15 @@ def test_common_code_does_not_name_sources_even_in_descriptions():
     found = [f"{p.relative_to(root)}:{i}" for p in root.rglob("*.py") if "sources" not in p.parts and str(p.relative_to(root)) not in KNOWN_STORE_KEY_FILES
              for i, line in enumerate(p.read_text().splitlines(), 1) if names.search(line)]
     assert found == []
+
+
+def test_screen_files_do_not_name_sources():
+    """画面の部品（JS・CSS・ページの HTML）にも取得元の名前を書かない（画面は「ストア」と書く。#3 2026-11-11）。
+    例外: 出典と権利の表示（説明のページ templates/info/・下の帯 foot.js。作品の情報と画像の出典を示す決まり）と、機種の名前（携帯型 PC の製品名）。"""
+    import re
+    from pathlib import Path
+    web = Path(__file__).parents[1] / "src/game_signal_scout/web"
+    names = re.compile(r"Steam(?! Deck)|ProtonDB|Proton|Bluesky|Mastodon|Lemmy|Reddit|GOG|Blizzard|Discourse|Pantip|PTT|ニコニコ|はてな|Tildes|ResetEra|Famiboards|NeoGAF|AniList|Wikidata|IGDB|YouTube")
+    files = [p for p in web.rglob("*") if p.suffix in (".js", ".css", ".html") and "info" not in p.parts and p.name != "foot.js"]
+    found = [f"{p.relative_to(web)}:{i}" for p in files for i, line in enumerate(p.read_text().splitlines(), 1) if names.search(line)]
+    assert found == []

@@ -223,113 +223,13 @@
   const crCards = CR.map(crCard).join("");
   const creation = crCards ? `<section class="wk-sec" id="wk-creation"><div class="sec-h"><h2>${tr("創作の動き", "Fan art over time")}</h2><p>${tr("この作品のイラストを描いた作家の数です。話題にした人の数とは別に数えていて、足していません。", "Artists who drew this title. Counted separately from people who talked about it; the two are never added together.")}</p></div>${crCards}</section>` : "";
 
-  /* ---------- AniList の追加の作品情報（ADR 0041）。取れた項目だけ段にする（空のカードを作らない）。出典は最後の段にだけ 1 か所、段の説明文は出さない（2026-10-12 のユーザーの指示） ---------- */
-  const X = W.extra, EX = A.EXTRA, num = A.num;
-  const ext = (url, label) => url ? `<a class="ex-ext" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${label} ↗</a>` : "";
-  const src = X ? `<p class="ex-src">${tr("出典", "Source")}: ${ext(X.url, "AniList")}${X.fetched ? tr(`（${X.fetched.replace(/-/g, "/")} 時点）`, ` (as of ${X.fetched})`) : ""}</p>` : "";
+  /* ---------- 追加の段の部品（ストアのユーザー評価の段など）。Anime から流用した外部の作品情報のサービスの段は、Game にそのデータがないので持たない（#3 2026-11-11） ---------- */
+  const num = A.num;
   const sec = (id, ja, en, body) => body ? `<section class="wk-sec wk-x" id="${id}"><div class="sec-h"><h2>${tr(ja, en)}</h2></div>${body}</section>` : "";
-  const titleOf = t => (A.lang === "en" ? t.en || t.ja : t.ja || t.en) || "";
-  const more = (id, n, ja, en) => n > 0 ? `<button type="button" class="ex-more" data-more="${id}" aria-expanded="false">${tr(`${ja}（ほか${n}${tr("件", "")}）`, `${en} (${n} more)`)}</button>` : "";
-  let score = "", air = "", voices = "", cast = "", rel = "", altrend = "", alSrc = false;
-  if (X) {
-    /* 評価と視聴状況（AniList の利用者の採点・登録の集計。このサイトの観測人数ではない） */
-    const smax = Math.max(1, ...X.scores.map(x => x[1]));
-    const cScore = X.score != null ? `<div class="wk-card ex-c"><h3>${tr("平均評価", "Average score")}</h3>
-        <p class="ex-big"><b>${X.score}</b><span>/ 100</span></p>
-        ${X.votes ? `<p class="ex-mean">${tr(`採点した人 ${num(X.votes)}人`, `${num(X.votes)} ratings`)}</p>` : ""}
-        ${X.scores.length ? `<div class="ex-hist" role="img" aria-label="${tr("採点の分布", "Score distribution")}">${X.scores.map(([s, n]) => `<span title="${s}: ${num(n)}"><i style="height:${Math.max(2, n / smax * 100)}%"></i><small>${s}</small></span>`).join("")}</div>
-        <p class="ex-cap">${tr("採点の分布（10点ごとの人数）", "Score distribution (people per 10 points)")}</p>` : ""}</div>` : "";
-    const cPop = X.popularity ? `<div class="wk-card ex-c"><h3>${tr("人気", "Popularity")}</h3>
-        <dl class="ex-kv"><div><dt>${tr("リストに入れた人", "On users' lists")}</dt><dd>${tr(`<b>${num(X.popularity)}</b>人`, `<b>${num(X.popularity)}</b>`)}</dd></div>
-        ${X.favourites ? `<div><dt>${tr("お気に入りにした人", "Favorited by")}</dt><dd>${tr(`<b>${num(X.favourites)}</b>人`, `<b>${num(X.favourites)}</b>`)}</dd></div>` : ""}</dl>
-        ${X.rankings.length ? `<p class="ex-rk">${X.rankings.map(r => `<span>${esc(EX.RANK(r))}</span>`).join("")}</p>` : ""}</div>` : "";
-    const stTot = X.statuses.reduce((a, [, n]) => a + n, 0);
-    const cSt = stTot ? `<div class="wk-card ex-c"><h3>${tr("視聴状況", "Watch status")}</h3>
-        <p class="ex-stack" role="img" aria-label="${tr("視聴状況の割合", "Watch status shares")}">${X.statuses.map(([k, n]) => `<i style="width:${n / stTot * 100}%;background:${EX.STATUS[k][1]}" title="${esc(EX.STATUS[k][0])}"></i>`).join("")}</p>
-        <ul class="ex-leg">${X.statuses.map(([k, n]) => `<li><i style="background:${EX.STATUS[k][1]}"></i><span>${esc(EX.STATUS[k][0])}</span><b>${num(n)}${tr("人", "")}</b><small>${Math.round(n / stTot * 100)}%</small></li>`).join("")}</ul></div>` : "";
-    const cards = [cScore, cPop, cSt].filter(Boolean);
-    score = cards.length ? sec("wk-score", "評価と視聴状況", "Scores and watch status",
-      `<div class="ex-cards n${cards.length}">${cards.join("")}</div>`) : "";
+  let score = "";
+  const tags = "";
 
-    /* 放送・配信（放送の期間・話数・次回の放送・予告編）。公式サイト・配信サービスは見出しのリンクにある。予告編の絵は作品のバナー（外部の画像を増やさない。配信の CSP） */
-    // 過ぎた予定は、画面が開いた時点の時計で外す（作品情報は取得した日の値。まもなく放送の枠と同じ規則）
-    const nx = X.next && X.next.airingAt && X.next.airingAt * 1000 > Date.now() ? new Date(X.next.airingAt * 1000) : null;
-    const nxs = nx ? nx.toLocaleString(A.lang === "en" ? "en-US" : "ja-JP", { month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "short" }) : "";
-    const rows = [
-      W.start ? [tr("放送期間", "Run"), `${ymd(W.start)}${W.end ? ` 〜 ${ymd(W.end)}` : tr(" 〜", " –")}`] : null,
-      when ? [tr("シーズン", "Season"), when] : null,
-      (X.episodes || W.episodes) ? [tr("話数", "Episodes"), tr(`全${X.episodes || W.episodes}話`, `${X.episodes || W.episodes}`) + (X.duration ? tr(`（1話 ${X.duration}分）`, ` (${X.duration} min each)`) : "")] : null,
-      nx ? [tr("次の放送", "Next episode"), tr(`第${X.next.episode}話 ${nxs}`, `Ep. ${X.next.episode}: ${nxs}`)] : null,
-      X.hashtag ? [tr("公式ハッシュタグ", "Official hashtag"), esc(X.hashtag)] : null].filter(Boolean);
-    const trl = X.trailer ? `<a class="wk-card ex-trl" href="https://www.youtube.com/watch?v=${encodeURIComponent(X.trailer.id)}" target="_blank" rel="noopener noreferrer">
-        <span class="th">${W.banner || W.cover ? `<img src="${esc(W.banner || W.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}<span class="pl" aria-hidden="true"></span></span>
-        <span class="tt">${tr("予告編を YouTube で見る", "Watch the trailer on YouTube")} ↗</span></a>` : "";
-    air = rows.length || trl ? sec("wk-air", "放送・配信", "Airing and where to watch",
-      `<div class="ex-air${trl ? "" : " one"}">${rows.length ? `<div class="wk-card"><dl class="ex-dl">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl></div>` : ""}${trl}</div>`) : "";
-
-    /* レビューとプレイヤーの交流（本文は転載しない。採点とリンクだけ）。1 枚のカード: 採点は 2 列に並べ、掲示板のリンクは同じ行に
-       （2026-10-18 Issue #7: 「プレイヤーの交流」はリンク 1 つで、隣に小さなカードを置くとその下が空いた） */
-    // 件数は出さない（AniList の pageInfo.total は上限で切られることがあり、正しい件数と確かめられない）
-    const rv = X.reviews, goRv = ext(X.reviews_url, tr("AniList でレビューを読む", "Read reviews on AniList")), goSo = ext(X.social, tr("AniList の掲示板・活動を見る", "Open forum and activity on AniList"));
-    voices = rv.n || goSo ? sec("wk-voices", "レビューとプレイヤーの交流", "Reviews and player discussion",
-      `<div class="wk-card ex-c"><h3>${rv.n ? tr("AniList のレビュー", "Reviews on AniList") : tr("プレイヤーの交流", "Fan discussion")}</h3>
-        ${rv.n && rv.top.length ? `<ul class="ex-rv">${rv.top.map((r, i) => `<li><a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer"><b>${r.score}</b><span>/ 100</span><small>${r.votes ? tr(`${num(r.votes)}人中 ${num(r.up)}人が参考になった`, `${num(r.up)} of ${num(r.votes)} found it helpful`) : tr(`レビュー ${i + 1}`, `Review ${i + 1}`)}</small><em>${tr("読む", "Read")} ↗</em></a></li>`).join("")}</ul>` : ""}
-        <p class="ex-go">${rv.n ? goRv : ""}${rv.n && goSo ? `<span class="ex-gl"><span class="lb">${tr("プレイヤーの交流", "Fan discussion")}</span>${goSo}</span>` : goSo}</p></div>`) : "";
-
-    /* キャラクター・スタッフ（最初の 6 人・8 行。もっと見るで続き。全員は AniList で） */
-    const RJ = { MAIN: tr("メイン", "Main"), SUPPORTING: tr("サブ", "Supporting"), BACKGROUND: tr("その他", "Background") };
-    const CH = 8, ST = 8;
-    const cCh = X.chars.length ? `<div class="wk-card ex-c"><h3>${tr("キャラクターと声優", "Characters and voice cast")}</h3>
-        <ul class="ex-ch" id="ex-ch">${X.chars.map((c, i) => `<li${i >= CH ? " hidden" : ""}><span class="im">${c.img ? `<img src="${esc(c.img)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}</span>
-          <span class="tx"><a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(nm(c.name))}</b></a><small class="rl">${RJ[c.role] || ""}</small>
-          ${c.va.length ? `<small class="va">${tr("声", "Voice")}: ${c.va.map(v => `<a href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">${esc(nm(v.name))}</a>`).join(tr("、", ", "))}</small>` : ""}</span></li>`).join("")}</ul>
-        <p class="ex-go">${more("ex-ch", X.chars.length - CH, "もっと見る", "Show more")}${ext(X.characters_url, tr("AniList ですべて見る", "See all on AniList"))}</p></div>` : "";
-    const cSt2 = X.staff.length ? `<div class="wk-card ex-c"><h3>${tr("制作スタッフ", "Staff")}</h3>        <dl class="ex-dl ex-staff" id="ex-st">${X.staff.map((s, i) => `<div${i >= ST ? " hidden" : ""}><dt>${esc(EX.role(s.role))}</dt><dd><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(nm(s.name))}</a></dd></div>`).join("")}</dl>
-        <p class="ex-go">${more("ex-st", X.staff.length - ST, "もっと見る", "Show more")}${ext(X.staff_url, tr("AniList ですべて見る", "See all on AniList"))}</p></div>` : "";
-    cast = cCh || cSt2 ? sec("wk-cast", "キャラクター・スタッフ", "Characters and staff",
-      `<div class="ex-cards n${[cCh, cSt2].filter(Boolean).length} cast">${cCh}${cSt2}</div>`) : "";
-
-    /* 関連作品・おすすめ（このサイトに作品詳細があれば内側へ。なければ AniList へ） */
-    const TL = 6;
-    const tile = (x, label, id, i) => { const href = x.inner ? A.workUrl(x.inner) : x.url, out = !x.inner;
-      return `<li${i >= TL ? " hidden" : ""}><a href="${esc(href)}"${out ? ' target="_blank" rel="noopener noreferrer"' : ""}>
-        <span class="art">${x.cover ? `<img src="${esc(x.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}</span>
-        <span class="tx">${wn(x.title, 2, "b")}<small>${[label, FMT[String(x.fmt || "").toLowerCase()], x.year].filter(Boolean).map(esc).join(tr("・", " · "))}</small>
-        ${x.score != null && id === "ex-rc" ? `<small>${tr(`平均評価 ${x.score}`, `Score ${x.score}`)}</small>` : ""}<em>${x.inner ? tr("このサイトの作品詳細 →", "Details on this site →") : "AniList ↗"}</em></span></a></li>`; };
-    const cRel = X.relations.length ? `<div class="wk-card ex-c"><h3>${tr("関連作品", "Related titles")}</h3><ul class="ex-tiles" id="ex-rl">${X.relations.map((x, i) => tile(x, EX.REL[x.rel], "ex-rl", i)).join("")}</ul>
-        <p class="ex-go">${more("ex-rl", X.relations.length - TL, "もっと見る", "Show more")}</p></div>` : "";
-    const cRec = X.recs.length ? `<div class="wk-card ex-c"><h3>${tr("この作品が好きな人へのおすすめ", "Recommended if you like this")}</h3>
-        <ul class="ex-tiles" id="ex-rc">${X.recs.map((x, i) => tile(x, tr(`${num(x.votes)}人が推薦`, `${num(x.votes)} recommend`), "ex-rc", i)).join("")}</ul>
-        <p class="ex-go">${more("ex-rc", X.recs.length - TL, "もっと見る", "Show more")}</p></div>` : "";
-    rel = cRel || cRec ? sec("wk-rel", "関連作品・おすすめ", "Related and recommended",
-      `${cRel}${cRec}`) : "";
-
-    /* AniList での推移（#37）: その日に AniList の利用者がこの作品をリストに入れた数（前の日からの増え方）。このサイトの「話題にした人」とは別の数で、足さない。
-       取った時点でまだ終わっていない日（part）は斜線にして、要約から外す。棒は直近 25 日。 */
-    const T = X.trends.slice(-25).filter(t => t.add != null), tl = T.filter(t => !t.part).at(-1);
-    const dd = t => { const d = new Date(t.d * 1000); return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`; };
-    const done = T.filter(t => !t.part), amx = Math.max(1, ...T.map(t => Math.max(0, t.add))), sumA = a => a.reduce((x, y) => x + Math.max(0, y.add), 0);
-    const r7 = done.slice(-7), b7 = done.slice(-14, -7);
-    altrend = done.length >= 3 ? sec("wk-altrend", "AniList での推移", "Trends on AniList",
-      `<div class="wk-card"><p class="wk-sum"><b class="lb">${tr("変化の要約", "What changed")}</b>${tr(`直近${r7.length}日（${dd(r7[0])}〜${dd(r7.at(-1))}）に AniList でこの作品をリストに入れた人は ${num(sumA(r7))}人${b7.length ? `、その前の${b7.length}日は ${num(sumA(b7))}人` : ""}です。`,
-          `In the last ${r7.length} days (${dd(r7[0])}–${dd(r7.at(-1))}), ${num(sumA(r7))} AniList users added this title to their list${b7.length ? `, versus ${num(sumA(b7))} in the ${b7.length} days before` : ""}.`)}</p>
-        <div class="ex-tch" style="--n:${T.length}">${T.map(t => { const lab = tr(`${dd(t)}: リストに入れた人 ${num(Math.max(0, t.add))}人${t.part ? "（集計の途中）" : ""}`, `${dd(t)}: ${num(Math.max(0, t.add))} added${t.part ? " (still counting)" : ""}`);
-          return `<span class="${t.part ? "pt" : ""}" role="img" aria-label="${esc(lab)}" title="${esc(lab)}"><i style="height:${Math.max(2, Math.max(0, t.add) / amx * 100)}%"></i></span>`; }).join("")}</div>
-        <p class="ex-tax"><span>${dd(T[0])}</span><span>${dd(T.at(-1))}</span></p>
-        <dl class="ex-kv ex-kv3"><div><dt>${tr(`${dd(tl)} にリストに入れた人`, `Added on ${dd(tl)}`)}</dt><dd><b>${num(Math.max(0, tl.add))}</b>${tr("人", "")}</dd></div>
-          ${tl.wip != null ? `<div><dt>${tr(`${dd(tl)} の視聴中の人`, `Watching on ${dd(tl)}`)}</dt><dd><b>${num(tl.wip)}</b>${tr("人", "")}</dd></div>` : ""}
-          ${tl.sc != null ? `<div><dt>${tr("その日の平均評価", "Average score that day")}</dt><dd><b>${tl.sc}</b> / 100</dd></div>` : ""}</dl>
-        <p class="wk-note">${tr("AniList（ゲームの視聴記録のサービス）の利用者が、この作品を自分のリストに入れた数です（1日ごと。前の日からの増え方）。このサイトで話題にした人の数とは別に数えていて、足していません。斜線の日はまだ集計の途中です。",
-          "How many AniList users added this title to their list each day (the day-to-day increase). Counted separately from the people who talked about it on this site; the two are never added together. Hatched days are still being counted.")}</p></div>`) : "";
-    /* 出典は、出ている AniList の段のうち最後の段の終わりに 1 か所だけ */
-    const segs = { score, air, voices, cast, rel, altrend }, last = Object.keys(segs).filter(k => segs[k]).pop();
-    if (last) ({ score, air, voices, cast, rel, altrend } = { ...segs, [last]: segs[last].replace(/<\/section>$/, `${src}</section>`) });
-    alSrc = !!last;
-  }
-  // タグ（AniList。ネタバレのタグ・成人向けのタグは出さない。関連の強いものから 8 つ、続きは「すべてのタグ」）
-  const tags = X && X.tags.length ? `<p class="wk-tg">${X.tags.map((t, i) => `<span class="t"${i >= 8 ? " hidden" : ""} title="${esc(t.name)}">${esc(EX.tag(t.name))}</span>`).join("")}${X.tags.length > 8 ? `<button type="button" class="ex-more sm" data-more="wk-tg" aria-expanded="false">${tr(`すべてのタグ（ほか${X.tags.length - 8}）`, `All tags (${X.tags.length - 8} more)`)}</button>` : ""}</p>` : "";
-
-  const cr = W.credit && !alSrc ? `<p class="wk-cr">${tr("作品情報", "Title info")}: <a href="${esc(W.credit_url)}" target="_blank" rel="noopener noreferrer">${esc(W.credit)} ↗</a></p>` : "";
+  const cr = W.credit ? `<p class="wk-cr">${tr("作品情報", "Title info")}: <a href="${esc(W.credit_url)}" target="_blank" rel="noopener noreferrer">${esc(W.credit)} ↗</a></p>` : "";
   /* ---------- この作品でプレイヤーが見つけた面白さ ／ 買う前に知っておきたいこと（W.finds。注目の作品のページと同じ読み取りの結果。読めた作品だけ） ----------
      面白さ = 面白さの一文 → したこと → 起きたこと → 人数（書いた人の多い順。6 件まで）。買う前に知っておきたいこと = AI が不満と判断した体験だけ。原文は出さない */
   const WF = W.finds, CJ = { time: ["時間がかかる", "Takes time"], price: ["価格・課金", "Price"], performance: ["動作が重い", "Performance"], bugs: ["不具合", "Bugs"], difficulty: ["難しい", "Difficult"], online: ["接続・対戦相手", "Online"] };
@@ -361,7 +261,7 @@
       <p class="ex-src">${tr("ストアの利用者が「おすすめする・しない」を選んだレビューの集計です。このサイトが数えた人数や、プレイヤーの体験の読み取りとは別の数です。", "Totals of store users' recommend / not recommend reviews. Separate from this site's counts and readings.")}
         ${tr(`最近 30 日の評価は、ストアのページで確かめられます。${esc(R.at)} 確認。`, `Recent 30-day reviews are on the store page. Checked ${esc(R.at)}.`)} ${R.url ? `<a class="ex-ext" href="${esc(R.url)}" target="_blank" rel="noopener noreferrer">${tr("ストアのレビューを見る", "See reviews on the store")} ↗</a>` : ""}</p>`);
   }
-  $("wk").innerHTML = `${head.replace("<!--tags-->", tags).replace("<!--cr-->", cr)}<div class="wk-grid">${score}${finds}${trend}${points}${creation}</div>${air}${voices}${cast}${rel}${altrend}`;
+  $("wk").innerHTML = `${head.replace("<!--tags-->", tags).replace("<!--cr-->", cr)}<div class="wk-grid">${score}${finds}${trend}${points}${creation}</div>`;
   // もっと見る: 隠した行を出す（もう一度押すと戻す）。内側のスクロールは使わない
   document.querySelectorAll(".ex-more").forEach(b => b.addEventListener("click", () => {
     const box = b.dataset.more === "wk-tg" ? b.closest(".wk-tg") : $(b.dataset.more), open = b.getAttribute("aria-expanded") !== "true", lim = ["wk-tg", "ex-st", "ex-ch"].includes(b.dataset.more) ? 8 : 6;
