@@ -40,18 +40,6 @@ def moved_spread_page():
     return RedirectResponse("finds.html", status_code=308)
 
 
-def _moved_intent(key: str):
-    def go():
-        """遊びたい体験の入口のページ（2026-11-11 に一時置いた deep.html など）は、注目の作品の「どんな体験を探す？」の同じ選択へ（#2 の配置確定）。"""
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(f"finds.html?i={key}", status_code=308)
-    return go
-
-
-for _k in ("deep", "short", "novel", "friends"):
-    router.add_api_route(f"/{_k}.html", _moved_intent(_k), methods=["GET"])
-
-
 @router.get("/robots.txt")
 def show_robots():
     """クローラーへの決まり（利用規約・データ利用ポリシーと同じ。検索エンジンは許可、AI の学習用のクローラーは断る）。robots.txt はドメインの直下でしか読まれない（#65）。"""

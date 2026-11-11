@@ -73,41 +73,43 @@ def test_anime_pages_and_api_serve_game_documents(client):
     assert "https://*.steamstatic.com" in c.get("/").headers["content-security-policy"]
 
 
-def test_menu_groups_content_and_intents_are_chosen_on_the_finds_page():
-    """左のメニュー（#2 2026-11-11 方針修正・配置確定）: ダッシュボード・注目の作品 → ゲームを見つける → ゲームを知る → 案内。
-    遊びたい体験の 4 つの入口はメニューに並べず、注目の作品の上部「どんな体験を探す？」で選ぶ（細かな面白さの種類は下に小さく）。
-    一時置いた deep.html などは finds.html?i=… へ転送する。遊び方・言語圏のページは消さない。"""
+def test_menu_has_the_four_intents_and_finds_keeps_its_own_kinds():
+    """左のメニュー（#2 2026-11-11 オーナーの最終判断）: ダッシュボード・注目の作品 → 遊ぶ目的の 4 つの入口（独立した項目）→ 作品を探す・このサイトについて。
+    「すべて」は置かない。注目の作品は細かな面白さの種類で探すページで、4 つの入口と親子の絞り込みにしない。選んだ種類はもう一度押すと解除。
+    4 つの入口のページの上に、メニューと同じ切り替えを重ねない。遊び方・言語圏のページは消さない。"""
     from pathlib import Path
     root = Path(__file__).parents[1] / "src/game_signal_scout/web"
     js = (root / "static/common.js").read_text()
     nav = js[js.index("const NAV = ["):js.index("const NAV_OF")]
-    order = ['"index", "ダッシュボード"', '"finds", "注目の作品"', '"h", "ゲームを見つける"', '"search", "作品を探す"', '"soon", "まもなく発売"',
-             '"h", "ゲームを知る"', '"split", "賛否が分かれる作品"', '"langspread", "言語圏の広がり"', '"h", "案内"', '"about", "このサイトについて"']
+    order = ['"index", "ダッシュボード"', '"finds", "注目の作品"', "...INTENTS.map", '"search", "作品を探す"', '"about", "このサイトについて"']
     pos = [nav.index(x) for x in order]
-    assert pos == sorted(pos) and "INTENTS" not in nav
+    assert pos == sorted(pos) and '"h"' not in nav and "すべて" not in nav and '"soon"' not in nav
+    for k, ja in (("deep", "じっくり没頭したい"), ("short", "短時間で楽しみたい"), ("novel", "新しい体験がしたい"), ("friends", "友達と遊びたい")):
+        assert f'["{k}", "{ja}"' in js and (root / f"templates/pages/{k}.html").exists()
     fj = (root / "static/finds.js").read_text()
-    assert "どんな体験を探す？" in fj and 'class="fi4"' in fj and "A.intentView(I, K)" in fj and "細かな面白さの種類で絞る" in fj
-    for k in ("solo", "coop", "versus", "pad", "langspread", "split", "soon"):
-        assert (root / f"templates/pages/{k}.html").exists()
-    for k in ("deep", "short", "novel", "friends"):
-        assert not (root / f"templates/pages/{k}.html").exists()
-        assert f'href="finds.html?i={k}"' in (root / "templates/pages/search.html").read_text()   # 作品を探すからも 4 つの入口へ
-    from game_signal_scout.web.pages import PAGES
-    assert PAGES["finds"].extra_scripts == ("intent.js",) and PAGES["split"].script == "divided.js" and PAGES["soon"].script == "soon.js"
-    from game_signal_scout.services.intents import RULES
+    assert "fi4" not in fj and "intentView" not in fj and "INTENT" not in fj and "fk-all" not in fj      # 4 つの入口・「すべて」の行は注目の作品に置かない
+    assert '<a href="${K === k ? "finds.html" : `finds.html?k=${k}`}"' in fj                            # もう一度押すと解除
     ij = (root / "static/intent.js").read_text()
-    for k, r in RULES.items():   # 画面の細かな種類の対応は、選び方（Service）と同じ
-        assert f'{k}: [{", ".join(chr(34) + x + chr(34) for x in sorted(r.get("kinds", ()), key=["explore", "story", "grow", "surprise", "team", "versus"].index))}]' in ij
+    assert "it-tabs" not in ij and 'getElementById("it-body")' in ij
+    for k in ("solo", "coop", "versus", "pad", "langspread", "split"):
+        assert (root / f"templates/pages/{k}.html").exists()
+    assert "finds.html?i=" not in (root / "templates/pages/search.html").read_text()
+    from game_signal_scout.web.pages import PAGES
+    assert PAGES["finds"].extra_scripts == () and all(PAGES[k].script == "intent.js" for k in ("deep", "short", "novel", "friends"))
     assert "放送後も熱い" not in js
 
 
-def test_old_intent_urls_go_to_the_same_choice_on_the_finds_page(client):
+def test_intent_pages_open_directly_and_short_is_not_filled_with_the_opposite(client):
+    """4 つの入口のページはそのまま開く（転送しない）。短時間で楽しみたいが 0 作品のとき、時間がかかる作品の一覧で埋めない（6796702815）。"""
     c, last, docs = client
-    for k in ("deep", "short", "novel", "friends"):
+    for k in ("deep", "short", "novel", "friends", "finds", "split", "solo", "langspread"):
         r = c.get(f"/{k}.html", follow_redirects=False)
-        assert r.status_code == 308 and r.headers["location"] == f"finds.html?i={k}"
-    for k in ("split", "soon", "finds", "solo", "langspread"):
-        assert c.get(f"/{k}.html").status_code == 200
+        assert r.status_code == 200, k
+    p = c.get("/api/pages").json()
+    assert "long" not in p["intents"]["short"]
+    from pathlib import Path
+    ij = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/intent.js").read_text()
+    assert "1 回に時間がかかると書かれた作品" not in ij and "I.short || {}).long" not in ij
 
 
 def test_divided_titles_need_both_sides():
@@ -128,7 +130,7 @@ def test_divided_titles_need_both_sides():
 def test_intents_are_chosen_from_player_experiences_only():
     """遊びたい体験の入口（#2 2026-11-11）: 作品は実際に遊んだ人の体験だけで選ぶ。不満の体験は根拠にしない。根拠のない入口は空（埋めない）。
     注意（不満の体験・注意の人数）と、短時間の入口では 1 回が長いという声を添える。"""
-    from game_signal_scout.services.intents import select, short_cautions
+    from game_signal_scout.services.intents import select
     x = lambda **k: {"verdict": "fun", "people": 1, "act": "a", "result": "r", "kind": None, "style": None, "session": None, "caution": None, "fits": "", **k}
     works = {1: {"xs": [x(kind="explore", people=3, fits="自力で進めたい人"), x(kind="story"), x(verdict="frustration", caution="bugs", people=2)]},
              2: {"xs": [x(style="coop", people=2), x(kind="surprise"), x(session="long", caution="time")]},
@@ -138,7 +140,6 @@ def test_intents_are_chosen_from_player_experiences_only():
     assert s["deep"][0]["warn"][0]["caution"] == "bugs" and s["deep"][0]["cautions"] == {"bugs": 2}
     assert [it["work"] for it in s["friends"]] == [2] and [it["work"] for it in s["novel"]] == [2]
     assert s["short"] == []                                                            # 1 回が短いと書いた体験がない: 空のまま
-    assert [it["work"] for it in short_cautions(works)] == [2]
     assert select({5: {"xs": [x(style="versus", verdict="mixed")]}})["friends"] == []   # 対戦で遊んだが賛否: 根拠にしない
     s2 = select({4: {"xs": [x(session="short", people=2)]}})
     assert [it["work"] for it in s2["short"]] == [4]
@@ -153,7 +154,6 @@ def test_intent_pages_are_published_with_reasons(client):
     for k in ("deep", "short", "novel", "friends"):
         ids = [w["id"] for w in I[k]["items"]]
         assert len(ids) == len(set(ids)) and all(w["why"] and w["why_people"] >= 1 for w in I[k]["items"])
-    assert "long" in I["short"]
     from pathlib import Path
     js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/intent.js").read_text()
     for s_ in ("この体験に合う根拠", "合わないかもしれない点", "まだ、短時間で楽しめたと書いた体験が見つかっていません", "ジャンルやストアの分類では選んでいません"):

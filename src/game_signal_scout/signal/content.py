@@ -824,9 +824,8 @@ def intents_page(ctx: Ctx) -> dict:
     from game_signal_scout.ops import work_display
     wf = work_finds(ctx)
     sel = intents.select(wf)
-    short_c = intents.short_cautions(wf)
     div = intents.divided(wf)
-    ids = sorted({it["work"] for k in sel for it in sel[k]} | {it["work"] for it in short_c} | {it["work"] for it in div})
+    ids = sorted({it["work"] for k in sel for it in sel[k]} | {it["work"] for it in div})
     meta = work_display.work_meta(ctx.conn, ids) if ids else {}
     ctx.conn.rollback()
     keep = lambda x: {k: v for k, v in x.items() if k in ("appeal", "appeal_en", "act", "act_en", "result", "result_en", "kind", "verdict", "people", "against", "caution", "style", "session", "fits", "fits_en")}
@@ -846,7 +845,6 @@ def intents_page(ctx: Ctx) -> dict:
                 rows.append({**c, "why": [keep(x) for x in it["why"]], "why_people": it["why_people"], "why_n": it["why_n"], "warn": [keep(x) for x in it["warn"]],
                              "cautions": it["cautions"], "fits": it["fits"], **({"fits_en": fe} if fe else {}), "long": it["long"]})
         out[k] = {"items": rows}
-    out["short"]["long"] = [{**c, "voices": [keep(x) for x in it["voices"]], "people": it["people"]} for it in short_c if (c := card(it["work"]))]
     out["divided"] = [{**c, "fun": it["fun"], "against": it["against"], "fun_xs": [keep(x) for x in it["fun_xs"]], "against_xs": [keep(x) for x in it["against_xs"]]}
                       for it in div if (c := card(it["work"]))]   # 賛否が分かれる作品（pages.divided として公開）
     out["basis"] = {"read_works": len(wf), "session_since": "2026-11-11"}   # 読み取りのある作品の数。1 回に遊ぶ時間は 2026-11-11 から読む

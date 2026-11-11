@@ -80,11 +80,6 @@
 @container (max-width: 420px) { .fk a { white-space: normal; min-height: 60px; } }
 
 /* 遊びたい体験の入口（#2 2026-11-11。intent.js）: 4 つの入口の切り替え → 選んだ根拠の説明 → 注目の作品と同じカード */
-.it-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 10px; }
-.it-tabs a { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: #fff; box-shadow: 0 1px 6px rgba(40,30,80,.08); color: var(--ink-2, #3c3958); text-decoration: none; font-weight: 700; font-size: 15px; border: 2px solid transparent; }
-.it-tabs a small { font-size: 12px; color: var(--ink-3, #57536f); font-weight: 700; }
-.it-tabs a:hover { border-color: #d4cdee; }
-.it-tabs a.on { background: var(--accent, #5246c9); color: #fff; } .it-tabs a.on small { color: rgba(255,255,255,.85); }
 .it-why { margin: 0 0 10px; font-size: 14px; color: var(--ink-2, #3c3958); }
 .it-h { display: block; margin: 4px 0 0; font-size: 11px; font-weight: 700; color: var(--accent, #5246c9); letter-spacing: .02em; }
 .it-p { margin-left: 6px; font-weight: 700; color: var(--ink-3, #57536f); }
@@ -93,26 +88,7 @@
 .it-how .hw { font-size: 12px; font-weight: 700; color: #1f6f5c; background: #e3f4ee; border-radius: 6px; padding: 1px 7px; white-space: nowrap; }
 .it-cs { color: var(--ink-3, #57536f); }
 .it-empty p { margin: 6px 0 0; font-size: 14px; line-height: 1.7; }
-.it-sub { margin: 16px 0 8px; font-size: 16px; }
-.it-long { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22em), 1fr)); gap: 8px; }
-.it-long a { display: flex; gap: 10px; padding: 10px; border-radius: 12px; background: #fff; box-shadow: 0 1px 6px rgba(40,30,80,.08); color: inherit; text-decoration: none; }
-.it-long img { width: 56px; height: 75px; object-fit: cover; border-radius: 8px; flex: none; }
-.it-long a > span { display: flex; flex-direction: column; gap: 2px; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
-.it-long small { margin-left: 6px; color: var(--ink-3, #57536f); }
 .it-more { margin: 12px 0 0; font-size: 14px; }
-@media (max-width: 600px) { .it-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } .it-tabs a { font-size: 14px; padding: 8px 10px; } }
-
-/* 注目の作品の選び方（#2 2026-11-11 配置確定）: 主な入口 = すべて ＋ 4 つの遊びたい体験。細かな面白さの種類は下に小さく */
-.fi4 { display: grid; grid-template-columns: minmax(0, .7fr) repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
-.fi4 a { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: #f4f2fa; border: 2px solid transparent; color: var(--ink-2, #3c3958); text-decoration: none; }
-.fi4 a span { font-size: 16px; font-weight: 800; } .fi4 a em { font-style: normal; font-size: 12px; color: var(--ink-3, #57536f); } .fi4 a small { font-size: 12px; font-weight: 700; color: var(--ink-3, #57536f); }
-.fi4 a:hover { border-color: #d4cdee; } .fi4 a:focus-visible { outline: 3px solid var(--accent, #5246c9); outline-offset: 2px; }
-.fi4 a.on { background: var(--accent, #5246c9); color: #fff; } .fi4 a.on em, .fi4 a.on small { color: rgba(255,255,255,.88); }
-.fk2 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 10px; font-size: 13px; }
-.fk2 > span { color: var(--ink-3, #57536f); font-weight: 700; margin-right: 2px; }
-.fk2 a { display: inline-flex; align-items: center; gap: 5px; padding: 2px 10px; border-radius: 999px; background: #fff; border: 1px solid #ddd8ef; color: var(--ink-2, #3c3958); text-decoration: none; font-weight: 700; }
-.fk2 a small { color: var(--ink-3, #57536f); } .fk2 a.on { background: var(--accent-soft, #EFEEFC); border-color: var(--accent, #5246c9); color: var(--accent, #5246c9); }
-@media (max-width: 760px) { .fi4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .fi4 a:first-child { grid-column: 1 / -1; } }
 
 /* 賛否が分かれる作品（split.html） */
 .dv-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 30em), 1fr)); gap: 12px; }
@@ -133,3 +109,4 @@
 .so-c { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 12px; background: #fff; box-shadow: 0 1px 6px rgba(40,30,80,.08); }
 .so-c .art { aspect-ratio: 3 / 4; border-radius: 10px; } .so-c .cardlink { position: absolute; inset: 0; z-index: 1; }
 .so-w, .so-p, .so-s { display: block; font-size: 13px; color: var(--ink-3, #57536f); } .so-w { font-weight: 700; color: var(--accent, #5246c9); }
+

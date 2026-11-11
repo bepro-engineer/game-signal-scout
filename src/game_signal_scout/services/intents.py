@@ -65,16 +65,6 @@ def select(works: dict[int, dict]) -> dict[str, list[dict]]:
     return out
 
 
-def short_cautions(works: dict[int, dict]) -> list[dict]:
-    """1 回に時間がかかる・長いと書いた人のいる作品（短時間で楽しみたい人が先に知っておきたいこと）。書いた人の多い順。"""
-    out = []
-    for w, wf in works.items():
-        xs = [x for x in wf.get("xs") or [] if x.get("session") == "long" or x.get("caution") == "time"]
-        if xs:
-            out.append({"work": w, "voices": sorted(xs, key=lambda x: -(x.get("people") or 1))[:MAX_WARN], "people": long_voices(xs)})
-    return sorted(out, key=lambda it: (-it["people"], it["work"]))
-
-
 DIVIDED_MIN = 2   # 面白いと書いた人・不満を書いた人が、どちらもこの数以上の作品だけ（ひとりずつの声では「分かれる」と言わない）
 
 
