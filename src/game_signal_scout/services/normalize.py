@@ -123,17 +123,26 @@ def voices(conn, source: str, settings: dict | None = None, batch: int = 2000) -
         shaped = [(item_id, occurred_at, shape(item_id, raw)) for item_id, occurred_at, raw in rows]
         with conn.transaction():
             works = _works(conn, settings, [p for _, _, p in shaped])
-            linked = {}   # 名前空間 → 本文・リンクの中の作品のページの番号
-            for _, _, p in shaped:
+            # 作品が取得元で決まらない発言だけ、本文・リンクの中の作品のページへのリンクの最初の 1 つ（番号の小さい順）を作品にする
+            # （使わないリンクから作品を作らない）
+            first = {}
+            for item_id, _, p in shaped:
+                if _work_of(p, works):
+                    continue
                 for ks, rx in links:
-                    linked.setdefault(ks, set()).update(m for s in (p.get("text") or "", p.get("link") or p.get("url") or "") for m in rx.findall(s))
-            by_link = {ks: work_key.resolve(conn, ks, ids) for ks, ids in linked.items()}
+                    ids = sorted({m for s in (p.get("text") or "", p.get("link") or p.get("url") or "") for m in rx.findall(s)})
+                    if ids:
+                        first[item_id] = (ks, ids[0])
+                        break
+            by_link = {}
+            for ks in {k for k, _ in first.values()}:
+                by_link[ks] = work_key.resolve(conn, ks, [x for k, x in first.values() if k == ks])
         conn.commit()
         for item_id, occurred_at, p in shaped:
             # どの取得元の発言にも同じ処理（取得元の名前・種類で分けない。Adapter が渡すのは取得元の形を直した素材だけ）:
             # ① 本文・リンクの中の作品のページへのリンク ② 宣伝・告知・ニュースなどの印 ③ 言語（取得元が示さなければ共通の判定器）
             text, link = p.get("text") or "", p.get("link") or p.get("url") or ""
-            p = {**p, "linked_works": [by_link[ks][m] for ks, rx in links for s in (text, link) for m in rx.findall(s) if m in by_link.get(ks, {})]}
+            p = {**p, "linked_works": [by_link[first[item_id][0]][first[item_id][1]]] if item_id in first else []}
             flags = list(dict.fromkeys([*(p.get("flags") or []), *flags_for(PostText(text=text, link_title=p.get("link_title") or "", tags=p.get("tags") or [], has_link=bool(p.get("link"))))]))
             if any(b in str(item_id) or b in str(p.get("url") or "") for b in banned):
                 flags.append("terms_excluded")
