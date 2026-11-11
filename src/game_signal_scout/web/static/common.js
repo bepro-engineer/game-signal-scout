@@ -327,7 +327,7 @@
     const href = x => x.id ? `href="${workUrl(x.id)}"` : `href="${esc(x.store)}" target="_blank" rel="noopener noreferrer"`;
     const li = (x, i) => `<li${i >= SHOW ? " hidden" : ""}><a class="cardlink" ${href(x)} aria-label="${esc(nm(x.name))}"></a>${art(x)}<div class="sn-t">${wn(x.name, 2)}
       <span class="sn-w">${when(x)}${x.people ? " · " + tr(`${num(x.people)}人が話題に`, `${num(x.people)} talking`) : ""}</span></div></li>`;
-    el.innerHTML = `<h2>${tr("まもなく発売", "Coming soon")}</h2><p class="sn-note">${tr("Steam の人気の近日発売（発売日は Steam のストアの表示）", "Popular upcoming games on Steam (release dates as shown on the Steam store)")}</p>`
+    el.innerHTML = `<h2>${tr("まもなく発売", "Coming soon")}</h2><p class="sn-note">${tr("ストアの人気の近日発売（発売日はストアの表示）", "Popular upcoming games on the store (release dates as shown on the store)")}</p>`
       + (dated.length ? `<h3 class="sn-h">${tr("発売日が近い", "Releasing soon")}</h3><ul class="sn-list">${dated.map(li).join("")}</ul>` : "")
       + (picks.length ? `<h3 class="sn-h">${tr("注目の近日発売", "Anticipated")}</h3><ul class="sn-list">${picks.map(li).join("")}</ul>` : "")
       + (!dated.length && !picks.length ? `<p class="sn-none">${tr("これから発売の作品は、まだ分かっていません。", "No upcoming games are known yet.")}</p>` : "");
