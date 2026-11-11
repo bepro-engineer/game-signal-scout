@@ -73,14 +73,57 @@ def test_anime_pages_and_api_serve_game_documents(client):
     assert "https://*.steamstatic.com" in c.get("/").headers["content-security-policy"]
 
 
-def test_menu_keeps_anime_names_and_adds_play_styles():
-    """左の案内: Anime の名前を保ち、遊び方のページを足す。「世界で広がる」は「プレイヤーの発見」に置き換えた（#2）。"""
+def test_menu_is_the_four_play_intents_and_keeps_the_other_pages():
+    """左のメニュー（#2 2026-11-11 オーナー確定）: ダッシュボード・注目の作品 → 遊びたい体験の 4 つの入口 → 作品を探す・このサイトについて。
+    メニューから外した言語圏の広がり・遊び方のページは消さず（URL もそのまま）、作品を探すと各遊び方のページから行ける。"""
     from pathlib import Path
-    js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/common.js").read_text()
-    for name in ('"index", "ダッシュボード"', '"finds", "注目の作品"', '"langspread", "言語圏の広がり"', '"search", "作品を探す"',
-                 '"about", "このサイトについて"', '"solo", "一人（ソロ）で遊べる"', '"coop", "協力プレイで遊べる"', '"versus", "対戦プレイで遊べる"', '"pad", "コントローラで遊べる"'):
-        assert name in js
+    root = Path(__file__).parents[1] / "src/game_signal_scout/web"
+    js = (root / "static/common.js").read_text()
+    nav = js[js.index("const NAV = ["):js.index("const NAV_OF")]
+    for name in ('"index", "ダッシュボード"', '"finds", "注目の作品"', "...INTENTS.map", '"search", "作品を探す"', '"about", "このサイトについて"'):
+        assert name in nav
+    for k, ja in (("deep", "じっくり没頭したい"), ("short", "短時間で楽しみたい"), ("novel", "新しい体験がしたい"), ("friends", "友達と遊びたい")):
+        assert f'["{k}", "{ja}"' in js and (root / f"templates/pages/{k}.html").exists()
+    for k in ("solo", "coop", "versus", "pad", "langspread"):
+        assert f'"{k}"' not in nav and (root / f"templates/pages/{k}.html").exists()
+        assert f'href="{k}.html"' in (root / "templates/pages/search.html").read_text()
+    from game_signal_scout.web.pages import PAGES
+    assert all(PAGES[k].script == "intent.js" and PAGES[k].data == "pages" for k in ("deep", "short", "novel", "friends"))
     assert "放送後も熱い" not in js                                                  # Game にない放送のページは置かない
+
+
+def test_intents_are_chosen_from_player_experiences_only():
+    """遊びたい体験の入口（#2 2026-11-11）: 作品は実際に遊んだ人の体験だけで選ぶ。不満の体験は根拠にしない。根拠のない入口は空（埋めない）。
+    注意（不満の体験・注意の人数）と、短時間の入口では 1 回が長いという声を添える。"""
+    from game_signal_scout.services.intents import select, short_cautions
+    x = lambda **k: {"verdict": "fun", "people": 1, "act": "a", "result": "r", "kind": None, "style": None, "session": None, "caution": None, "fits": "", **k}
+    works = {1: {"xs": [x(kind="explore", people=3, fits="自力で進めたい人"), x(kind="story"), x(verdict="frustration", caution="bugs", people=2)]},
+             2: {"xs": [x(style="coop", people=2), x(kind="surprise"), x(session="long", caution="time")]},
+             3: {"xs": [x(kind="explore", verdict="frustration")]}}                     # 不満だけ: どの入口にも入らない
+    s = select(works)
+    assert [it["work"] for it in s["deep"]] == [1] and s["deep"][0]["why_people"] == 4 and s["deep"][0]["fits"] == "自力で進めたい人"
+    assert s["deep"][0]["warn"][0]["caution"] == "bugs" and s["deep"][0]["cautions"] == {"bugs": 2}
+    assert [it["work"] for it in s["friends"]] == [2] and [it["work"] for it in s["novel"]] == [2]
+    assert s["short"] == []                                                            # 1 回が短いと書いた体験がない: 空のまま
+    assert [it["work"] for it in short_cautions(works)] == [2]
+    s2 = select({4: {"xs": [x(session="short", people=2)]}})
+    assert [it["work"] for it in s2["short"]] == [4]
+
+
+def test_intent_pages_are_published_with_reasons(client):
+    """公開の文書 pages に入口ごとの作品・根拠・注意がある。作品は重複せず、根拠の体験が必ずある。"""
+    c, last, docs = client
+    p = c.get("/api/pages").json()
+    I = p["intents"]
+    assert set(I) >= {"deep", "short", "novel", "friends", "basis"} and I["basis"]["session_since"] == "2026-11-11"
+    for k in ("deep", "short", "novel", "friends"):
+        ids = [w["id"] for w in I[k]["items"]]
+        assert len(ids) == len(set(ids)) and all(w["why"] and w["why_people"] >= 1 for w in I[k]["items"])
+    assert "long" in I["short"]
+    from pathlib import Path
+    js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/intent.js").read_text()
+    for s_ in ("この体験に合う根拠", "合わないかもしれない点", "まだ、短時間で楽しめたと書いた体験が見つかっていません", "ジャンルやストアの分類では選んでいません"):
+        assert s_ in js
 
 
 def test_todays_pick_card_has_no_language_area_list():

@@ -773,6 +773,7 @@ def pages(ctx: Ctx) -> dict:
     ls.sort(key=lambda it: (PAGE_SORT["language_spread"](it["sort"]), it["id"]))
     out["language_spread"] = {"items": ls, "grid": {"days": int(th["grid_days"]), "before": int(th["grid_before"])}}   # 言語×日の表の窓（langspread.js）
     out["finds"] = finds_page(ctx)
+    out["intents"] = intents_page(ctx)
     return out
 
 
@@ -815,6 +816,39 @@ def finds_page(ctx: Ctx) -> dict:
     return {"items": items}
 
 
+def intents_page(ctx: Ctx) -> dict:
+    """遊びたい体験の入口（#2 2026-11-11 オーナー確定。services/intents が根拠の体験で選ぶ）。入口ごとに、作品・根拠の体験・注意・向いている人。
+    作品の判断の属性（日本語・価格・開発元・ストアの遊び方の表示）と、カードの絵を添える。根拠のない入口は空（ほかの作品で埋めない）。"""
+    from game_signal_scout.services import intents
+    from game_signal_scout.ops import work_display
+    wf = work_finds(ctx)
+    sel = intents.select(wf)
+    short_c = intents.short_cautions(wf)
+    ids = sorted({it["work"] for k in sel for it in sel[k]} | {it["work"] for it in short_c})
+    meta = work_display.work_meta(ctx.conn, ids) if ids else {}
+    ctx.conn.rollback()
+    keep = lambda x: {k: v for k, v in x.items() if k in ("appeal", "appeal_en", "act", "act_en", "result", "result_en", "kind", "verdict", "people", "against", "caution", "style", "session", "fits", "fits_en")}
+
+    def card(w: int) -> dict | None:
+        m = meta.get(w)
+        if not m:
+            return None
+        return {**{k: m.get(k) for k in ("id", "name", "cover", "banner", "header", "shots")}, **_judge(m), "modes": (ctx.briefs.get(w) or {}).get("modes") or []}
+    out = {}
+    for k, items in sel.items():
+        rows = []
+        for it in items:
+            c = card(it["work"])
+            if c:
+                fe = next((x.get("fits_en") for x in it["why"] if it["fits"] and x.get("fits") == it["fits"] and x.get("fits_en")), None)
+                rows.append({**c, "why": [keep(x) for x in it["why"]], "why_people": it["why_people"], "why_n": it["why_n"], "warn": [keep(x) for x in it["warn"]],
+                             "cautions": it["cautions"], "fits": it["fits"], **({"fits_en": fe} if fe else {}), "long": it["long"]})
+        out[k] = {"items": rows}
+    out["short"]["long"] = [{**c, "voices": [keep(x) for x in it["voices"]], "people": it["people"]} for it in short_c if (c := card(it["work"]))]
+    out["basis"] = {"read_works": len(wf), "session_since": "2026-11-11"}   # 読み取りのある作品の数。1 回に遊ぶ時間は 2026-11-11 から読む
+    return out
+
+
 def work_finds(ctx: Ctx) -> dict[int, dict]:
     """作品ごとの プレイヤーが見つけた面白さ と 買う前に知っておきたいこと（注目の作品のページと同じ読み取りの結果。作品詳細とダッシュボードの今日の兆しに添える）。
     good = 面白さの一文のある体験（不満を除く。書いた人の多い順）、warn = AI が不満と判断した体験だけ（賛否の体験の注意の印は良い体験にも付くので使わない）。
@@ -830,20 +864,21 @@ def work_finds(ctx: Ctx) -> dict[int, dict]:
         for f in b.get("finds") or []:
             ev = (f.get("examples") or [{}])[0]
             xs.append({"appeal": f.get("appeal"), "kind": f.get("appeal_kind"), "verdict": f.get("verdict"), "act": ev.get("did"), "result": ev.get("happened"),
-                       "people": f.get("people") or 1, "against": (f.get("frustration") or 0) if f.get("verdict") == "fun" else 0, "caution": f.get("caution")})
+                       "people": f.get("people") or 1, "against": (f.get("frustration") or 0) if f.get("verdict") == "fun" else 0, "caution": f.get("caution"),
+                       "style": f.get("style"), "session": f.get("session"), "fits": f.get("fits") or ""})
         for e in b.get("singles") or []:
             xs.append({"appeal": e.get("appeal"), "kind": e.get("appeal_kind"), "verdict": e.get("verdict"), "act": e.get("did"), "result": e.get("happened"),
-                       "people": 1, "against": 0, "caution": e.get("caution")})
+                       "people": 1, "against": 0, "caution": e.get("caution"), "style": e.get("style"), "session": e.get("session"), "fits": ""})
         xs = [x for x in xs if x["act"] and x["result"]]
         en = b.get("en") or {}
         for x in xs:   # 英訳（#2）。訳のない文には付けない
-            for k in ("appeal", "act", "result"):
+            for k in ("appeal", "act", "result", "fits"):
                 if x[k] and en.get(x[k]):
                     x[f"{k}_en"] = en[x[k]]
         good = sorted([x for x in xs if x["appeal"] and x["verdict"] != "frustration"], key=lambda x: -x["people"])
         warn = sorted([x for x in xs if x["verdict"] == "frustration"], key=lambda x: -x["people"])
         if good or warn:
-            out[int(a)] = {"good": good, "warn": warn, "read_people": b.get("read_people"), "experiences": b.get("experiences"),
+            out[int(a)] = {"good": good, "warn": warn, "xs": xs, "read_people": b.get("read_people"), "experiences": b.get("experiences"),
                            "window_days": b.get("window_days"), "since": (b.get("since") or "")[:10]}
     ctx._work_finds = out
     return out
@@ -1058,7 +1093,7 @@ def work_detail(ctx: Ctx, w: int, hist: list[date], pg_on: dict) -> dict:
             "days": [d.isoformat() for d in window], "streams": streams, "lead": lead,
             "pages": pg_on.get(meta["id"], []), **({"creation": cr} if (cr := [{"label": c["label"], "o": c["o"][-nd:], "n": c["n"][-nd:], "ranges": chart_ranges(ctx, hist, c["n"], c["o"], {})}
                                                                                 for c in creation_series(ctx, hist).get(w, [])]) else {}),
-            "extra": _extra(ctx, cur.get("id")), **({"finds": f} if (f := work_finds(ctx).get(w)) else {})}
+            "extra": _extra(ctx, cur.get("id")), **({"finds": {k: v for k, v in f.items() if k != "xs"}} if (f := work_finds(ctx).get(w)) else {})}
 
 
 def _obs_index(ctx: Ctx, window: list[date]) -> dict:

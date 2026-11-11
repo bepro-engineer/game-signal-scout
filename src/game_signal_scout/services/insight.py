@@ -27,6 +27,7 @@ VERDICTS = ("fun", "frustration", "mixed")
 STYLES = ("solo", "coop", "versus")       # その体験をどう遊んでいたか（ひとりで・協力して・対戦で）。発言から言えるときだけ
 INPUTS = ("controller",)                  # 体験が入力機器の操作感についてのとき
 CAUTIONS = ("time", "price", "performance", "bugs", "difficulty", "online")
+SESSIONS = ("short", "long")              # 1 回に遊ぶ時間（#2 2026-11-11: 「短時間で楽しみたい」の根拠）。発言に書いてあるときだけ。2026-11-11 より前に読んだ発言にはない
 # 醍醐味（#2: そのゲームで何が面白いのか、の核心）の種類。体験から言えるときだけ付ける（作品の属性からは付けない）
 APPEALS = ("conquer", "explore", "story", "grow", "team", "versus", "feel", "surprise")
 KANA = re.compile(r"[\u3040-\u30ff]")
@@ -44,7 +45,8 @@ appeal は、この体験の醍醐味＝何が面白かったのかの核心を�
   不満だけの体験・面白さが書かれていない体験では空にします。発言にない面白さを足さないでください。
 appeal_kind は、その醍醐味の種類: conquer（強敵・難所を自力で乗り越える手応え）/ explore（探索して見つける喜び）/ story（物語・世界に浸る）/ grow（育てる・作り上げる・やり込む）/ team（仲間との連携が決まる）/ versus（相手との駆け引き・読み合い）/ feel（操作・アクションの気持ちよさ）/ surprise（予想外の展開・意外な遊び方）/ none
 caution は、買う・遊ぶ前に知っておくべき注意（発言に書いてあるときだけ）: time（時間がかかる）/ price（価格・課金）/ performance（重い・動作）/ bugs（不具合）/ difficulty（難しさ）/ online（接続・人がいない・不正）/ none
-各発言について次の JSON を返します: {{"id": 番号, "exp": null または {{"did": "プレイヤーがしたこと（日本語 30 字以内）", "happened": "その結果起きたこと（日本語 40 字以内）", "verdict": "fun（面白い・良かった）/ frustration（不満・困った）/ mixed", "topic": "体験の話題を表す短い日本語（15 字以内）", "appeal": "醍醐味（日本語 30 字以内。なければ空）", "appeal_kind": "conquer / explore / story / grow / team / versus / feel / surprise / none", "style": "solo / coop / versus / none", "input": "controller / none", "caution": "time / price / performance / bugs / difficulty / online / none"}}}}
+session は、1 回に遊ぶ時間について発言に書いてあるときだけ: short（1 回・1 試合が短い、すきま時間や数分〜30 分ほどで区切りよく遊べた）/ long（1 回が長い、何時間も続けて遊んだ・区切りにくい）/ none。書いていなければ none
+各発言について次の JSON を返します: {{"id": 番号, "exp": null または {{"did": "プレイヤーがしたこと（日本語 30 字以内）", "happened": "その結果起きたこと（日本語 40 字以内）", "verdict": "fun（面白い・良かった）/ frustration（不満・困った）/ mixed", "topic": "体験の話題を表す短い日本語（15 字以内）", "appeal": "醍醐味（日本語 30 字以内。なければ空）", "appeal_kind": "conquer / explore / story / grow / team / versus / feel / surprise / none", "style": "solo / coop / versus / none", "input": "controller / none", "caution": "time / price / performance / bugs / difficulty / online / none", "session": "short / long / none"}}}}
 次の形の JSON だけを返してください（前置き不要）: {{"items": [各発言の JSON, ...]}}
 
 発言:
@@ -86,11 +88,12 @@ def _clean_exp(e) -> dict | None:
         return None
     if any(not KANA.search(out[k]) or HANZI_ONLY.search(out[k]) for k in ("did", "happened")):   # 日本語でない（訳されていない）体験は使わない
         return None
-    sy, ip, ca, ak = (str(e.get(k) or "").strip() for k in ("style", "input", "caution", "appeal_kind"))
+    sy, ip, ca, ak, se = (str(e.get(k) or "").strip() for k in ("style", "input", "caution", "appeal_kind", "session"))
     ap = str(e.get("appeal") or "").strip()[:40]
     if v == "frustration" or not KANA.search(ap) or HANZI_ONLY.search(ap) or STIFF.search(ap) or ap in EXAMPLES:   # 不満だけの体験・訳されていない句には醍醐味を付けない
         ap, ak = "", ""
-    return {**out, "verdict": v, "appeal": ap, "appeal_kind": ak if ak in APPEALS and ap else None, "style": sy if sy in STYLES else None, "input": ip if ip in INPUTS else None, "caution": ca if ca in CAUTIONS else None}
+    return {**out, "verdict": v, "appeal": ap, "appeal_kind": ak if ak in APPEALS and ap else None, "style": sy if sy in STYLES else None, "input": ip if ip in INPUTS else None, "caution": ca if ca in CAUTIONS else None,
+            "session": se if se in SESSIONS else None}
 
 
 def read_statements(ask, title: str, rows: list[dict]) -> dict[str, dict | None]:
@@ -158,7 +161,7 @@ def tally(groups: list[dict], posts: dict[str, dict], exps: dict[str, dict], sin
         kind = _major(cur, exps, "appeal_kind")
         ap = g.get("appeal") or next((exps[m]["appeal"] for m in cur if exps[m].get("appeal") and exps[m].get("appeal_kind") == kind), "")
         finds.append({"title": g["title"], "fits": g.get("fits") or "", "appeal": ap if _verdict(v) != "frustration" else "", "appeal_kind": kind if _verdict(v) != "frustration" else None, "verdict": _verdict(v), "people": people, "prev": before, "trend": trend,
-                      "style": _major(cur, exps, "style"), "input": _major(cur, exps, "input"), "caution": _major(cur, exps, "caution"),
+                      "style": _major(cur, exps, "style"), "input": _major(cur, exps, "input"), "caution": _major(cur, exps, "caution"), "session": _major(cur, exps, "session"),
                       "fun": v["fun"], "frustration": v["frustration"], "mixed": v["mixed"],
                       "langs": [lg for lg, _ in Counter(posts[m]["lang"] for m in cur if posts[m]["lang"]).most_common()],
                       "examples": [{"did": exps[m]["did"], "happened": exps[m]["happened"], "verdict": exps[m]["verdict"]} for m in cur[:3]]})
@@ -168,7 +171,7 @@ def tally(groups: list[dict], posts: dict[str, dict], exps: dict[str, dict], sin
 def singles(posts: dict[str, dict], exps: dict[str, dict], finds_members: set[str], since, limit: int = 6) -> list[dict]:
     """まだほかの人の声と重ならない、ひとりの具体的な体験（直近の窓）。発見ではなく「ひとりの体験」として、そう明記して出す。"""
     out = [{"did": e["did"], "happened": e["happened"], "verdict": e["verdict"], "topic": e["topic"], "appeal": e.get("appeal") or "", "appeal_kind": e.get("appeal_kind"), "style": e.get("style"), "input": e.get("input"),
-            "caution": e.get("caution"), "lang": posts[k]["lang"]}
+            "caution": e.get("caution"), "session": e.get("session"), "lang": posts[k]["lang"]}
            for k, e in sorted(exps.items(), key=lambda kv: posts[kv[0]]["at"], reverse=True) if k not in finds_members and posts[k]["at"] >= since]
     return out[:limit]
 
@@ -185,11 +188,11 @@ Lines:
 
 
 def public_texts(body: dict) -> list[str]:
-    """画面に出す日本語の文（面白さの一文・したこと・起きたこと）。英語の表示のために訳す対象。"""
+    """画面に出す日本語の文（面白さの一文・したこと・起きたこと・向いている人）。英語の表示のために訳す対象。"""
     out: list[str] = []
     for f in (body or {}).get("finds") or []:
         ex = (f.get("examples") or [{}])[0]
-        out += [f.get("appeal") or "", ex.get("did") or "", ex.get("happened") or ""]
+        out += [f.get("appeal") or "", ex.get("did") or "", ex.get("happened") or "", f.get("fits") or ""]   # fits: 向いている人（遊びたい体験の入口。#2 2026-11-11）
     for e in (body or {}).get("singles") or []:
         out += [e.get("appeal") or "", e.get("did") or "", e.get("happened") or ""]
     return list(dict.fromkeys(t for t in out if t))

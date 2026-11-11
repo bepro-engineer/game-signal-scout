@@ -78,3 +78,26 @@
 .fk a span { overflow-wrap: normal; } .fk a small { background: none; box-shadow: none; padding: 0; font-weight: 700; } .fk a.on small { background: none; }
 @container (max-width: 900px) { .fk { grid-template-columns: repeat(2, minmax(0, 1fr)); } .fk a:last-child:nth-child(odd) { grid-column: 1 / -1; } }
 @container (max-width: 420px) { .fk a { white-space: normal; min-height: 60px; } }
+
+/* 遊びたい体験の入口（#2 2026-11-11。intent.js）: 4 つの入口の切り替え → 選んだ根拠の説明 → 注目の作品と同じカード */
+.it-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 10px; }
+.it-tabs a { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: #fff; box-shadow: 0 1px 6px rgba(40,30,80,.08); color: var(--ink-2, #3c3958); text-decoration: none; font-weight: 700; font-size: 15px; border: 2px solid transparent; }
+.it-tabs a small { font-size: 12px; color: var(--ink-3, #57536f); font-weight: 700; }
+.it-tabs a:hover { border-color: #d4cdee; }
+.it-tabs a.on { background: var(--accent, #5246c9); color: #fff; } .it-tabs a.on small { color: rgba(255,255,255,.85); }
+.it-why { margin: 0 0 10px; font-size: 14px; color: var(--ink-2, #3c3958); }
+.it-h { display: block; margin: 4px 0 0; font-size: 11px; font-weight: 700; color: var(--accent, #5246c9); letter-spacing: .02em; }
+.it-p { margin-left: 6px; font-weight: 700; color: var(--ink-3, #57536f); }
+.it-f, .it-how { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 4px; font-size: 13px; color: var(--ink-2, #3c3958); }
+.it-f em, .it-how em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--ink-3, #57536f); background: #f1eff8; border-radius: 6px; padding: 0 6px; }
+.it-how .hw { font-size: 12px; font-weight: 700; color: #1f6f5c; background: #e3f4ee; border-radius: 6px; padding: 1px 7px; white-space: nowrap; }
+.it-cs { color: var(--ink-3, #57536f); }
+.it-empty p { margin: 6px 0 0; font-size: 14px; line-height: 1.7; }
+.it-sub { margin: 16px 0 8px; font-size: 16px; }
+.it-long { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22em), 1fr)); gap: 8px; }
+.it-long a { display: flex; gap: 10px; padding: 10px; border-radius: 12px; background: #fff; box-shadow: 0 1px 6px rgba(40,30,80,.08); color: inherit; text-decoration: none; }
+.it-long img { width: 56px; height: 75px; object-fit: cover; border-radius: 8px; flex: none; }
+.it-long a > span { display: flex; flex-direction: column; gap: 2px; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.it-long small { margin-left: 6px; color: var(--ink-3, #57536f); }
+.it-more { margin: 12px 0 0; font-size: 14px; }
+@media (max-width: 600px) { .it-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } .it-tabs a { font-size: 14px; padding: 8px 10px; } }
