@@ -29,7 +29,7 @@
   const ss = LD && G.lead.kind === "finding" && LD.body.length ? LD.body : null;
   const head = LD ? LD.head : S.head[L];
   // 大見出しは作品名の短い句（#2: AI の長い文を大見出しにしない。文は見出しの下の詳細に）
-  const shortHead = LD && G.lead.kind === "finding" && (LD.names || []).length ? LD.names.map(n => `『${n}』`).join(tr("・", ", ")) : "";
+  const shortHead = LD && G.lead.kind === "finding" && (LD.names || []).length ? LD.names.map(n => tr(`『${n}』`, n)).join(tr("・", ", "))   /* 英語の画面では『』を付けない */ : "";
   const body = LD ? LD.body.join(L === "ja" ? "" : " ") : null;
   const lede = body ? `<span class="lede-t" id="lede-t">${esc(body).replace(/『([^』]+)』/g, (_, n) => `<b class="nb">『${n}』</b>`)}</span>`
     : `${esc(S.lede[L])}${S.basis === "movement" ? "" : tr("たとえば、こんな作品です。", " For example:")}`;
