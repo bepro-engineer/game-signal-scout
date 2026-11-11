@@ -78,9 +78,9 @@ def test_profiles_and_activity_flow_to_cards_and_game_documents(run, conn, stub_
     assert conn.execute("SELECT about_ja, about_en FROM game_profile WHERE appid='2246340'").fetchone() == ("モンスターハンターワイルズ\n狩りに出よう。\n仲間と&一人で。", "Hunt & explore.")
     ov = public_document.get_document(conn, "overview")
     cards = {c["appid"]: c for c in ov["catalog"]}
-    assert cards["730"]["rank"] == 1 and cards["730"]["modes"] == ["対戦"] and cards["730"]["image"].endswith("/730/header.jpg")
+    assert cards["730"]["rank"] == 1 and cards["730"]["modes"] == ["みんなで遊べる", "対戦", "オンラインで対戦"] and cards["730"]["image"].endswith("/730/header.jpg")
     assert cards["2246340"]["modes"] == ["ひとりで遊べる", "協力プレイ"] and cards["2246340"]["ja_text"] is True and cards["2246340"]["ja_voice"] is True
-    assert ov["modes"] == {"ひとりで遊べる": 1, "協力プレイ": 1, "対戦": 1} and "クリアまでの時間" in ov["missing"]
+    assert ov["modes"] == {"ひとりで遊べる": 1, "協力プレイ": 1, "対戦": 1, "みんなで遊べる": 1, "オンラインで対戦": 1} and "クリアまでの時間" in ov["missing"]
     g = public_document.get_document(conn, "game/2246340")
     assert g["profile"]["platforms"] == ["Windows", "Linux・Steam Deck"] and g["compat"] == {"n": 8, "failed": 0}
     assert public_document.get_document(conn, "game/730")["activity"]["peak_players"] == 1300000

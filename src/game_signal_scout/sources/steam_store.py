@@ -55,15 +55,20 @@ def pick(data: dict) -> dict:
 
 # ---- ストアの項目を共通の作品の情報（game_profile）の形へ直す
 # 遊び方（Steam のカテゴリの ID → 利用者の言葉）。作品を選ぶ切り口の正本はこの言葉で、取得元のカテゴリの名前を画面に出さない
-STEAM_MODES = {2: "ひとりで遊べる", 9: "協力プレイ", 38: "協力プレイ", 39: "協力プレイ", 24: "画面分割・同じ画面で", 37: "画面分割・同じ画面で",
-               49: "対戦", 36: "対戦", 47: "対戦", 28: "コントローラーで遊べる"}
+# 協力・対戦は、どこでつながって遊ぶか（オンライン・同じ画面・LAN）もストアの表示どおりに持つ（#2 2026-11-11: 遊び方のページで選べるように）。
+# マルチプレイ（1）・MMO（20）は、協力か対戦かが分からないので「みんなで遊べる」とだけ持つ（協力・対戦のページには入れない。推測で付けない）
+STEAM_MODES = {2: ("ひとりで遊べる",), 1: ("みんなで遊べる",), 20: ("みんなで遊べる",),
+               9: ("協力プレイ",), 38: ("協力プレイ", "オンラインで協力"), 39: ("協力プレイ", "同じ画面で協力", "画面分割・同じ画面で"),
+               48: ("協力プレイ", "LANで協力"), 24: ("画面分割・同じ画面で",),
+               49: ("対戦",), 36: ("対戦", "オンラインで対戦"), 37: ("対戦", "同じ画面で対戦", "画面分割・同じ画面で"), 47: ("対戦", "LANで対戦"),
+               28: ("コントローラーで遊べる",)}
 STEAM_PLATFORMS = {"windows": "Windows", "mac": "Mac", "linux": "Linux・Steam Deck"}
 
 
 def profile_row(item_id: str, received_at, p: dict) -> dict | None:
     if p.get("type") != "game" or not p.get("name"):
         return None
-    modes = list(dict.fromkeys(STEAM_MODES[c["id"]] for c in p.get("categories") or [] if c.get("id") in STEAM_MODES))
+    modes = list(dict.fromkeys(m for c in p.get("categories") or [] if c.get("id") in STEAM_MODES for m in STEAM_MODES[c["id"]]))
     langs = p.get("supported_languages") or ""
     ja_text = "日本語" in langs if langs else None
     ja_voice = None

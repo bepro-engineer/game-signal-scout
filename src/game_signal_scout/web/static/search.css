@@ -38,3 +38,9 @@
 @media (max-width: 1360px) { .sr-card { grid-template-columns: 54px minmax(0, 1fr); gap: 12px; } .sr-card > .art { width: 54px; } }
 
 .sr-sel select { max-width: 100%; min-width: 0; }   /* 320px でも選ぶ欄が枠を越えない */
+
+/* 遊び方のページの選び方とカードの札（#2 2026-11-11） */
+.sr-how-row { row-gap: 4px; }
+.sr-how-note { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--ink-3); }
+.sr-hw { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.sr-hw .hw { font-size: 12px; font-weight: 700; color: #1f6f5c; background: #e3f4ee; border-radius: 6px; padding: 1px 7px; white-space: nowrap; }

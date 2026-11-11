@@ -213,3 +213,20 @@ def test_published_days_never_show_the_lead_title_in_todays_pick(client):
     js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/dashboard.js").read_text()
     assert "cks.sort" not in (Path(__file__).parents[1] / "src/game_signal_scout/signal/content.py").read_text()
     assert "今日の兆しで紹介した作品を除く" in js and "上の今日の兆しで紹介した作品のほかにはありませんでした" in js
+
+
+def test_play_style_pages_classify_only_what_the_store_lists():
+    """遊び方のページ（#2 2026-11-11 オーナー）: ソロ・協力・対戦の分け方はストアの表示だけ。マルチプレイ（協力か対戦か分からない）は
+    協力・対戦のどちらにも入れない。協力・対戦は、どこでつながるか（オンライン・同じ画面・LAN）も表示どおりに持つ。"""
+    from game_signal_scout.sources.steam_store import profile_row
+    m = lambda *cats: profile_row("1", None, {"type": "game", "name": "x", "categories": [{"id": c} for c in cats]})["modes"]
+    assert m(2) == ["ひとりで遊べる"]
+    assert m(1) == ["みんなで遊べる"]                                                     # 協力・対戦の印がない: どちらにも入れない
+    assert m(9, 38) == ["協力プレイ", "オンラインで協力"]
+    assert set(m(39)) == {"協力プレイ", "同じ画面で協力", "画面分割・同じ画面で"} and m(48) == ["協力プレイ", "LANで協力"]
+    assert m(49, 36) == ["対戦", "オンラインで対戦"] and set(m(37)) == {"対戦", "同じ画面で対戦", "画面分割・同じ画面で"} and m(47) == ["対戦", "LANで対戦"]
+    from pathlib import Path
+    js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/search.js").read_text()
+    for s_ in ('["only", tr("ひとり用だけ"', '["online", tr("オンラインで協力"', '["online", tr("オンラインで対戦"', "表示のない作品は、どれにも入りません"):
+        assert s_ in js
+    assert "AniList" not in js                                                            # Game にない評価・リストの数で並べない
