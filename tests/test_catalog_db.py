@@ -85,3 +85,16 @@ def test_profiles_and_activity_flow_to_cards_and_game_documents(run, conn, stub_
     assert g["profile"]["platforms"] == ["Windows", "Linux・Steam Deck"] and g["compat"] == {"n": 8, "failed": 0}
     assert public_document.get_document(conn, "game/730")["activity"]["peak_players"] == 1300000
     assert "item_id" not in json.dumps(ov["catalog"])
+
+
+def test_publish_input_changes_when_profiles_are_rebuilt_from_the_same_fetch(conn):
+    """作品の情報を同じ取得の応答から作り直したとき（取得の時刻は同じ）も、公開の材料の版が変わって作り直される（#2 2026-11-11）。"""
+    from game_signal_scout.repositories import catalog
+    conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('x', '1', now(), now(), '{}')")
+    conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) "
+                 "VALUES ('1', 'x', '1', 't', '[]', '[\"対戦\"]', '[]', '2026-11-01T00:00:00Z')")
+    v1 = catalog.newest_catalog_at(conn)
+    conn.execute("UPDATE game_profile SET modes = '[\"対戦\", \"オンラインで対戦\"]' WHERE appid = '1'")
+    v2 = catalog.newest_catalog_at(conn)
+    assert v1 != v2 and v1.split("|")[0] == v2.split("|")[0]
+    conn.rollback()

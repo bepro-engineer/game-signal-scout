@@ -197,6 +197,8 @@ def platforms_of(conn, appids: list[str]) -> dict[str, list[str]]:
 
 
 def newest_catalog_at(conn):
-    """作品の情報・画像・属性のいちばん新しい取得の時刻（公開の作り直しの判定）。"""
-    return conn.execute("SELECT greatest((SELECT max(fetched_at) FROM game_profile), (SELECT max(fetched_at) FROM game_assets), "
-                        "(SELECT max(fetched_at) FROM game_attribute))").fetchone()[0]
+    """作品の情報・画像・属性のいちばん新しい取得の時刻と、作品の情報の中身の指紋（公開の作り直しの判定）。
+    指紋は、同じ取得の応答から作品の情報を作り直したとき（読み方を直したときなど。取得の時刻は変わらない）にも作り直すため（#2 2026-11-11）。"""
+    at, fp = conn.execute("SELECT greatest((SELECT max(fetched_at) FROM game_profile), (SELECT max(fetched_at) FROM game_assets), "
+                          "(SELECT max(fetched_at) FROM game_attribute)), (SELECT md5(string_agg(g::text, '' ORDER BY g.appid)) FROM game_profile g)").fetchone()
+    return f"{at}|{fp}"
