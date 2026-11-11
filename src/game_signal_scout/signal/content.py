@@ -774,7 +774,8 @@ def pages(ctx: Ctx) -> dict:
     out["language_spread"] = {"items": ls, "grid": {"days": int(th["grid_days"]), "before": int(th["grid_before"])}}   # 言語×日の表の窓（langspread.js）
     out["finds"] = finds_page(ctx)
     out["intents"] = intents_page(ctx)
-    out["divided"] = {"items": out["intents"].pop("divided"), "min": 2, "read_works": out["intents"]["basis"]["read_works"]}   # 賛否が分かれる作品（split.html）
+    from game_signal_scout.services.intents import DIVIDED_MIN
+    out["divided"] = {"items": out["intents"].pop("divided"), "min": DIVIDED_MIN, "read_works": out["intents"]["basis"]["read_works"]}   # 賛否が分かれる作品（split.html）
     return out
 
 
@@ -845,8 +846,7 @@ def intents_page(ctx: Ctx) -> dict:
                 rows.append({**c, "why": [keep(x) for x in it["why"]], "why_people": it["why_people"], "why_n": it["why_n"], "warn": [keep(x) for x in it["warn"]],
                              "cautions": it["cautions"], "fits": it["fits"], **({"fits_en": fe} if fe else {}), "long": it["long"]})
         out[k] = {"items": rows}
-    out["divided"] = [{**c, "fun": it["fun"], "against": it["against"], "fun_xs": [keep(x) for x in it["fun_xs"]], "against_xs": [keep(x) for x in it["against_xs"]]}
-                      for it in div if (c := card(it["work"]))]   # 賛否が分かれる作品（pages.divided として公開）
+    out["divided"] = [{**c, "points": it["points"], "other_warn": [keep(x) for x in it["other_warn"]]} for it in div if (c := card(it["work"]))]   # 賛否が分かれる作品（pages.divided）
     out["basis"] = {"read_works": len(wf), "session_since": "2026-11-11"}   # 読み取りのある作品の数。1 回に遊ぶ時間は 2026-11-11 から読む
     return out
 
@@ -880,7 +880,11 @@ def work_finds(ctx: Ctx) -> dict[int, dict]:
         good = sorted([x for x in xs if x["appeal"] and x["verdict"] != "frustration"], key=lambda x: -x["people"])
         warn = sorted([x for x in xs if x["verdict"] == "frustration"], key=lambda x: -x["people"])
         if good or warn:
-            out[int(a)] = {"good": good, "warn": warn, "xs": xs, "read_people": b.get("read_people"), "experiences": b.get("experiences"),
+            tr_ = lambda t: {"ja": t, **({"en": en[t]} if en.get(t) else {})}
+            dv = [{"point": tr_(d["point"]), "pro_people": d["pro_people"], "con_people": d["con_people"],
+                   **{side: [{"act": tr_(x["did"]), "result": tr_(x["happened"])} for x in d.get(side) or []] for side in ("pro", "con")}}
+                  for d in b.get("divided") or [] if d.get("point")]   # 同じ論点で賛否が分かれた体験（#2 2026-11-11。services/insight.divide）
+            out[int(a)] = {"good": good, "warn": warn, "xs": xs, "divided": dv, "read_people": b.get("read_people"), "experiences": b.get("experiences"),
                            "window_days": b.get("window_days"), "since": (b.get("since") or "")[:10]}
     ctx._work_finds = out
     return out

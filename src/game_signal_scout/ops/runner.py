@@ -172,8 +172,35 @@ def job_insight(ctx: Context) -> JobResult:
             repo.upsert(ctx.conn, x)
             ctx.conn.commit()
             done.append(appid)
+    divided = divide_missing(ctx.conn, ic, int(ic.get("max_divide_per_run", 60)), failed)   # 同じ論点の賛否（#2 2026-11-11）。訳す前に作る（論点も訳す）
     translated = translate_missing(ctx.conn, ic, int(ic.get("max_translate_per_run", 400)), failed)
-    return JobResult(input_count=len(todo), output_count=len(done), detail={"done": done, "unchanged": skipped, "failed": failed, "translated": translated})
+    return JobResult(input_count=len(todo), output_count=len(done), detail={"done": done, "unchanged": skipped, "failed": failed, "translated": translated, "divided": divided})
+
+
+def divide_missing(conn, ic: dict, budget: int, failed: list) -> int:
+    """同じ論点で賛否が分かれた体験（#2 2026-11-11）: 読み取りの材料（input_hash）に対してまだ作っていない作品だけ、保存済みの読み取りから作る（読み直さない）。
+    1 回に budget 作品まで。作った作品の数を返す。"""
+    from game_signal_scout.repositories import catalog, insight as repo
+    from game_signal_scout.services import insight
+    rows = repo.all_insights(conn)
+    names = {a: p["title"] for a, p in catalog.profiles(conn, list(rows)).items()}
+    conn.rollback()
+    n = 0
+    for appid, body in rows.items():
+        if n >= budget:
+            break
+        h = f"{repo.get_hash(conn, appid)}|{insight.DIVIDE_VERSION}"   # 材料か作り方の版が変われば作り直す
+        if body.get("kind") != insight.KIND or (body.get("divided_for") == h and "divided" in body):
+            continue
+        try:
+            d = insight.divide_game(conn, appid, names.get(appid) or appid, body, ic, insight_ask(ic))
+            repo.set_divided(conn, appid, d, h)
+            conn.commit()
+            n += 1
+        except Exception as e:  # noqa: BLE001 — 1 作品の失敗で止めない
+            conn.rollback()
+            failed.append({"appid": appid, "stage": "divide", "error": f"{type(e).__name__}: {str(e)[:160]}"})
+    return n
 
 
 def translate_missing(conn, ic: dict, budget: int, failed: list) -> int:

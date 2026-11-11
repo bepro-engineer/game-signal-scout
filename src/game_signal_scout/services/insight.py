@@ -65,6 +65,52 @@ fits は、一覧の体験そのものから言える「この体験が向いて
 {items}"""
 
 
+DIVIDE_VERSION = "d2"   # 論点の組の作り方の版（指示文を変えたら上げる。上がると保存済みの読み取りから作り直す）
+DIVIDE_PROMPT = """ゲーム「{title}」のプレイヤーの体験の一覧です。[+] は面白かった体験、[-] は不満だった体験です。
+同じ 1 つの性質について、[+] の人はそれを良いと感じ、[-] の人は同じその性質を悪いと感じている組だけを探してください。
+同じ性質とは、例えば「ボスの難しさ」（[+] 難しいボスを倒せて最高 ／ [-] ボスが難しすぎて嫌になった）、「カメラの動き」（[+] 視点が自由で見やすい ／ [-] 視点が勝手に動いて酔う）、
+「マップの広さ」（[+] 広くて探索しがいがある ／ [-] 広すぎて移動が退屈）のように、良し悪しを言っている対象がまったく同じものです。
+同じ場所・同じモード・同じマップの話でも、良いと言っている点と悪いと言っている点が違えば組にしません（例: 「街で隠し要素を見つけた」と「街の敵が強すぎる」は、発見と難しさで別の点なので組にしない）。
+「協力プレイが楽しい」と「起動時に落ちる」のように対象が違うものも組にしません。一覧の文から同じ性質だと言い切れないものは組にしません。組がなければ空にします。
+point は、意見が分かれた性質を表す短い日本語（15 字以内。例: ボスの難しさ・カメラの動き・マップの広さ）。場所やモードの名前だけにしない。一覧にない言葉で膨らませないでください。
+番号は一覧にあるものだけを使い、pro には [+] の番号だけ、con には [-] の番号だけを入れます。
+次の形の JSON だけを返してください（前置き不要）: {{"pairs": [{{"point": "性質", "pro": [番号, ...], "con": [番号, ...]}}]}}
+
+体験:
+{items}"""
+POINT_BAD = re.compile(r"(全体|色々|いろいろ|様々|さまざま|ゲーム性|体験|その他|評価|満足|不満)$")
+
+
+def divide(ask, title: str, exps: list[tuple[str, dict]], authors: dict[str, str]) -> list[dict]:
+    """同じ論点で賛否が分かれた体験（#2 2026-11-11 オーナー: 違う論点の好評と不満を寄せ集めない）。exps = [(item_id, 体験)]（直近の窓の体験）。
+    LLM は「同じ対象についての面白い体験と不満の体験」の組と論点の名前だけを返し、番号・面白い／不満の向き・人数はこちらで確かめて数える。
+    返り値: [{point, pro: [体験], con: [体験], pro_people, con_people}]（同じ人は 1 人。両方の側に 1 人以上の組だけ）。"""
+    pro_i = [i for i, (_, e) in enumerate(exps) if e["verdict"] == "fun"]
+    con_i = [i for i, (_, e) in enumerate(exps) if e["verdict"] == "frustration"]
+    if not pro_i or not con_i:
+        return []
+    items = "\n".join(f"[{i}] {'[+]' if e['verdict'] == 'fun' else '[-]'} {e['did']} → {e['happened']}" for i, (_, e) in enumerate(exps) if i in set(pro_i + con_i))
+    pairs, seen = [], set()
+    for g in _json_array(ask(DIVIDE_PROMPT.format(title=title, items=items))):
+        if not isinstance(g, dict):
+            continue
+        point = str(g.get("point") or "").strip()[:30]
+        if not point or not KANA.search(point) and not re.search(r"[\u4e00-\u9fff]", point) or HANZI_ONLY.search(point) or POINT_BAD.search(point):
+            continue
+        ids = lambda k, ok: sorted({int(i) for i in g.get(k) or [] if str(i).isdigit() and int(i) in ok})
+        pro, con = ids("pro", set(pro_i)), ids("con", set(con_i))
+        if not pro or not con or (tuple(pro), tuple(con)) in seen:
+            continue
+        seen.add((tuple(pro), tuple(con)))
+        ev = lambda i: {"did": exps[i][1]["did"], "happened": exps[i][1]["happened"]}
+        people = lambda xs: len({authors.get(exps[i][0]) or exps[i][0] for i in xs})   # 同じ人の複数の発言は 1 人
+        who = lambda xs: {authors.get(exps[i][0]) or exps[i][0] for i in xs}
+        if not (who(pro) - who(con)) or not (who(con) - who(pro)):   # 同じ人だけが両方の側にいる: 意見が分かれたとは言わない
+            continue
+        pairs.append({"point": point, "pro": [ev(i) for i in pro[:3]], "con": [ev(i) for i in con[:3]], "pro_people": people(pro), "con_people": people(con)})
+    return pairs
+
+
 def _json_array(text: str) -> list:
     try:
         v = json.loads(text[text.find("["):text.rfind("]") + 1])
@@ -195,6 +241,8 @@ def public_texts(body: dict) -> list[str]:
         out += [f.get("appeal") or "", ex.get("did") or "", ex.get("happened") or "", f.get("fits") or ""]   # fits: 向いている人（遊びたい体験の入口。#2 2026-11-11）
     for e in (body or {}).get("singles") or []:
         out += [e.get("appeal") or "", e.get("did") or "", e.get("happened") or ""]
+    for d in (body or {}).get("divided") or []:   # 同じ論点で賛否が分かれた体験（#2 2026-11-11）
+        out += [d.get("point") or ""] + [x.get(k) or "" for x in (d.get("pro") or []) + (d.get("con") or []) for k in ("did", "happened")]
     return list(dict.fromkeys(t for t in out if t))
 
 
@@ -278,6 +326,18 @@ def read_game(conn, appid: str, title: str, model: str, cfg: dict, prev_body: di
     return {"appid": appid, "generated_at": now, "model": model, "input_hash": input_hash(rows),
             "body": {"kind": KIND, "en": en, "window_days": days, "since": since.isoformat(), "read_people": n_cur, "min_people": mp,
                      "experiences": cur_exps, "finds": finds, "singles": body_public["singles"], "stages": stages, "reads": reads}}
+
+
+def divide_game(conn, appid: str, title: str, body: dict, cfg: dict, ask) -> list[dict]:
+    """保存済みの読み取り（body の reads）から、同じ論点で賛否が分かれた体験を作る（読み直さない）。窓は読み取りを作ったときの直近の窓（body の since）。"""
+    from game_signal_scout.repositories import insight as repo
+    from game_signal_scout import observations
+    since = datetime.fromisoformat(body["since"]) if body.get("since") else datetime.now(timezone.utc) - timedelta(days=int(cfg.get("window_days", 7)))
+    days = int(body.get("window_days") or cfg.get("window_days", 7))
+    rows = repo.statements_by_author(conn, appid, days * 2, int(cfg.get("max_per_window", 60)), since, list(observations.sources()))
+    posts = {r["item_id"]: r for r in rows}
+    exps = sorted([(k, v) for k, v in (body.get("reads") or {}).items() if v and k in posts and posts[k]["at"] >= since], key=lambda kv: posts[kv[0]]["at"])
+    return divide(ask, title, exps, {k: posts[k]["author"] for k in posts})
 
 
 def phenomena(body: dict, ranked: bool) -> list[str]:

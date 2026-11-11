@@ -43,6 +43,12 @@ def set_en(conn, appid: str, en: dict) -> None:
     conn.execute("UPDATE game_insight SET body = jsonb_set(body, '{en}', %s::jsonb) WHERE appid = %s", (json.dumps(en, ensure_ascii=False), appid))
 
 
+def set_divided(conn, appid: str, divided: list, for_hash: str | None) -> None:
+    """同じ論点で賛否が分かれた体験（body の divided）と、それを作った材料の版（divided_for）だけを置き換える（読み直さない。#2 2026-11-11）。"""
+    conn.execute("UPDATE game_insight SET body = jsonb_set(jsonb_set(body, '{divided}', %s::jsonb), '{divided_for}', %s::jsonb) WHERE appid = %s",
+                 (json.dumps(divided, ensure_ascii=False), json.dumps(for_hash), appid))
+
+
 def all_insights(conn) -> dict[str, dict]:
     return {a: {"generated_at": g, "model": m, **b} for a, g, m, b in conn.execute("SELECT appid, generated_at, model, body FROM game_insight")}
 

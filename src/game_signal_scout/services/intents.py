@@ -65,20 +65,22 @@ def select(works: dict[int, dict]) -> dict[str, list[dict]]:
     return out
 
 
-DIVIDED_MIN = 2   # 面白いと書いた人・不満を書いた人が、どちらもこの数以上の作品だけ（ひとりずつの声では「分かれる」と言わない）
+DIVIDED_MIN = 1   # 同じ論点で、面白いと書いた人・不満を書いた人がどちらもこの数以上（別の人。人数はこちらで数える）。値の根拠は #2 の報告
 
 
 def divided(works: dict[int, dict]) -> list[dict]:
-    """賛否が分かれる作品（#2 2026-11-11 オーナーの左メニューの候補。実データで成立を確かめて採用）: 同じ作品で、面白いと書いた人と
-    不満を書いた人がどちらも DIVIDED_MIN 人以上。人数はこちらで数えた体験の人数（面白い体験の反対の声も不満に数える）。賛否の混じる体験（mixed）は数えない。
-    返り値: [{work, fun, against, fun_xs, against_xs}]（両方の声の少ない側が多い順＝より割れている順）。"""
+    """賛否が分かれる作品（#2 2026-11-11 オーナー: 同じ論点で評価が割れた作品だけ）。根拠は読み取りの divided（services/insight.divide:
+    同じ対象についての面白い体験と不満の体験の組。LLM は組と論点の名前だけ、向き・人数はこちらで確かめる）。作品全体の好評と不満の寄せ集めでは選ばない。
+    返り値: [{work, points: [{point, pro, con, pro_people, con_people}], other_warn}]（論点は割れ方の大きい順。作品はいちばん割れた論点の少ない側が多い順）。
+    other_warn = 論点の組に入っていない不満の体験（比べる枠に混ぜず、別の注意として出す）。"""
     out = []
     for w, wf in works.items():
-        xs = wf.get("xs") or []
-        fun_xs = sorted([x for x in xs if x.get("verdict") == "fun"], key=lambda x: -(x.get("people") or 1))
-        bad_xs = sorted([x for x in xs if x.get("verdict") == "frustration"], key=lambda x: -(x.get("people") or 1))
-        fun = sum(x.get("people") or 1 for x in fun_xs)
-        bad = sum(x.get("people") or 1 for x in bad_xs) + sum(x.get("against") or 0 for x in fun_xs)
-        if fun >= DIVIDED_MIN and bad >= DIVIDED_MIN and bad_xs:
-            out.append({"work": w, "fun": fun, "against": bad, "fun_xs": fun_xs[:MAX_WHY], "against_xs": bad_xs[:MAX_WHY]})
-    return sorted(out, key=lambda it: (-min(it["fun"], it["against"]), -(it["fun"] + it["against"]), it["work"]))
+        pts = [d for d in wf.get("divided") or [] if d["pro_people"] >= DIVIDED_MIN and d["con_people"] >= DIVIDED_MIN]
+        if not pts:
+            continue
+        pts = sorted(pts, key=lambda d: (-min(d["pro_people"], d["con_people"]), -(d["pro_people"] + d["con_people"])))
+        used = {(x["act"]["ja"], x["result"]["ja"]) for d in pts for x in d["con"]}
+        other = [x for x in wf.get("xs") or [] if x.get("verdict") == "frustration" and (x.get("act"), x.get("result")) not in used][:MAX_WARN]
+        out.append({"work": w, "points": pts, "other_warn": other})
+    return sorted(out, key=lambda it: (-min(it["points"][0]["pro_people"], it["points"][0]["con_people"]),
+                                       -(it["points"][0]["pro_people"] + it["points"][0]["con_people"]), it["work"]))

@@ -112,19 +112,32 @@ def test_intent_pages_open_directly_and_short_is_not_filled_with_the_opposite(cl
     assert "1 回に時間がかかると書かれた作品" not in ij and "I.short || {}).long" not in ij
 
 
-def test_divided_titles_need_both_sides():
-    """賛否が分かれる作品: 面白いと書いた人・不満を書いた人がどちらも 2 人以上。賛否の混じる体験は数えない。より割れている順。"""
-    from game_signal_scout.services.intents import divided
-    x = lambda **k: {"verdict": "fun", "people": 1, "act": "a", "result": "r", "against": 0, **k}
-    works = {1: {"xs": [x(people=3), x(verdict="frustration", people=2)]},
-             2: {"xs": [x(people=5, against=1), x(verdict="frustration")]},       # 不満 1 + 反対の声 1 = 2
-             3: {"xs": [x(people=4), x(verdict="mixed", people=3)]},               # 不満がない
-             4: {"xs": [x(), x(verdict="frustration", people=4)]}}                # 面白いが 1 人
+def test_divided_needs_the_same_point_on_both_sides():
+    """賛否が分かれる作品（#2 2026-11-11 オーナー）: 同じ論点で面白い側・不満の側がどちらもいる作品だけ。違う論点の好評と不満の寄せ集めでは選ばない。
+    LLM が返した組は、番号・向き（面白い／不満）・同じ人をこちらで確かめる。人数は別の人だけを数える。"""
+    from game_signal_scout.services.insight import divide
+    from game_signal_scout.services.intents import divided, DIVIDED_MIN
+    e = lambda v, d: {"verdict": v, "did": d, "happened": "h"}
+    exps = [("p1", e("fun", "ボスに挑んだ")), ("p2", e("frustration", "同じボスに挑んだ")), ("p3", e("fun", "協力で遊んだ")), ("p4", e("frustration", "起動した")),
+            ("p5", e("fun", "ボスを倒した"))]
+    authors = {"p1": "a", "p2": "b", "p3": "c", "p4": "d", "p5": "a"}
+    ans = '{"pairs": [{"point": "ボス戦の難しさ", "pro": [0, 4, 1], "con": [1, 9]}, {"point": "協力プレイ", "pro": [2], "con": [2]}, {"point": "その他", "pro": [2], "con": [3]}]}'
+    got = divide(lambda prompt: ans, "x", exps, authors)
+    assert len(got) == 1 and got[0]["point"] == "ボス戦の難しさ"                        # 向きの違う番号・ない番号は外す。曖昧な論点（その他）は使わない
+    assert got[0]["pro_people"] == 1 and got[0]["con_people"] == 1                    # p1 と p5 は同じ人（a）: 1 人
+    assert divide(lambda p: '{"pairs": [{"point": "操作", "pro": [0], "con": [1]}]}', "x", exps, {"p1": "a", "p2": "a"}) == []   # 同じ人だけが両側: 分かれたと言わない
+    assert divide(lambda p: ans, "x", [("p1", e("fun", "a"))], {}) == []              # 片側だけ: 組なし
+    w = lambda pro, con: {"point": {"ja": "p"}, "pro": [], "con": [{"act": {"ja": "a"}, "result": {"ja": "r"}}], "pro_people": pro, "con_people": con}
+    works = {1: {"divided": [], "xs": [{"verdict": "fun", "act": "x", "result": "y"}, {"verdict": "frustration", "act": "z", "result": "q"}]},   # 違う論点の好評と不満だけ: 載せない
+             2: {"divided": [w(3, 1), w(2, 2)], "xs": [{"verdict": "frustration", "act": "a", "result": "r"}, {"verdict": "frustration", "act": "o", "result": "t"}]},
+             3: {"divided": [w(1, 1)], "xs": []}}
     got = divided(works)
+    assert [it["work"] for it in got] == [2, 3] and got[0]["points"][0]["pro_people"] == 2   # 論点は割れ方の大きい順
+    assert [x["act"] for x in got[0]["other_warn"]] == ["o"]                              # 論点に入った不満は「ほかの注意」に重ねない
+    assert DIVIDED_MIN == 1
     from pathlib import Path
     dj = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/divided.js").read_text()
-    assert "w.fun_xs.map(x => `<li>${line(x)}</li>`)" in dj and "line(x, true)" in dj                 # 注意の印は不満の側だけ
-    assert [it["work"] for it in got] == [2, 1] and got[1]["fun"] == 3 and got[1]["against"] == 2 and got[0]["against"] == 2   # 割れ方が同じなら声の多い順
+    assert "で意見が分かれた" in dj and "ほかの注意（上の論点とは別）" in dj and "fun_xs" not in dj
 
 
 def test_intents_are_chosen_from_player_experiences_only():

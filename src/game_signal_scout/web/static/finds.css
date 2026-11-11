@@ -115,3 +115,7 @@
 main.it .fd-title .it-copy { margin: 4px 0 2px; font-size: 22px; font-weight: 800; line-height: 1.45; letter-spacing: .02em; color: var(--accent, #5246c9); }
 main.it .fd-title .it-copy span { display: inline-block; }   /* 文の区切りで折り返す（語の途中で切らない） */
 @media (max-width: 600px) { main.it .fd-title .it-copy { font-size: 18px; } }
+/* 賛否が分かれる作品の論点（#2 2026-11-11: 何について意見が分かれたかを主見出しに） */
+.dv-p { display: flex; flex-direction: column; gap: 6px; }
+.dv-q { margin: 0; font-size: 16px; font-weight: 800; color: var(--ink, #23203a); overflow-wrap: anywhere; }
+.dv-o { display: block; font-size: 12px; color: var(--ink-3, #57536f); overflow-wrap: anywhere; } .dv-o em { font-style: normal; font-weight: 700; margin-right: 6px; }
