@@ -122,10 +122,12 @@ def test_divided_needs_the_same_point_on_both_sides():
             ("p5", e("fun", "ボスを倒した"))]
     authors = {"p1": "a", "p2": "b", "p3": "c", "p4": "d", "p5": "a"}
     ans = '{"pairs": [{"point": "ボス戦の難しさ", "pro": [0, 4, 1], "con": [1, 9]}, {"point": "協力プレイ", "pro": [2], "con": [2]}, {"point": "その他", "pro": [2], "con": [3]}]}'
-    got = divide(lambda prompt: ans, "x", exps, authors)
+    ask = lambda prompt: '{"same": "yes"}' if "同じ性質について述べていて" in prompt else ans
+    got = divide(ask, "x", exps, authors)
     assert len(got) == 1 and got[0]["point"] == "ボス戦の難しさ"                        # 向きの違う番号・ない番号は外す。曖昧な論点（その他）は使わない
     assert got[0]["pro_people"] == 1 and got[0]["con_people"] == 1                    # p1 と p5 は同じ人（a）: 1 人
-    assert divide(lambda p: '{"pairs": [{"point": "操作", "pro": [0], "con": [1]}]}', "x", exps, {"p1": "a", "p2": "a"}) == []   # 同じ人だけが両側: 分かれたと言わない
+    assert divide(lambda p: '{"same": "yes"}' if "同じ性質について述べていて" in p else '{"pairs": [{"point": "操作", "pro": [0], "con": [1]}]}', "x", exps, {"p1": "a", "p2": "a"}) == []
+    assert divide(lambda p: '{"same": "no"}' if "同じ性質について述べていて" in p else ans, "x", exps, authors) == []   # 確かめで no: 組にしない   # 同じ人だけが両側: 分かれたと言わない
     assert divide(lambda p: ans, "x", [("p1", e("fun", "a"))], {}) == []              # 片側だけ: 組なし
     w = lambda pro, con: {"point": {"ja": "p"}, "pro": [], "con": [{"act": {"ja": "a"}, "result": {"ja": "r"}}], "pro_people": pro, "con_people": con}
     works = {1: {"divided": [], "xs": [{"verdict": "fun", "act": "x", "result": "y"}, {"verdict": "frustration", "act": "z", "result": "q"}]},   # 違う論点の好評と不満だけ: 載せない
@@ -334,4 +336,4 @@ def test_intent_pages_open_with_their_own_catch_copy():
         h = (root / f"templates/pages/{k}.html").read_text()
         assert f'</h2><p class="it-copy" data-en="{en}">' in h and ja in h.replace("<span>", "").replace("</span>", "") and "プレイヤーが書いた作品" not in h
     css = (root / "static/finds.css").read_text()
-    assert "main.it .fd-title .it-copy { margin: 4px 0 2px; font-size: 22px; font-weight: 800" in css and ".it-why { margin: 0 0 10px; font-size: 13px" in css
+    assert "font-size: 30px; font-weight: 900" in css and "main.it .fd-title h2 { margin: 0 0 6px; font-size: 15px !important" in css and ".it-why { margin: 0 0 10px; font-size: 13px" in css

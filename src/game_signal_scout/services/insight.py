@@ -65,7 +65,7 @@ fits は、一覧の体験そのものから言える「この体験が向いて
 {items}"""
 
 
-DIVIDE_VERSION = "d2"   # 論点の組の作り方の版（指示文を変えたら上げる。上がると保存済みの読み取りから作り直す）
+DIVIDE_VERSION = "d3"   # 論点の組の作り方の版（指示文を変えたら上げる。上がると保存済みの読み取りから作り直す）
 DIVIDE_PROMPT = """ゲーム「{title}」のプレイヤーの体験の一覧です。[+] は面白かった体験、[-] は不満だった体験です。
 同じ 1 つの性質について、[+] の人はそれを良いと感じ、[-] の人は同じその性質を悪いと感じている組だけを探してください。
 同じ性質とは、例えば「ボスの難しさ」（[+] 難しいボスを倒せて最高 ／ [-] ボスが難しすぎて嫌になった）、「カメラの動き」（[+] 視点が自由で見やすい ／ [-] 視点が勝手に動いて酔う）、
@@ -78,6 +78,11 @@ point は、意見が分かれた性質を表す短い日本語（15 字以内�
 
 体験:
 {items}"""
+CHECK_PROMPT = """次の 2 つの体験は、どちらも「{point}」という同じ性質について述べていて、1 つ目はそれを良いと、2 つ目はそれを悪いと感じていますか。
+片方が別の性質（例: 一方は操作の感触、もう一方は物理演算の騒ぎ）について述べているなら no です。文から言い切れないときも no です。
+1: {pro}
+2: {con}
+yes か no だけを JSON で返してください: {{"same": "yes" または "no"}}"""
 POINT_BAD = re.compile(r"(全体|色々|いろいろ|様々|さまざま|ゲーム性|体験|その他|評価|満足|不満)$")
 
 
@@ -106,6 +111,14 @@ def divide(ask, title: str, exps: list[tuple[str, dict]], authors: dict[str, str
         people = lambda xs: len({authors.get(exps[i][0]) or exps[i][0] for i in xs})   # 同じ人の複数の発言は 1 人
         who = lambda xs: {authors.get(exps[i][0]) or exps[i][0] for i in xs}
         if not (who(pro) - who(con)) or not (who(con) - who(pro)):   # 同じ人だけが両方の側にいる: 意見が分かれたとは言わない
+            continue
+        # 確かめ（#2 2026-11-11）: 組のいちばん目の体験どうしが、本当に同じ性質の良し悪しか、もう一度だけ問う。no・答えなしは組にしない
+        try:
+            ok = '"yes"' in ask(CHECK_PROMPT.format(point=point, pro=f"{exps[pro[0]][1]['did']} → {exps[pro[0]][1]['happened']}",
+                                                     con=f"{exps[con[0]][1]['did']} → {exps[con[0]][1]['happened']}")).replace(" ", "").lower()
+        except Exception:  # noqa: BLE001 — 確かめられない組は出さない
+            ok = False
+        if not ok:
             continue
         pairs.append({"point": point, "pro": [ev(i) for i in pro[:3]], "con": [ev(i) for i in con[:3]], "pro_people": people(pro), "con_people": people(con)})
     return pairs
