@@ -76,15 +76,12 @@ def test_profiles_and_activity_flow_to_cards_and_game_documents(run, conn, stub_
     assert sum("appids=2246340&l=japanese" in u for u in http.calls) == 1                          # 取った作品は次の回に取り直さない
     # ゲーム内容（あらすじの代わり）: 日本語の取得の文（HTML を文に）と英語の取得の文
     assert conn.execute("SELECT about_ja, about_en FROM game_profile WHERE appid='2246340'").fetchone() == ("モンスターハンターワイルズ\n狩りに出よう。\n仲間と&一人で。", "Hunt & explore.")
-    ov = public_document.get_document(conn, "overview")
-    cards = {c["appid"]: c for c in ov["catalog"]}
-    assert cards["730"]["rank"] == 1 and cards["730"]["modes"] == ["みんなで遊べる", "対戦", "オンラインで対戦"] and cards["730"]["image"].endswith("/730/header.jpg")
-    assert cards["2246340"]["modes"] == ["ひとりで遊べる", "協力プレイ"] and cards["2246340"]["ja_text"] is True and cards["2246340"]["ja_voice"] is True
-    assert ov["modes"] == {"ひとりで遊べる": 1, "協力プレイ": 1, "対戦": 1, "みんなで遊べる": 1, "オンラインで対戦": 1} and "クリアまでの時間" in ov["missing"]
-    g = public_document.get_document(conn, "game/2246340")
-    assert g["profile"]["platforms"] == ["Windows", "Linux・Steam Deck"] and g["compat"] == {"n": 8, "failed": 0}
-    assert public_document.get_document(conn, "game/730")["activity"]["peak_players"] == 1300000
-    assert "item_id" not in json.dumps(ov["catalog"])
+    modes = dict(conn.execute("SELECT appid, modes FROM game_profile").fetchall())
+    assert modes["730"] == ["みんなで遊べる", "対戦", "オンラインで対戦"] and modes["2246340"] == ["ひとりで遊べる", "協力プレイ"]
+    prof = conn.execute("SELECT platforms, ja_text, ja_voice, image_url FROM game_profile WHERE appid='2246340'").fetchone()
+    assert prof[0] == ["Windows", "Linux・Steam Deck"] and prof[1] is True and prof[2] is True
+    assert conn.execute("SELECT peak_players FROM game_activity WHERE appid='730' ORDER BY day DESC LIMIT 1").fetchone()[0] == 1300000
+    assert public_document.get_document(conn, "overview") is None                   # 古い文書は作らない（#3 2026-11-11）
 
 
 def test_publish_input_changes_when_profiles_are_rebuilt_from_the_same_fetch(conn):

@@ -1,6 +1,6 @@
 """これから発売の作品（Anime の「まもなく放送」に当たる。文書 soon・接続口 api/soon・メニューの下の枠）。
 
-材料: Steam の人気の近日発売の一覧（game_upcoming）と作品の情報（game_profile の発売日の文・画像）。
+材料: ストアの人気の近日発売の一覧（game_upcoming）と作品の情報（game_profile の発売日の文・画像）。
 話題の人数は、どの取得元の発言も同じに数える（直近 7 日に、その作品について書いた人。取得元ごとに数えて足さない＝最も多い取得元の人数）。
 """
 from __future__ import annotations
@@ -12,7 +12,7 @@ Q = {"1": ("1〜3月", "Q1"), "2": ("4〜6月", "Q2"), "3": ("7〜9月", "Q3"), 
 
 
 def release(text: str | None) -> dict:
-    """Steam のストアの発売日の文（日本語の表示）→ {date: 日付（日まで分かるとき）, ja, en}。"""
+    """ストアの発売日の文（日本語の表示）→ {date: 日付（日まで分かるとき）, ja, en}。"""
     t = (text or "").strip()
     if m := re.fullmatch(r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", t):
         d = date(int(m[1]), int(m[2]), int(m[3]))
@@ -34,7 +34,7 @@ def people_7d(conn, appids: list[str], as_of: date) -> dict[str, int]:
 
 
 def soon(conn, as_of: date, works: set[int], limit: int = 60) -> dict:
-    """文書 soon: dated（発売日が決まっていて今日から先。日付の順）と picks（ほかの近日発売。Steam の一覧の順）。作品詳細があれば id、なければ Steam のストアの URL。"""
+    """文書 soon: dated（発売日が決まっていて今日から先。日付の順）と picks（ほかの近日発売。ストアの一覧の順）。作品詳細があれば id、なければストアの URL。"""
     from game_signal_scout.repositories import catalog
     rows = [r for r in catalog.upcoming(conn) if r.get("title") and r.get("coming_soon") is not False][:limit]
     ppl = people_7d(conn, [r["appid"] for r in rows], as_of) if rows else {}

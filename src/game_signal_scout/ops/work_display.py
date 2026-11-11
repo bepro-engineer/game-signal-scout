@@ -1,4 +1,4 @@
-"""Anime の ops/work_display.work_meta の Game 版: 作品の名前と画像（作品の情報 game_profile。画像は Steam の配信元の URL）。"""
+"""Anime の ops/work_display.work_meta の Game 版: 作品の名前と画像（作品の情報 game_profile。画像は作品の情報にある配信元の URL）。"""
 from __future__ import annotations
 
 

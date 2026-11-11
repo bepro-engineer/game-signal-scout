@@ -48,54 +48,5 @@ _TITLE = "(SELECT title FROM player_report p WHERE p.appid = {} AND p.title IS N
 EVENT_COLS = ("side", "appid", "title", "window_start", "n_key", "n_window", "share_prev", "share_window", "n_prev")
 
 
-def recent_events(conn, version: str, limit: int) -> list[dict]:
-    """検出した変化（新しい窓から）。作品名は最新の報告の題名。"""
-    rows = conn.execute(f"SELECT e.side, e.appid, {_TITLE.format('e.appid')}, e.window_start, e.n_key, e.n_window, e.share_prev, e.share_window, e.n_prev, "
-                        "e.item_ids FROM shift_event e WHERE e.version=%s ORDER BY e.window_start DESC, e.n_key DESC LIMIT %s", (version, limit)).fetchall()
-    return [dict(zip(EVENT_COLS + ("item_ids",), r)) for r in rows]
-
-
-def notes_by_ids(conn, item_ids: list[str]) -> list[str]:
-    """変化の根拠の報告の記述（内容の語を数える。publication/themes）。"""
-    return [r[0] or "" for r in conn.execute("SELECT notes FROM player_report WHERE item_id = ANY(%s)", (list(item_ids),))]
-
-
-def after(conn, appid: str, since) -> dict:
-    """窓の後（since 以降）の報告の数と失敗の数。変化がその後も続いているかを見る。"""
-    n, failed = conn.execute("SELECT count(*), count(*) FILTER (WHERE failed) FROM player_report WHERE appid=%s AND at >= %s", (appid, since)).fetchone()
-    return {"n": n, "failed": failed}
-
-
-def app_events(conn, version: str, appid: str) -> list[dict]:
-    rows = conn.execute("SELECT side, appid, NULL, window_start, n_key, n_window, share_prev, share_window, n_prev, item_ids FROM shift_event "
-                        "WHERE version=%s AND appid=%s ORDER BY window_start DESC", (version, appid)).fetchall()
-    return [dict(zip(EVENT_COLS + ("item_ids",), r)) for r in rows]
-
-
-def app_title(conn, appid: str) -> str | None:
-    row = conn.execute(f"SELECT {_TITLE.format('%s')}, count(*) FROM player_report WHERE appid=%s", (appid, appid)).fetchone()
-    return None if row[1] == 0 else (row[0] or "")
-
-
-def app_weekly(conn, appid: str, weeks: int) -> list[dict]:
-    """作品の週ごとの報告の数と失敗の数（最新の報告の週から遡って weeks 週）。"""
-    rows = conn.execute("WITH last AS (SELECT date_trunc('week', max(at)) AS w FROM player_report WHERE appid=%s) "
-                        "SELECT date_trunc('week', at) AS w, count(*), count(*) FILTER (WHERE failed), count(DISTINCT config_hash) "
-                        "FROM player_report, last WHERE appid=%s AND at >= last.w - make_interval(weeks => %s) GROUP BY 1 ORDER BY 1",
-                        (appid, appid, weeks - 1)).fetchall()
-    return [{"week": w, "reports": n, "failed": f, "configs": c} for w, n, f, c in rows]
-
-
-def reports_by_ids(conn, item_ids: list[str]) -> list[dict]:
-    """変化の根拠の報告（時刻の順）。"""
-    rows = conn.execute("SELECT source, item_id, at, failed, proton, notes FROM player_report WHERE item_id = ANY(%s) ORDER BY at",
-                        (list(item_ids),)).fetchall()
-    return [dict(zip(("source", "item_id", "at", "failed", "proton", "notes"), r)) for r in rows]
-
-
-def newest_report_at(conn):
-    return conn.execute("SELECT max(at) FROM player_report").fetchone()[0]
-
-
 def event_counts(conn, version: str) -> dict:
     return dict(conn.execute("SELECT side, count(*) FROM shift_event WHERE version=%s GROUP BY side", (version,)).fetchall())

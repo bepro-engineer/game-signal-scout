@@ -15,7 +15,7 @@ def work_profile(conn, work_id: int, level: str, as_of, view: CatalogView | None
     if not p:
         return {}
     m = re.search(r"(\d{4})", p.get("released") or "")
-    # 作品詳細が読む形（Anime の profile の current）。あらすじの代わりにゲーム内容（Steam のストアの「このゲームについて」。日本語・英語の原文）
+    # 作品詳細が読む形（Anime の profile の current）。あらすじの代わりにゲーム内容（ストアの「このゲームについて」。日本語・英語の原文）
     p["current"] = {"title": p["title"], "genres": p.get("genres") or [], "year": int(m.group(1)) if m else None,
                     "about": {"ja": p.get("about_ja") or (p.get("summary") if re.search(r"[\u3040-\u30ff]", p.get("summary") or "") else None), "en": p.get("about_en")}}
     return p

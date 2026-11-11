@@ -74,11 +74,9 @@ def test_two_sources_flow_to_normalized_posts_and_viewer_documents(run, conn, st
     got = posts(conn)
     assert [r for r in got if r[1] == "2246340"] and all(r[2] == "title" for r in got if r[1] == "2246340")
     assert (f"{A}b", "252490", "title") in got and (f"{A}c", "999", "steam_link") in got
-    ov = public_document.get_document(conn, "overview")
-    g = public_document.get_document(conn, "game/2246340")
-    assert g["posts"]["authors"] == 6 and set(g["posts"]["recent"][0]) == {"at", "lang", "matched_by", "text"}
-    assert public_document.get_document(conn, "game/999") is None                 # リンクだけの投稿（印 link_only）は数えない
-    assert "did:plc" not in json.dumps(ov) + json.dumps(g)
+    assert len({r[0] for r in got if r[1] == "2246340"}) == 6                    # 6 人の発言が同じ作品に結び付く
+    assert public_document.get_document(conn, "overview") is None and public_document.get_document(conn, "game/2246340") is None   # 古い文書は作らない（#3 2026-11-11）
+    assert "did:plc" not in json.dumps([r[0] for r in conn.execute("SELECT path FROM public_document").fetchall()])
 
 
 def test_deleted_posts_and_gone_accounts_are_removed_with_their_normalized_rows(run, conn, stub_screen_docs):

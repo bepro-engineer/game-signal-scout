@@ -1,7 +1,7 @@
 """公開用の文書の Service（publication/publishing。Anime の tests/test_web_publishing を移植）: 材料の版が変わったときだけ作り、
 検査に通った文書だけを表 public_document に置き換える。検査に通らなければ表は前の回のまま。この回にない鍵は消える。
 日中の定期の起動（interval）は日次処理の実行中は作らない。中身の作り方（build_documents）は架空に差し替える。"""
-from game_signal_scout.publication import content, publishing
+from game_signal_scout.publication import publishing
 from game_signal_scout.repositories import job as job_repo, public_document as public_document_repo
 from game_signal_scout.web.services import public_content
 
@@ -58,13 +58,14 @@ def test_interval_does_not_build_while_the_daily_run_is_running(conn, monkeypatc
     assert publishing.publish(conn, conn, CFG, "interval")["status"] == "daily_running"
 
 
-def test_audit_rejects_private_fields_and_missing_game_documents():
-    """Game 固有の検査: 一覧の作品に作品の文書がない、許していない項目（item_id など）が入っている、記述が長すぎる。"""
-    ok = {"overview": {"events": [{"appid": "1"}]},
-          "game/1": {"events": [{"side": "fail", "reports": [{"at": "x", "failed": True, "proton": None, "notes": "n"}]}]}}
-    assert content.audit(ok) == []
-    bad = {"overview": {"events": [{"appid": "1"}, {"appid": "2"}]},
-           "game/1": {"events": [{"side": "fail", "item_ids": [], "reports": [{"at": "x", "failed": True, "proton": None, "notes": "n" * 500,
-                                                                             "config_hash": "h"}]}]}}
-    p = " ".join(content.audit(bad))
-    assert "game/2 がない" in p and "item_ids" in p and "config_hash" in p and "長すぎる" in p
+def test_latest_day_comes_from_the_built_screen_days_not_from_any_source(conn, monkeypatch):
+    """最新の日（健康の確認・公開の記録）は、作った画面の日の一覧の最後。特定の取得元の報告の日付に依らない（#3 2026-11-11）。
+    特定の取得元の報告を中心にした古い文書（overview・game/）は作らない。"""
+    from game_signal_scout.signal import publishing as signal_publishing
+    days = {"days": {"built": ["2031-05-19", "2031-05-21"]}, "day/2031-05-21": {}, "pages": {}}
+    monkeypatch.setattr(signal_publishing, "build_documents", lambda conn, cfg: (dict(days), {}))
+    docs, stats = publishing.build_documents(conn, CFG)
+    assert stats["latest"] == "2031-05-21" and not any(k == "overview" or k.startswith("game/") for k in docs)
+    from pathlib import Path
+    src = (Path(__file__).parents[1] / "src/game_signal_scout/publication/publishing.py").read_text()
+    assert "newest_report_at" not in src and not (Path(__file__).parents[1] / "src/game_signal_scout/publication/content.py").exists()

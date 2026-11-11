@@ -159,7 +159,7 @@ def assets(conn, source: str, settings: dict | None = None, batch: int = 1000) -
 
 
 def activity(conn, source: str, settings: dict | None = None, batch: int = 1000) -> int:
-    """遊ばれている規模（Steam の順位）→ game_activity。"""
+    """遊ばれている規模（取得元の順位・同時に遊んだ人数）→ game_activity。"""
     from datetime import date
     from game_signal_scout.repositories import catalog
     total = 0

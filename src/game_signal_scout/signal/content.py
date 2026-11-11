@@ -965,7 +965,7 @@ def work_quotes(ctx: Ctx, w: int, window: list[date]) -> dict[date, list[dict]]:
     for d, src, uid, kind, lang, quote in rows:
         key = (d, _re.sub(r"\s+", " ", quote).strip().casefold())
         link = factory.permalink(src, uid, urls.get((src, uid)))
-        # 引用は原投稿へ辿れるものだけ（Anime の §8・audit_public の QUOTE_URL。Steam のレビューは投稿者の ID を持たないので個別の URL を作れず、引用しない）
+        # 引用は原投稿へ辿れるものだけ（Anime の §8・audit_public の QUOTE_URL。投稿者の ID を持たない取得元は個別の URL を作れず、引用しない）
         if len(out.get(d, [])) >= int(ctx.pages["work"]["quotes_per_point"]) or (src, uid) not in ok or key in seen or not link:   # 同じ日の同じ文（同じ投稿の別の分類・同じ文の拡散）は 1 つ
             continue
         seen.add(key)

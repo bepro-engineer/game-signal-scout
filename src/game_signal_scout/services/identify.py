@@ -1,7 +1,7 @@
 """作品の同定（Game 固有）: 発言 → Steam の app ID。
 
 1. Steam のストアのリンク（store.steampowered.com/app/<id>）があれば、その app ID（複数なら最初のもの）。
-2. なければ題名の一致: 作品の辞書（ProtonDB の報告にある作品の題名）を、語の並び（NFKC・casefold の後の \\w+ の列）で照合し、最も長い一致を採る。
+2. なければ題名の一致: 作品の辞書（作品の情報 game_profile にある作品の題名。repositories/post.known_titles）を、語の並び（NFKC・casefold の後の \\w+ の列）で照合し、最も長い一致を採る。
    2026-11-07 の実データ（2 分の受信・160 件）で、緩い規則は 65 件を同定し、目視ではほぼすべてが誤り（Back・Door・Pressure など
    1 語の題名、スポーツの "game"・"play"、ラジオの "Now playing"）だった。そのため次をすべて満たすときだけ採る:
    - 題名が 2 語以上で、min_title_chars 以上（1 語の題名は辞書に入れない。Steam のリンクでだけ同定する）

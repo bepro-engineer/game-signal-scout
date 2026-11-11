@@ -290,3 +290,21 @@ def test_every_enabled_source_has_a_terms_record_and_prohibited_ones_are_not_rea
             assert f"//{h}" not in text, (n, h)
     voices = set(tomllib.loads((top / "config/map_sources.toml").read_text()).get("sources") or {})
     assert not any(source_terms.quote_allowed(n) for n in enabled if n in voices)      # 発言の原文を公開の画面に引用する取得元は今は 0
+
+
+# 作品の鍵が 1 つのストアの作品番号そのもの（#3 2026-11-11 の最終監査で記録した構造の不適合。作品の鍵を取得元に依らない形にするには本番の DB の作りを変える移行が要り、
+# オーナーの承認が要る）。それを説明する 4 ファイルと、画像の配信元を許す画面の安全設定（web/app.py）だけは、ストアの名前を書いてよい。直したらここから外す
+KNOWN_STORE_KEY_FILES = {"services/identify.py", "repositories/work.py", "ops/work.py", "web/app.py"}
+
+
+def test_common_code_does_not_name_sources_even_in_descriptions():
+    """取得元を特別視しない（CLAUDE.md・#3）: 共通の処理（sources/ の外）の説明・注釈にも、取得元の名前を書かない。取得元ごとの読み方は sources/ だけ。
+    例外は、作品の鍵が 1 つのストアの番号であることを説明するファイル（KNOWN_STORE_KEY_FILES。構造の不適合として #3 に記録）だけ。
+    Anime から流用した、Game にない外部サービスの名前（AniList）も、使わない共通の Python に残さない。"""
+    import re
+    from pathlib import Path
+    root = Path(__file__).parents[1] / "src/game_signal_scout"
+    names = re.compile(r"Steam|ProtonDB|Proton|Bluesky|Mastodon|Lemmy|Reddit|GOG|Blizzard|Discourse|Pantip|PTT|ニコニコ|はてな|Tildes|ResetEra|Famiboards|NeoGAF|AniList|Wikidata|IGDB|YouTube")
+    found = [f"{p.relative_to(root)}:{i}" for p in root.rglob("*.py") if "sources" not in p.parts and str(p.relative_to(root)) not in KNOWN_STORE_KEY_FILES
+             for i, line in enumerate(p.read_text().splitlines(), 1) if names.search(line)]
+    assert found == []

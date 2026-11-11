@@ -1,7 +1,9 @@
 """公開用の文書を作る Service（書く側）。Anime の publication/publishing の publish をそのまま移植し、中身の作り方だけ Game に替えた。
 
 - 材料の版（input_version）が最後に作った回と同じなら作らない（force なら作る）。
-- 作った中身が検査（publication/content.audit）に通らなければ表を変えない（前の回のまま）。記録は public_build。
+- 作った中身が検査（signal/content.audit_public）に通らなければ表を変えない（前の回のまま）。記録は public_build。
+- 文書は画面が読むもの（day/・pages・search・soon・work/・days。signal/publishing）だけ。特定の取得元の報告を中心にした古い文書（overview・game/）は
+  画面が読まず、取得元を特別視しない決まりにも反するので作らない（#3 2026-11-11）。「最新の日」も特定の取得元の日付ではなく、作った画面の日の一覧から決める。
 - 同時に 2 つ作らない（advisory lock）。
 - ここでの「公開」は、表 public_document に置き換えること。Viewer は自分の機械だけで待ち受けていて、外への公開はしていない。
 """
@@ -11,8 +13,7 @@ import logging
 import time
 from datetime import date, datetime, timezone
 
-from game_signal_scout.publication import content
-from game_signal_scout.repositories import job as job_repo, public_document as public_document_repo, report, session
+from game_signal_scout.repositories import job as job_repo, public_document as public_document_repo, session
 
 log = logging.getLogger(__name__)
 LOCK = "publish"          # repositories/session が game_signal_scout: を付ける
@@ -23,13 +24,11 @@ class PublishRejectedError(Exception):
 
 
 def code_version() -> str:
-    """文書を作るプログラム（publication/content.py・themes.py）の中身の指紋。Game には Anime の「反映のときに force で作り直す」手順がないので、
+    """文書を作るプログラム（signal/ ほか）の中身の指紋。Game には Anime の「反映のときに force で作り直す」手順がないので、
     プログラムを替えたら次の回で作り直されるように、材料の版に含める。"""
     import hashlib
     from pathlib import Path
     h = hashlib.sha256()
-    for name in ("content.py", "themes.py"):
-        h.update((Path(__file__).parent / name).read_bytes())
     from game_signal_scout import config as _cfg
     pkg = Path(__file__).parent.parent
     for f in sorted((pkg / "signal").glob("*.py")) + [pkg / "ops" / "work_display.py", pkg / "catalog" / "profile.py", pkg / "languages.py", pkg / "services" / "intents.py"] + [
@@ -40,37 +39,31 @@ def code_version() -> str:
 
 
 def input_version(conn, cfg: dict) -> str:
-    """材料の版: 分析の規則の版・最後に成功した正規化と分析の時刻・最新の発言の時刻・作品の情報の最新の時刻・文書を作るプログラムの指紋。どれかが変われば作り直す。"""
+    """材料の版: 最後に成功した正規化と観測の集計の時刻・最新の発言の時刻・AI の読み取りの時刻・作品の情報・文書を作るプログラムの指紋。どれかが変われば作り直す。"""
     from game_signal_scout.repositories import post
     from game_signal_scout.repositories import insight
     from game_signal_scout.repositories import catalog
     newest_insight = insight.newest_generated_at(conn)
-    return "|".join(str(x) for x in (cfg["analysis"]["version"], job_repo.last_ok_finished_at(conn, "normalize"),
-                                       job_repo.last_ok_finished_at(conn, "analyze"), post.newest_at(conn), newest_insight,
+    return "|".join(str(x) for x in (job_repo.last_ok_finished_at(conn, "normalize"),
+                                       job_repo.last_ok_finished_at(conn, "observe"), post.newest_at(conn), newest_insight,
                                        catalog.newest_catalog_at(conn), code_version()))   # 作品の情報・画像・属性が新しくなれば作り直す
 
 
 def build_documents(conn, cfg: dict) -> tuple[dict[str, object], dict]:
     t0 = time.perf_counter()
-    docs = content.build(conn, cfg["analysis"]["version"])
-    conn.rollback()
     from game_signal_scout.signal import publishing as signal_publishing   # Anime の画面の流用が読む文書（day/・pages・search・soon・work/・days）
     # 画面の文書（day/・pages・search・soon・work/・days）が作れない・検査に通らないときは、公開を止めて前の回のままにする
     # （Anime の §16.1・REQ-OPS-006。2026-11-08 Issue #3: 例外を握りつぶして続け、画面の文書が消えうる形だった）
-    sdocs, sstats = signal_publishing.build_documents(conn, cfg)
-    docs.update(sdocs)
+    docs, sstats = signal_publishing.build_documents(conn, cfg)
+    sdocs = docs
     conn.rollback()
     if sstats.get("audit"):
         raise PublishRejectedError("画面の文書の検査に通らなかった: " + "; ".join(str(x) for x in sstats["audit"][:10]))
     if not any(k.startswith("day/") for k in sdocs) or "days" not in sdocs:
         raise PublishRejectedError("画面の文書（日・日の一覧）が空")
-    problems = content.audit(docs)
-    if problems:
-        raise PublishRejectedError("公開用の文書の検査に通らなかった: " + "; ".join(problems[:10]))
-    newest = report.newest_report_at(conn)
-    conn.rollback()
-    docs_latest = newest.date().isoformat() if newest else None
-    return docs, {"seconds": round(time.perf_counter() - t0, 1), "games": len(docs) - 1, "latest": docs_latest}
+    built = (docs.get("days") or {}).get("built") or []
+    docs_latest = max(built) if built else None   # 最新の日 = 作った画面の日の一覧の最後（特定の取得元の日付に依らない）
+    return docs, {"seconds": round(time.perf_counter() - t0, 1), "works": sum(1 for k in docs if k.startswith("work/")), "latest": docs_latest}
 
 
 def publish(read_conn, write_conn, cfg: dict, trigger: str, force: bool = False) -> dict:

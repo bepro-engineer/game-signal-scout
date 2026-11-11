@@ -324,7 +324,7 @@
     renderNav, store, sstore, dayBar, restoreScroll, fromPage, goBack, restoring });
   renderNav();
   // まもなく発売（メニューの下の枠。Anime の「まもなく放送」に当たる。signal/upcoming.py・接続口 api/soon）:
-  // 発売日が近い作品（日付の順。過ぎた日は開いた時点の日本時間の暦で外す）と、Steam で注目の近日発売（発売日が月・四半期・未定）
+  // 発売日が近い作品（日付の順。過ぎた日は開いた時点の日本時間の暦で外す）と、ストアで注目の近日発売（発売日が月・四半期・未定）
   (async () => {
     const el = document.getElementById("soon"); if (!el) return;
     let S; try { const r = await fetch("api/soon", { cache: "no-store" }); if (!r.ok) return; S = await r.json(); } catch (e) { return; }

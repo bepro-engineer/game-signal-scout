@@ -30,7 +30,7 @@
   // あらすじは表示の言語の文だけを出す（ほかの言語の文で埋めない。#60）
   const syn = A.lang === "en" ? W.synopsis.en : W.synopsis.ja;
   // 続編・期の案内だけの短い説明は「あらすじ」と見出さない（#54。作品情報の synopsis_kind）
-  // Game: あらすじの代わりにゲーム内容（Steam のストアの「このゲームについて」）
+  // Game: あらすじの代わりにゲーム内容（ストアの「このゲームについて」）
   const NOTE = W.synopsis_kind === "note", SYN = tr("ゲーム内容", "About the game");
   const synNote = A.lang === "en" || !W.synopsis_mt ? "" : `英語の${NOTE ? "説明" : "あらすじ"}を機械翻訳しています。`;
   const row = (label, body, cls = "") => `<div${cls ? ` class="${cls}"` : ""}><dt>${label}</dt><dd>${body}</dd></div>`;

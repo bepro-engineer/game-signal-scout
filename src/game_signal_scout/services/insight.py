@@ -351,8 +351,3 @@ def divide_game(conn, appid: str, title: str, body: dict, cfg: dict, ask) -> lis
     posts = {r["item_id"]: r for r in rows}
     exps = sorted([(k, v) for k, v in (body.get("reads") or {}).items() if v and k in posts and posts[k]["at"] >= since], key=lambda kv: posts[kv[0]]["at"])
     return divide(ask, title, exps, {k: posts[k]["author"] for k in posts})
-
-
-def phenomena(body: dict, ranked: bool) -> list[str]:
-    """古い公開の文書（publication/content）の互換: 発見の見出し。"""
-    return [f["title"] for f in (body or {}).get("finds") or []][: 3 if ranked else 5]

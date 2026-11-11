@@ -77,7 +77,7 @@ Anime の `ops/launchd`（agent の形）と `sources/runner` を移植してい
 
 | 名前 | 起動 | 中身 |
 |------|------|------|
-| `daily-run` | 毎日 6:15 | collect → normalize → analyze → publish |
+| `daily-run` | 毎日 6:15 | collect → normalize → observe → analyze → insight → digest → publish（[docs/OPERATIONS.md](docs/OPERATIONS.md)） |
 | `web` | 常駐 | Viewer（127.0.0.1:8720） |
 | `collect-<取得元>` | 常駐（異常終了のときだけ起動し直す） | 声の取得元ごとの収集器（どの取得元も同じ形。`source-collect --source <取得元>`。間隔は記述の `poll_seconds`。Anime と同じ） |
 
