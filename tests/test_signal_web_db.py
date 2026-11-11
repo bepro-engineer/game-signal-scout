@@ -307,3 +307,18 @@ def test_play_style_pages_classify_only_what_the_store_lists():
     for s_ in ('["only", tr("ひとり用だけ"', '["online", tr("オンラインで協力"', '["online", tr("オンラインで対戦"', "表示のない作品は、どれにも入りません"):
         assert s_ in js
     assert "AniList" not in js                                                            # Game にない評価・リストの数で並べない
+
+
+def test_intent_pages_open_with_their_own_catch_copy():
+    """4 つの遊ぶ目的のページ（#2 2026-11-11 オーナー）: 見出しの直下にページごとに違うキャッチコピー（日英）。選び方の説明は小さな補足で、大きな主文にしない。"""
+    from pathlib import Path
+    root = Path(__file__).parents[1] / "src/game_signal_scout/web"
+    want = {"deep": ("気づけば、もうこんな時間。夢中になれる世界へ。", "Lose track of time. Find a world to get lost in."),
+            "short": ("少しの時間でも、心に残る遊びを。", "A little time. A memorable experience."),
+            "novel": ("まだ知らない「面白い」に、出会おう。", "Discover a kind of fun you haven't met yet."),
+            "friends": ("一緒だから、もっと面白い。", "Better together.")}
+    for k, (ja, en) in want.items():
+        h = (root / f"templates/pages/{k}.html").read_text()
+        assert f'</h2><p class="it-copy" data-en="{en}">{ja}</p>' in h and "プレイヤーが書いた作品" not in h
+    css = (root / "static/finds.css").read_text()
+    assert "main.it .fd-title .it-copy { margin: 4px 0 2px; font-size: 22px; font-weight: 800" in css and ".it-why { margin: 0 0 10px; font-size: 13px" in css

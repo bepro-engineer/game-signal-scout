@@ -9,11 +9,12 @@
   const A = window.ASS;
   A.intentView = PAGE => {
   const { tr, esc, num, nm, tx } = A, I = (A.P || {}).intents || {};
+  // 選び方の小さな補足（キャッチコピーはテンプレートの見出しの直下。説明を大きな主文にしない。#2 2026-11-11）
   const META = {
-    deep: { why: ["探索・物語・育成ややり込みを、プレイヤーが面白さとして書いた作品です。", "Titles where players wrote that exploring, the story, or building and growing was the fun."] },
-    short: { why: ["1 回が短くても満足できたと、プレイヤーが書いた作品です。", "Titles where players wrote that short sessions were satisfying."] },
-    novel: { why: ["予想外の展開や意外な遊び方を、プレイヤーが面白さとして書いた作品です。", "Titles where players wrote that surprises or unexpected ways to play were the fun."] },
-    friends: { why: ["仲間との連携や相手との駆け引き、協力・対戦で遊んだ体験を、プレイヤーが書いた作品です。", "Titles where players wrote about teamwork, outplaying others, or playing co-op or versus."] },
+    deep: { why: ["探索・物語・育成ややり込みを面白さとして書いた、プレイヤーの体験から選んでいます。", "Picked from players who wrote that exploring, the story, or building and growing was the fun."] },
+    short: { why: ["1 回が短くても満足できたと書いた、プレイヤーの体験から選んでいます。", "Picked from players who wrote that short sessions were satisfying."] },
+    novel: { why: ["予想外の展開や意外な遊び方を面白さとして書いた、プレイヤーの体験から選んでいます。", "Picked from players who wrote that surprises or unexpected ways to play were the fun."] },
+    friends: { why: ["仲間との連携や駆け引き、協力・対戦で遊んで面白かった体験から選んでいます。", "Picked from players who enjoyed teamwork, outplaying others, or playing co-op or versus."] },
   };
   const NAMES = Object.fromEntries((A.INTENTS || []).map(([k, ja, en]) => [k, [ja, en]]));
   const CJ = { time: ["時間がかかる", "Takes time"], price: ["価格・課金", "Price"], performance: ["動作が重い", "Performance"], bugs: ["不具合", "Bugs"], difficulty: ["難しい", "Difficult"], online: ["接続・対戦相手", "Online"] };
@@ -50,7 +51,7 @@
         <small><span>${tr(`この体験を書いた人 ${num(w.why_people)}人`, `${num(w.why_people)} players wrote about this`)}</span>${jp(lv(w))}${A.priceTag(w)}</small></div></a>`;
   };
 
-  const intro = `<p class="it-why">${esc(tr(...META[PAGE].why))}${tr(" 選んだ根拠は、実際に遊んだ人の体験だけです（ジャンルやストアの分類では選んでいません）。", " Picked only from what players actually experienced, not from genres or store categories.")}</p>`;
+  const intro = `<p class="it-why">${esc(tr(...META[PAGE].why))}${tr("（ジャンルやストアの分類では選んでいません）", " (not from genres or store categories)")}</p>`;
   let body;
   if (items.length) {
     body = `<div class="fcs" data-n="${items.length}" style="--n:${Math.min(3, items.length)}">${items.map(card).join("")}</div>`;

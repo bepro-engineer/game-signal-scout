@@ -80,7 +80,7 @@
 @container (max-width: 420px) { .fk a { white-space: normal; min-height: 60px; } }
 
 /* 遊びたい体験の入口（#2 2026-11-11。intent.js）: 4 つの入口の切り替え → 選んだ根拠の説明 → 注目の作品と同じカード */
-.it-why { margin: 0 0 10px; font-size: 14px; color: var(--ink-2, #3c3958); }
+.it-why { margin: 0 0 10px; font-size: 13px; color: var(--ink-3, #57536f); }
 .it-h { display: block; margin: 4px 0 0; font-size: 11px; font-weight: 700; color: var(--accent, #5246c9); letter-spacing: .02em; }
 .it-p { margin-left: 6px; font-weight: 700; color: var(--ink-3, #57536f); }
 .it-f, .it-how { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 4px; font-size: 13px; color: var(--ink-2, #3c3958); }
@@ -110,3 +110,7 @@
 .so-c .art { aspect-ratio: 3 / 4; border-radius: 10px; } .so-c .cardlink { position: absolute; inset: 0; z-index: 1; }
 .so-w, .so-p, .so-s { display: block; font-size: 13px; color: var(--ink-3, #57536f); } .so-w { font-weight: 700; color: var(--accent, #5246c9); }
 
+
+/* 4 つの遊ぶ目的のページの見出しの直下のキャッチコピー（#2 2026-11-11）: 見出しの次に目立つ大きさ・太さ。選び方の説明（.it-why）は小さな補足 */
+main.it .fd-title .it-copy { margin: 4px 0 2px; font-size: 22px; font-weight: 800; line-height: 1.45; letter-spacing: .02em; color: var(--accent, #5246c9); }
+@media (max-width: 600px) { main.it .fd-title .it-copy { font-size: 18px; } }
