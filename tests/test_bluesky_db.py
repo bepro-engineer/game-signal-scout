@@ -10,7 +10,7 @@ from datetime import date, datetime, timezone
 
 import pytest
 
-from conftest import make_dump, report
+from conftest import KS, known_works, make_dump, report
 from test_bluesky import A, WORDS, FakeWS, frame
 from game_signal_scout.ops import runner
 from game_signal_scout.repositories import public_document
@@ -37,11 +37,12 @@ def run(conn, tmp_path, monkeypatch):
     catalog.upsert(conn, [{"appid": a, "source": "works", "item_id": a, "title": t, "genres": [], "modes": [], "platforms": [], "fetched_at": at} for a, t in works])
     conn.commit()
     cfg = {"protondb": {"adapter": "game_signal_scout.sources.protondb:ProtonDBDump", "local_path": str(path),
-                        "normalizer": "game_signal_scout.services.normalize:reports"},
-           "bluesky": {"adapter": "game_signal_scout.sources.bluesky:Bluesky", "normalizer": "game_signal_scout.services.normalize:voices",
+                        "normalizer": "game_signal_scout.services.normalize:reports", "work_keyspace": KS, "work_link": r"store\.steampowered\.com/app/(\d{1,10})"},
+           "bluesky": {"adapter": "game_signal_scout.sources.bluesky:Bluesky", "normalizer": "game_signal_scout.services.normalize:voices", "work_keyspace": KS,
                        "endpoints": ["wss://fake.invalid/a"], "batch_seconds": 5, "idle_seconds": 0.05, "context_words": WORDS,
                        "ambiguous_titles": ["Rust"]}}
     monkeypatch.setattr(factory, "load_sources_config", lambda: cfg)
+    known_works(conn, [a for a, _ in works] + sorted({r["app"]["steam"]["appId"] for r in recs}))   # 移行の前からある作品（番号はそのまま）
     frames = [[]]
 
     def make(name):
@@ -73,7 +74,9 @@ def test_two_sources_flow_to_normalized_posts_and_viewer_documents(run, conn, st
     assert out["jobs"][1]["detail"] == {"protondb": 4, "bluesky": 8}
     got = posts(conn)
     assert [r for r in got if r[1] == "2246340"] and all(r[2] == "title" for r in got if r[1] == "2246340")
-    assert (f"{A}b", "252490", "title") in got and (f"{A}c", "999", "steam_link") in got
+    new = conn.execute("SELECT work_id FROM game_work_key WHERE keyspace = %s AND ext_id = '999'", (KS,)).fetchone()[0]   # 知らない作品のページ: 新しい作品
+    assert int(new) >= 1_000_000_000
+    assert (f"{A}b", "252490", "title") in got and (f"{A}c", new, "link") in got
     assert len({r[0] for r in got if r[1] == "2246340"}) == 6                    # 6 人の発言が同じ作品に結び付く
     assert public_document.get_document(conn, "overview") is None and public_document.get_document(conn, "game/2246340") is None   # 古い文書は作らない（#3 2026-11-11）
     assert "did:plc" not in json.dumps([r[0] for r in conn.execute("SELECT path FROM public_document").fetchall()])

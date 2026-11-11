@@ -49,7 +49,7 @@ class SteamReviews(SourceReader):
         appids = [str(a) for a in self.settings.get("appids") or []]
         if not appids and self.conn is not None:
             from game_signal_scout.repositories import catalog
-            appids = [a for a, _ in catalog.active_apps(self.conn, int(self.settings.get("active_days", 90)), int(self.settings.get("max_games", 60)))]
+            appids = self.own_ids([a for a, _ in catalog.active_apps(self.conn, int(self.settings.get("active_days", 90)), int(self.settings.get("max_games", 60)))])
         if not appids or not self.settings.get("endpoint"):
             raise SourceNotConfiguredError("steam_reviews: appids と endpoint がない")
         # 前回、全作品を読み終えていれば、今回は最初から（新しい・編集されたレビューを拾う）。途中なら続きから

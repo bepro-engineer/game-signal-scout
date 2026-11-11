@@ -52,7 +52,7 @@ class SteamPrices(SourceReader):
         from game_signal_scout.repositories import catalog
         s = self.settings
         cc, size, max_detail = str(s.get("country", "jp")), int(s.get("batch_size", 50)), int(s.get("max_detail", 500))
-        apps = [str(a) for a in s.get("appids") or []] or (catalog.all_appids(self.conn) if self.conn is not None else [])
+        apps = [str(a) for a in s.get("appids") or []] or (catalog.all_appids(self.conn, s.get("work_keyspace") or "") if self.conn is not None else [])
         detail_left = max_detail
         for i in range(0, len(apps), size):
             chunk = apps[i:i + size]

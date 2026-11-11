@@ -14,10 +14,12 @@ min_snapshot_ratio = 0.9 # 新しい配布物が保存済みのこの割合よ�
 retention_days = 0       # 保持期限（日。0 = 無期限）。検証で使う一時の DB では短くする
 min_interval_hours = 24  # 前回の成功からこの時間は取りに行かない（配布物は月 1 回。一覧の確認も 1 日 1 回で足りる）
 normalizer = "game_signal_scout.services.normalize:reports"   # 正規化の選び方（取得元の名前で分岐しない）
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 
 [steam_reviews]
 adapter = "game_signal_scout.sources.steam_reviews:SteamReviews"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（肯定・否定・遊んだ時間つき）。AI が読んで、作品ごとの体験・満足と不満・変化をまとめる材料（services/insight）。
 # 2026-11-08 から使う（Issue #2「権利に振り回されすぎ、一切気にするな」を受けた判断。非公開・非商用。止めるときは enabled = false にして保存分を消す）
 enabled = true
@@ -37,6 +39,7 @@ poll_seconds = 86400
 [steam_charts]
 adapter = "game_signal_scout.sources.steam_charts:SteamCharts"
 normalizer = "game_signal_scout.services.normalize:activity"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: 遊ばれている規模（Steam の最も遊ばれているゲームの上位 100。キー不要。Oshi Charts と同じ種類）。補助の材料で、満足度の根拠にしない。
 # 作品の情報（steam_store）より先に読む（上位の作品も作品の情報を揃える対象になる）
 min_interval_hours = 20
@@ -46,6 +49,7 @@ min_interval_hours = 20
 enabled = false
 adapter = "game_signal_scout.sources.steam_discussions:SteamDiscussions"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Steam コミュニティの作品ごとの総合の掲示板。話題と返信。多言語。キー不要）。作品は掲示板で決まる
 # 対象: 遊ばれている・話題の多い作品（max_games）と、これから発売の作品の上位（upcoming_games。発売前の期待・不安）
 max_games = 60
@@ -58,6 +62,7 @@ min_interval_hours = 6
 [steam_upcoming]
 adapter = "game_signal_scout.sources.steam_upcoming:SteamUpcoming"
 normalizer = "game_signal_scout.services.normalize:upcoming"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: これから発売の作品（Steam の人気の近日発売の上位。キー不要）。Anime の「まもなく放送」に当たる（画面のメニューの下の枠・api/soon）。
 # 作品の情報（steam_store）より先に読む（一覧の作品も作品の情報を揃える対象になる）
 max_items = 100
@@ -66,12 +71,17 @@ min_interval_hours = 20
 [steam_assets]
 adapter = "game_signal_scout.sources.steam_assets:SteamAssets"
 normalizer = "game_signal_scout.services.normalize:assets"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
+image_hosts = ["https://*.steamstatic.com"]   # 作品の画像の配信元（画面の CSP の img-src。web/app.image_hosts）
 # 役割: 作品の画像の場所（縦長の表紙・横長の帯。IStoreBrowseService/GetItems。キー不要・50 作品ずつ）。画面の作品の画像の枠は縦長（Anime と同じ）
 min_interval_hours = 20
 
 [steam_store]
 adapter = "game_signal_scout.sources.steam_store:SteamStore"
 normalizer = "game_signal_scout.services.normalize:profiles"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
+image_hosts = ["https://*.steamstatic.com"]   # 作品の画像の配信元（画面の CSP の img-src。web/app.image_hosts）
+work_link = 'store\.steampowered\.com/app/(\d{1,10})'   # 発言の本文・リンクの中の、この取得元の作品のページ（番号は work_keyspace の名前空間）
 # 役割: 作品の情報（画像・短い説明・ジャンル・遊び方・機種・日本語・発売日）。利用者がゲームを選ぶための項目（game_profile）。レビューは取らない。
 # 対象: プレイヤーの報告・発言の多い作品（repositories/catalog.active_apps）のうち、情報がない・refresh_days より古いもの。
 active_days = 90
@@ -84,6 +94,7 @@ min_interval_hours = 20
 [blizzard_forums]
 adapter = "game_signal_scout.sources.feeds:Discourse"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Blizzard の公式掲示板。Discourse の公開 JSON。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 sites = [
@@ -109,6 +120,7 @@ poll_seconds = 600
 [game_official_forums]
 adapter = "game_signal_scout.sources.feeds:Discourse"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（ゲームの公式掲示板。Discourse の公開 JSON。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 # 利用条件で禁止が明記されたサイトは外した（config/source_terms.toml の excluded_hosts。2026-11-08）
@@ -123,6 +135,7 @@ poll_seconds = 600
 [gamekult]
 adapter = "game_signal_scout.sources.feeds:Discourse"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Gamekult の掲示板。Discourse の公開 JSON。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 sites = [
@@ -134,6 +147,7 @@ poll_seconds = 600
 [neogaf]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（NeoGAF。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -145,6 +159,7 @@ poll_seconds = 600
 [tildes]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Tildes。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -156,6 +171,7 @@ poll_seconds = 600
 [ptt_games]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（PTT のゲームの板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -174,6 +190,7 @@ poll_seconds = 600
 [keylol]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（其乐 Keylol。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -187,6 +204,7 @@ poll_seconds = 600
 [stage1st_games]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Stage1st のゲームの板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -198,6 +216,7 @@ poll_seconds = 600
 [computerbase]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（ComputerBase のゲームの板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -216,6 +235,7 @@ poll_seconds = 600
 [pcgh_extreme]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（PCGH Extreme。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -227,6 +247,7 @@ poll_seconds = 600
 [mein_mmo]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Mein-MMO のコメント。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -238,6 +259,7 @@ poll_seconds = 600
 [playua]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（PlayUA のコメント。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -249,6 +271,7 @@ poll_seconds = 600
 [true_gaming]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（True Gaming。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -260,6 +283,7 @@ poll_seconds = 600
 [outerspace]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Outer Space。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -271,6 +295,7 @@ poll_seconds = 600
 [adrenaline]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Adrenaline の掲示板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -283,6 +308,7 @@ poll_seconds = 600
 [guildwars2_forum]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Guild Wars 2 の公式掲示板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -294,6 +320,7 @@ poll_seconds = 600
 [cdpr_forum]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（CD PROJEKT RED の掲示板。RSS / Atom。キー不要。台帳 config/source_candidates.toml）
 game_only = true
 feeds = [
@@ -305,6 +332,7 @@ poll_seconds = 600
 [studio_forums]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（作品の公式の掲示板の RSS。Warframe・Stardew Valley・Kerbal Space Program・BeamNG.drive。キー不要）。作品は掲示板で決まる
 game_only = true
 # 利用条件で禁止が明記されたサイトは外した（config/source_terms.toml の excluded_hosts。2026-11-08）
@@ -319,6 +347,7 @@ poll_seconds = 600
 [lemmy_games]
 adapter = "game_signal_scout.sources.feeds:Lemmy"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Lemmy のゲームのコミュニティ。公開 API。キー不要。台帳 config/source_candidates.toml の lemmy_games）
 game_only = true
 communities = [
@@ -340,6 +369,7 @@ poll_seconds = 600
 [mastodon_games]
 adapter = "game_signal_scout.sources.feeds:MastodonTags"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Mastodon のゲームのハッシュタグ。公開 API。キー不要。台帳の mastodon_tags）。宣伝の bot が多いので bot と URL だけの投稿は採らない
 game_only = true
 base = "https://mastodon.social"
@@ -374,6 +404,7 @@ poll_seconds = 21600
 [pantip_games]
 adapter = "game_signal_scout.sources.pantip:Pantip"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Pantip のゲームのタグの話題とコメント。タイ語。キー不要。Anime の sources/pantip を流用。台帳の pantip_chalermkrung は音楽の部屋だったのでタグで読む）
 game_only = true
 tags = ["เกม", "เกมคอมพิวเตอร์", "PlayStation", "Nintendo Switch", "Steam"]
@@ -384,6 +415,7 @@ poll_seconds = 1800
 [hatena_games]
 adapter = "game_signal_scout.sources.feeds:HatenaComments"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（ゲームの記事へのはてなブックマークのコメント。日本語。公式のエントリー情報取得 API。キー不要。台帳の hatena_bookmark_comments）
 # 記事は各誌の RSS から見つけ、記事の時刻から 12・72 時間の時点でコメントを読む。Crawl-delay 5 を守る
 game_only = true
@@ -396,6 +428,7 @@ poll_seconds = 1800
 [elotrolado]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（ElOtroLado。スペイン語のゲームの総合掲示板の新着。RSS。キー不要）。スペイン語の声が手薄なため（台帳の手薄な言語）
 game_only = true
 feeds = [{ url = "https://www.elotrolado.net/feed.php", lang = "es" }]
@@ -405,6 +438,7 @@ poll_seconds = 600
 [gtplanet]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（GTPlanet。レースゲームの掲示板の新着。英語。RSS。キー不要）
 game_only = true
 feeds = [{ url = "https://www.gtplanet.net/forum/forums/-/index.rss", lang = "en" }]
@@ -414,6 +448,7 @@ poll_seconds = 600
 [spaziogames]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（SpazioGames の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
 game_only = true
 feeds = [{ url = "https://forum.spaziogames.it/forums/-/index.rss", lang = "it" }]
@@ -423,6 +458,7 @@ poll_seconds = 600
 [tomshw_it]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Tom's Hardware Italia の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
 game_only = true
 feeds = [{ url = "https://forum.tomshw.it/forums/-/index.rss", lang = "it" }]
@@ -432,6 +468,7 @@ poll_seconds = 600
 [cdaction]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（CD-Action の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
 game_only = true
 feeds = [{ url = "https://forum.cdaction.pl/discover/all.xml/", lang = "pl" }]
@@ -441,6 +478,7 @@ poll_seconds = 600
 [pcgames_de]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（PC Games の掲示板の新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
 game_only = true
 feeds = [{ url = "https://forum.pcgames.de/forums/-/index.rss", lang = "de" }]
@@ -450,6 +488,7 @@ poll_seconds = 600
 [famiboards]
 adapter = "game_signal_scout.sources.feeds:FeedForum"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: プレイヤーの声（Famiboardsの新着。RSS / Atom。キー不要。2026-11-08 手薄な言語の補い）
 game_only = true
 feeds = [{ url = "https://famiboards.com/forums/-/index.rss", lang = "en" }]
@@ -460,6 +499,7 @@ poll_seconds = 600
 # 役割: プレイヤーの声（SNS。キー不要）
 adapter = "game_signal_scout.sources.bluesky:Bluesky"
 normalizer = "game_signal_scout.services.normalize:voices"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 enabled = true
 error_backoff_seconds = 30
 endpoints = ["wss://jetstream.us-east.bsky.network/xrpc/network.bsky.jetstream.subscribeEvents",
@@ -486,6 +526,7 @@ poll_seconds = 0
 [steam_attributes]
 adapter = "game_signal_scout.sources.steam_attributes:SteamAttributes"
 normalizer = "game_signal_scout.services.normalize:attributes"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: 作品の属性（日本語の UI・字幕・音声、開発元・販売元。IStoreBrowseService/GetItems。キー不要・50 作品ずつ）
 min_interval_hours = 20
 refresh_days = 14
@@ -493,6 +534,7 @@ refresh_days = 14
 [steam_prices]
 adapter = "game_signal_scout.sources.steam_prices:SteamPrices"
 normalizer = "game_signal_scout.services.normalize:attributes"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: 作品の日本向けの販売価格（作品の属性 price。通常価格・現在価格・割引率・通貨・確かめた時刻。無料・発売前・未確認を区別。#2 2026-11-10）。
 # 価格は変わりやすいので毎日、作品の情報のあるすべての作品を問い合わせる（価格は batch_size 件ずつ 1 回。価格が返らない作品だけ 1 作品ずつ max_detail 件まで）
 # 間隔は 6 時間: 毎日の処理（1 日 1 回）の再試行（30 分おき）では取り直さず、前の晩に手で取得しても翌朝の回は取りに行く（20 時間だと翌朝の回が飛ぶ）
@@ -504,6 +546,7 @@ max_detail = 500
 [steam_ratings]
 adapter = "game_signal_scout.sources.steam_ratings:SteamRatings"
 normalizer = "game_signal_scout.services.normalize:attributes"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: 作品のユーザー評価（作品の属性 rating。ストアが示す全期間の集計と、日本語のレビューだけの集計: 件数・好評の割合・評価の段階と名前。#2 2026-11-10）。
 # 最近 30 日の集計はこの問い合わせ先にないので持たない。換算・推定はしない。間隔は価格と同じ 6 時間（毎朝の回で取り直し、再試行では取り直さない）
 min_interval_hours = 6
@@ -513,6 +556,7 @@ batch_size = 50
 [wikidata_works]
 adapter = "game_signal_scout.sources.wikidata_works:WikidataWorks"
 normalizer = "game_signal_scout.services.normalize:attributes"
+work_keyspace = "steam"   # この取得元が渡す作品の番号の名前空間（作品の鍵の表 game_work_key で、このサイトの作品の番号に引く。#3）
 # 役割: 作品の属性（開発元と開発元の国・地域。Wikidata〔CC0〕の Query Service。1 回に 100 作品）
 min_interval_hours = 20
 refresh_days = 30

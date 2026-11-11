@@ -23,8 +23,9 @@ def active_apps(conn, days: int, limit: int) -> list[tuple[str, int]]:
         (days, days, EXCLUDE, limit)).fetchall()
 
 
-def targets(conn, days: int, limit: int, refresh_days: int, source: str) -> list[str]:
-    """作品の情報を取りに行く作品: 対象の作品（と、これから発売の作品）のうち、その取得元の情報がない・refresh_days より古いもの。"""
+def targets(conn, days: int, limit: int, refresh_days: int, source: str, keyspace: str) -> list[str]:
+    """作品の情報を取りに行く作品: 対象の作品（と、これから発売の作品）のうち、その取得元の情報がない・refresh_days より古いもの。
+    返すのは、その取得元の番号（名前空間 keyspace の鍵。鍵のない作品は、その取得元では取れないので飛ばす）。"""
     want = [a for a, _ in active_apps(conn, days, limit)]
     # これから発売の作品（最新の一覧）も作品の情報を揃える（発売日・画像。画面のまもなく発売）。レビューの対象にはしない
     want += [a for (a,) in conn.execute("SELECT appid FROM game_upcoming WHERE day = (SELECT max(day) FROM game_upcoming) ORDER BY rank") if a not in want]
@@ -32,9 +33,11 @@ def targets(conn, days: int, limit: int, refresh_days: int, source: str) -> list
         return []
     fresh = {r[0] for r in conn.execute("SELECT appid FROM game_profile WHERE appid = ANY(%s) AND source = %s AND fetched_at > now() - make_interval(days => %s)",
                                         (want, source, refresh_days))}
+    from game_signal_scout.repositories import work_key
+    own = work_key.external(conn, keyspace, want)
     done = {r[0] for r in conn.execute("SELECT item_id FROM source_item WHERE source = %s AND item_id = ANY(%s) AND received_at > now() - make_interval(days => %s)",
-                                       (source, want, refresh_days))}
-    return [a for a in want if a not in fresh and a not in done]
+                                       (source, list(own.values()), refresh_days))}
+    return [own[a] for a in want if a in own and a not in fresh and own[a] not in done]
 
 
 def unnormalized(conn, source: str, limit: int):
@@ -129,8 +132,14 @@ def game_appids(conn, appids: list[str], not_game: list[str]) -> set[str]:
     return {a for (a,) in conn.execute("SELECT appid FROM game_profile WHERE appid = ANY(%s) AND NOT (genres ?| %s)", (list(appids), not_game))}
 
 
-def all_appids(conn) -> list[str]:
-    return [a for (a,) in conn.execute("SELECT appid FROM game_profile WHERE appid ~ '^[0-9]+$'")]
+def profiled_works(conn) -> list[str]:
+    """作品の情報のある作品の番号（このサイトの作品の番号）。"""
+    return [a for (a,) in conn.execute("SELECT appid FROM game_profile ORDER BY appid")]
+
+
+def all_appids(conn, keyspace: str) -> list[str]:
+    """作品の情報のある作品の、その取得元の番号（名前空間 keyspace の鍵のある作品だけ）。"""
+    return [a for (a,) in conn.execute("SELECT k.ext_id FROM game_profile g JOIN game_work_key k ON k.work_id = g.appid AND k.keyspace = %s ORDER BY 1", (keyspace,))]
 
 
 PROFILE_KEYS = ("title", "summary", "image", "genres", "modes", "platforms", "ja_text", "ja_voice", "released", "store_url", "about_ja", "about_en", "names")
@@ -185,11 +194,12 @@ def attributes_of(conn, appids: list[str]) -> dict[str, dict[str, list[dict]]]:
     return out
 
 
-def attribute_targets(conn, source: str, refresh_days: int) -> list[str]:
-    """属性を取りに行く作品: 作品の情報のある作品のうち、その取得元の属性がない・refresh_days より古いもの。"""
+def attribute_targets(conn, source: str, refresh_days: int, keyspace: str) -> list[str]:
+    """属性を取りに行く作品: 作品の情報のある作品のうち、その取得元の属性がない・refresh_days より古いもの（その取得元の番号。名前空間 keyspace の鍵）。"""
     return [a for (a,) in conn.execute(
-        "SELECT g.appid FROM game_profile g WHERE NOT EXISTS (SELECT 1 FROM source_item s WHERE s.source = %s AND s.item_id = g.appid "
-        "AND s.received_at > now() - make_interval(days => %s)) ORDER BY g.appid", (source, refresh_days))]
+        "SELECT k.ext_id FROM game_profile g JOIN game_work_key k ON k.work_id = g.appid AND k.keyspace = %s "
+        "WHERE NOT EXISTS (SELECT 1 FROM source_item s WHERE s.source = %s AND s.item_id = k.ext_id "
+        "AND s.received_at > now() - make_interval(days => %s)) ORDER BY g.appid", (keyspace, source, refresh_days))]
 
 
 def platforms_of(conn, appids: list[str]) -> dict[str, list[str]]:

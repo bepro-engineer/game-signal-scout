@@ -63,6 +63,14 @@ class SourceReader(ABC):
     def read(self, cursor: dict | None) -> Iterator[Batch]:
         """cursor（前回の続きの位置。初回は None）から読み、束を順に返す。"""
 
+    def own_ids(self, work_ids) -> list[str]:
+        """このサイトの作品の番号 → この取得元の番号（記述の work_keyspace の名前空間。鍵のない作品は飛ばす。#3 段階 B）。"""
+        conn = getattr(self, "conn", None)
+        if conn is None:
+            return []
+        from game_signal_scout.repositories import work_key
+        return work_key.own_ids(conn, self.settings.get("work_keyspace") or "", list(work_ids))
+
     # ---- 取得しない用途の契約（Anime の sources/contract と同じ名前・同じ既定。取得元の決まりがあれば上書きする）
 
     def quotable(self, conn, item_ids: list[str]) -> set[str]:

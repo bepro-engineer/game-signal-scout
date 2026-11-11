@@ -22,7 +22,7 @@ class SteamAttributes(SourceReader):
     def read(self, cursor: dict | None) -> Iterator[Batch]:
         from game_signal_scout.repositories import catalog
         apps = [str(a) for a in self.settings.get("appids") or []] or (
-            catalog.attribute_targets(self.conn, self.name, int(self.settings.get("refresh_days", 14))) if self.conn is not None else [])
+            catalog.attribute_targets(self.conn, self.name, int(self.settings.get("refresh_days", 14)), self.settings.get("work_keyspace") or "") if self.conn is not None else [])
         now = datetime.now(timezone.utc)
         for i in range(0, len(apps), 50):
             chunk = apps[i:i + 50]

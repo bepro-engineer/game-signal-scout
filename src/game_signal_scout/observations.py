@@ -278,6 +278,6 @@ def common_series(conn, first: date, as_of: date, srcs: dict | None = None):
 def work_levels(conn) -> dict[int, tuple[str, None]]:
     """Anime の work_repo.list_work_levels の Game 版: 作品（作品の情報のある app ID）はすべて 1 段（親なし）。"""
     from game_signal_scout.repositories import catalog
-    out = {int(a): ("work", None) for a in catalog.all_appids(conn)}
+    out = {int(a): ("work", None) for a in catalog.profiled_works(conn)}
     conn.rollback()
     return out

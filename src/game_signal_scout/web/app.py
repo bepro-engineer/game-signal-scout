@@ -29,10 +29,22 @@ SECURITY_HEADERS = {"X-Content-Type-Options": "nosniff", "X-Frame-Options": "DEN
                     "Cross-Origin-Opener-Policy": "same-origin"}
 
 
+def image_hosts() -> list[str]:
+    """作品の画像の配信元: 取得元の記述（config/sources.toml）の image_hosts を、どの取得元も同じに集める。"""
+    global _IMAGE_HOSTS
+    if _IMAGE_HOSTS is None:
+        from game_signal_scout.sources import factory
+        _IMAGE_HOSTS = sorted({str(h) for sc in factory.load_sources_config().values() if isinstance(sc, dict) for h in sc.get("image_hosts") or []})
+    return _IMAGE_HOSTS
+
+
+_IMAGE_HOSTS = None
+
+
 def csp(html: bool, analytics: str) -> str:
     if not html:
         return "default-src 'none'; frame-ancestors 'none'; sandbox"
-    img = "https://*.steamstatic.com"   # 作品の画像（Steam の配信元。Game の作品情報 game_profile の URL）
+    img = " ".join(image_hosts())   # 作品の画像の配信元（取得元の記述の image_hosts。どの取得元の記述も同じに読む）
     return (f"default-src 'self'; script-src 'self' {analytics}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             f"font-src 'self' https://fonts.gstatic.com; img-src 'self' data: {img}; connect-src 'self'; object-src 'none'; base-uri 'none'; "
             "form-action 'none'; frame-ancestors 'none'").replace("  ", " ")

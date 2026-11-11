@@ -33,6 +33,7 @@ launchctl list | grep game-signal-scout
 
 - 導入: `git pull` → `.venv/bin/alembic upgrade head`（`runtime/db.env` を読み込んで）→ 試験 → Viewer の起動し直し → `daily-run --only publish`。
 - 切り戻し: 前の commit に戻して、Viewer を起動し直します。移行は `alembic downgrade <版>` で戻せます（0013 ゲーム内容・0014 近日発売・0015 各言語の題名は、列・表を消すだけ）。
+- 作品の番号を渡す取得元は、記述に `work_keyspace`（その取得元の番号の名前空間）を書きます。作品のページへのリンクの形は `work_link`、作品の画像の配信元は `image_hosts`。どの取得元も同じ書き方です（ARCHITECTURE §8）。
 - 取得元を止める: `config/sources.toml` の `enabled = false`（必要なら保存した項目を消す）。画面から外すだけなら `config/map_sources.toml` から外します。
 
 ## 5. バックアップ

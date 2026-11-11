@@ -29,6 +29,8 @@ def main(argv=None) -> int:
     sc.add_argument("--source", required=True)
     sc.add_argument("--once", action="store_true", help="1 周期だけ")
     sub.add_parser("init-author-key", help="投稿者の HMAC の鍵（runtime/author_hmac.key）を初回だけ作る（あれば作らない）")
+    ak = sub.add_parser("adopt-work-keys", help="移行の前からある作品の番号を、そのまま名前空間 --keyspace の鍵として作品の鍵の表に入れる（一度だけ。ARCHITECTURE §8）")
+    ak.add_argument("--keyspace", required=True, help="既存の作品の番号を出した取得元の記述の work_keyspace")
     a = ap.parse_args(argv)
     if a.cmd == "launchd":
         from pathlib import Path
@@ -70,6 +72,16 @@ def main(argv=None) -> int:
     from game_signal_scout import config, db
     from game_signal_scout.repositories import report
     with db.connect() as conn:
+        if a.cmd == "adopt-work-keys":
+            from game_signal_scout.repositories import work_key
+            from game_signal_scout.sources import factory
+            if a.keyspace not in {sc.get("work_keyspace") for sc in factory.load_sources_config().values() if isinstance(sc, dict)}:
+                print(json.dumps({"error": f"記述に work_keyspace = {a.keyspace} の取得元がない"}, ensure_ascii=False))
+                return 2
+            with conn.transaction():
+                n = work_key.adopt_existing(conn, a.keyspace)
+            print(json.dumps({"adopted": n}))
+            return 0
         if a.cmd == "status":
             from game_signal_scout.ops.status import status
             print(json.dumps(status(conn), ensure_ascii=False, default=str))

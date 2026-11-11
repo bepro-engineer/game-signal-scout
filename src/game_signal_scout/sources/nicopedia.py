@@ -42,6 +42,12 @@ class Nicopedia(SourceReader):
     conn = None
     _last = 0.0
 
+    @staticmethod
+    def voice(item_id: str, payload: dict) -> dict:
+        """対象はこのサイトの作品（catalog.active_apps）なので、payload の appid はこのサイトの作品の番号（引かずに使う: work_id）。"""
+        p = {k: v for k, v in payload.items() if k != "appid"}
+        return {**p, "work_id": payload.get("work_id") or payload.get("appid")} if payload.get("work_id") or payload.get("appid") else p
+
     def get(self, url: str) -> str | None:
         wait = float(self.settings.get("crawl_delay", 5)) - (time.monotonic() - self._last)
         if wait > 0:

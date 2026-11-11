@@ -1,5 +1,6 @@
 """作品の日本向けの販売価格（#2 2026-11-10）: 取得 → 作品の属性 price → 画面の値 → 公開の文書 → 画面。
 通常価格・割引中・無料・発売前・未確認を区別し、0 円・架空の価格を作らない。古い価格は今の価格として出さない。日英で国・通貨・数値は同じ。"""
+from conftest import KS, known_works
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -74,7 +75,8 @@ def test_price_flows_from_store_item_to_public_work(conn):
     p = {"appid": "10", "price": price_value("10", PO(400000, 200000, 50), None, "JP", now.isoformat())}
     conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload, version) VALUES ('steam_prices', '10', now(), now(), %s, 'v')", (json.dumps(p),))
     conn.commit()
-    assert normalize.attributes(conn, "steam_prices") == 1
+    known_works(conn, ["10", "20"])   # 移行の前からある作品（番号はそのまま）
+    assert normalize.attributes(conn, "steam_prices", {"work_keyspace": KS}) == 1
     m = work_meta(conn, [10, 20])
     assert _judge(m[10])["price"]["fin"] == 2000 and _judge(m[10])["price"]["off"] == 50 and _judge(m[10])["price"]["cur"] == "JPY"
     assert "price" not in _judge(m[20])                                                          # 価格のない作品: 0 円にも無料にもしない

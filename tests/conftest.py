@@ -18,7 +18,7 @@ import pytest
 os.environ.setdefault("GSS_RUNTIME_DIR", tempfile.mkdtemp(prefix="gss-runtime-"))
 ADMIN = os.environ.get("GSS_TEST_ADMIN_DSN")
 REPO = Path(__file__).resolve().parents[1]
-TABLES = ("source_gone", "game_attribute", "game_assets", "game_upcoming", "obs_post", "obs_work_lang_day", "obs_day_state", "job_artifact", "game_insight", "game_activity", "game_profile", "public_document", "public_build", "shift_event", "player_post", "player_report", "job_run", "source_checkpoint", "source_item", "source_fetch", "source_state")
+TABLES = ("game_work_key", "game_work", "source_gone", "game_attribute", "game_assets", "game_upcoming", "obs_post", "obs_work_lang_day", "obs_day_state", "job_artifact", "game_insight", "game_activity", "game_profile", "public_document", "public_build", "shift_event", "player_post", "player_report", "job_run", "source_checkpoint", "source_item", "source_fetch", "source_state")
 
 
 def make_dump(path: Path, records: list[dict]) -> Path:
@@ -88,3 +88,16 @@ def _author_key():
     """投稿者の参照の鍵（一時の runtime に作る。取得元の読み方が鍵付きの HMAC をかけるため）。"""
     from game_signal_scout import actor_key
     actor_key.create_key()
+
+
+
+KS = "shop"   # 試験の取得元の作品の番号の名前空間（架空の名前。どの取得元の記述も同じ形）
+
+
+def known_works(conn, ids, keyspace: str = KS) -> None:
+    """移行の前からある作品（ARCHITECTURE §8: 既存の作品は、取得元の番号をそのまま作品の番号にする）と同じ状態を、試験の DB に作る。"""
+    with conn.transaction():
+        for i in ids:
+            conn.execute("INSERT INTO game_work (work_id) VALUES (%s) ON CONFLICT DO NOTHING", (str(i),))
+            conn.execute("INSERT INTO game_work_key (keyspace, ext_id, work_id) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING", (keyspace, str(i), str(i)))
+    conn.commit()

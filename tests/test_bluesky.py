@@ -198,9 +198,9 @@ def index():
                       ["Sweet Home"], ["game", "steam", "ゲーム"], 8)
 
 
-def test_identify_steam_link_first_then_longest_cased_title_with_game_context():
+def test_identify_linked_work_first_then_longest_cased_title_with_game_context():
     ix = index()
-    assert identify({"steam_appids": ["2246340"], "text": "Hades II"}, ix) == ("2246340", "Monster Hunter Wilds", "steam_link")
+    assert identify({"linked_works": ["2246340"], "text": "Hades II"}, ix) == ("2246340", "Monster Hunter Wilds", "link")
     assert identify({"text": "Monster Hunter Wilds keeps crashing, worst game"}, ix) == ("2246340", "Monster Hunter Wilds", "title")
     assert identify({"text": "Hades II on steam is great"}, ix) == ("2", "Hades II", "title")
 

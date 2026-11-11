@@ -35,6 +35,12 @@ def lang(code: str | None) -> str | None:
 class GogReviews(SourceReader):
     conn = None
 
+    @staticmethod
+    def voice(item_id: str, payload: dict) -> dict:
+        """対象はこのサイトの作品（catalog.active_apps）なので、payload の appid はこのサイトの作品の番号（引かずに使う: work_id）。"""
+        p = {k: v for k, v in payload.items() if k != "appid"}
+        return {**p, "work_id": payload.get("work_id") or payload.get("appid")} if payload.get("work_id") or payload.get("appid") else p
+
     def titles(self) -> list[tuple[str, str]]:
         """(appid, 英語の題名)。"""
         if self.settings.get("apps"):

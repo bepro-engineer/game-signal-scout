@@ -96,7 +96,7 @@ class SteamStore(SourceReader):
     def read(self, cursor: dict | None) -> Iterator[Batch]:
         from game_signal_scout.repositories import catalog
         s = self.settings
-        todo = catalog.targets(self.conn, int(s.get("active_days", 90)), int(s.get("max_games", 150)), int(s.get("refresh_days", 30)), self.name) if self.conn else []
+        todo = catalog.targets(self.conn, int(s.get("active_days", 90)), int(s.get("max_games", 150)), int(s.get("refresh_days", 30)), self.name, s.get("work_keyspace") or "") if self.conn else []
         size = int(s.get("batch_size", 20))
         items: list[SourceItem] = []
         for i, appid in enumerate(todo, 1):

@@ -1,4 +1,4 @@
-"""Anime の ops/work.publishable_works の Game 版: 作品として見せてよい作品 = 作品の情報（game_profile）のある Steam の作品のうち、ゲームであるもの。
+"""Anime の ops/work.publishable_works の Game 版: 作品として見せてよい作品 = 作品の情報（game_profile）のある作品のうち、ゲームであるもの。
 
 ゲームでないソフト（ストアのジャンルがユーティリティ・映像や音声の制作・デザインなどのもの。例: Wallpaper Engine）は出さない
 （Game の対象は PC・家庭用のゲーム。2026-11-08: 今日の兆しに壁紙のソフトが選ばれた）。"""

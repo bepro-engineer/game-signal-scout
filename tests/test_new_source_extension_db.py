@@ -8,6 +8,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from game_signal_scout.days import day_range, default_day
+from conftest import KS, known_works
 from game_signal_scout.sources.contract import Batch, SourceItem, SourceReader
 
 DAY = default_day()
@@ -35,7 +36,8 @@ def test_a_new_source_flows_to_documents_without_changing_common_code(conn, monk
                  "'{\"en\": \"Monster Hunter Wilds\"}')")
     conn.commit()
     # 記述だけで足す: 取得元の記述（adapter・normalizer）と、観測の集計に入れる記述（map_sources）
-    src_cfg = {"fake_forum": {"adapter": "test_new_source_extension_db:FakeForum", "normalizer": "game_signal_scout.services.normalize:voices", "game_only": True}}
+    src_cfg = {"fake_forum": {"adapter": "test_new_source_extension_db:FakeForum", "normalizer": "game_signal_scout.services.normalize:voices", "game_only": True, "work_keyspace": KS}}
+    known_works(conn, ["2246340"])   # 移行の前からある作品（番号はそのまま。作品の情報の取得元と同じ名前空間）
     monkeypatch.setattr(factory, "load_sources_config", lambda: src_cfg)
     real_toml = config.load_toml
     monkeypatch.setattr(config, "load_toml", lambda name: {"sources": {"fake_forum": {"reader": "foundation", "production": True, "history": True, "label": ["架空の掲示板", "Fake forum"]}}}
@@ -59,6 +61,56 @@ def test_a_new_source_flows_to_documents_without_changing_common_code(conn, monk
     assert not any(k.startswith("_") for k in work["streams"][0]), "内部の値は公開しない"
     day = public_document.get_document(conn, f"day/{DAY.isoformat()}")
     assert day["dashboard"]["works_today"] == 1
+
+
+class FakeConsoleCatalog(SourceReader):
+    """架空の家庭用機の作品の目録（このサイトのほかの取得元にない作品。番号の形もほかの取得元と違う）。"""
+
+    def read(self, cursor):
+        yield Batch([SourceItem(self.name, "CUSA-77", day_range(DAY)[0], {"id": "CUSA-77", "name": "Lantern Tide"}, None)], {"done": True})
+
+    @staticmethod
+    def profile(item_id, received_at, payload):
+        return {"appid": payload["id"], "item_id": item_id, "title": payload["name"], "genres": ["アドベンチャー"], "modes": [], "platforms": [],
+                "names": {"en": payload["name"]}, "fetched_at": received_at}
+
+
+class FakeConsoleForum(SourceReader):
+    """架空の家庭用機の掲示板（作品は目録と同じ名前空間の番号で決まる）。"""
+
+    def read(self, cursor):
+        t = day_range(DAY)[0] + timedelta(hours=3)
+        yield Batch([SourceItem(self.name, f"c{i}", t + timedelta(minutes=i), {"appid": "CUSA-77", "author": f"c{i}", "lang": "en",
+                                                                              "text": f"Lantern Tide night {i} was lovely"}) for i in range(2)], {"done": True})
+
+
+def test_a_title_known_only_to_a_new_source_becomes_a_work_and_reaches_the_screen(conn, monkeypatch):
+    """作品の鍵は取得元に依らない（#3 段階 B。ARCHITECTURE §8）: ほかの取得元にない作品が、架空の取得元の記述だけで作品になり、
+    発言の同定・観測の集計・作品詳細の文書まで進む。既存の作品の番号は変わらず、ほかの名前空間の取得元は、その作品を自分の番号として扱わない。"""
+    from game_signal_scout import config
+    from game_signal_scout.ops import runner
+    from game_signal_scout.repositories import public_document, work_key
+    from game_signal_scout.sources import factory
+    known_works(conn, ["2246340"])
+    profiles, voices = "game_signal_scout.services.normalize:profiles", "game_signal_scout.services.normalize:voices"
+    src_cfg = {"console_catalog": {"adapter": "test_new_source_extension_db:FakeConsoleCatalog", "normalizer": profiles, "work_keyspace": "console"},
+               "console_forum": {"adapter": "test_new_source_extension_db:FakeConsoleForum", "normalizer": voices, "work_keyspace": "console"}}
+    monkeypatch.setattr(factory, "load_sources_config", lambda: src_cfg)
+    real_toml = config.load_toml
+    obs = {"console_forum": {"reader": "foundation", "production": True, "history": True, "label": ["架空の掲示板", "Fake forum"]}}
+    monkeypatch.setattr(config, "load_toml", lambda name: {"sources": obs} if name == "map_sources.toml" else real_toml(name))
+    real_daily = config.load_daily_config
+    monkeypatch.setattr(config, "load_daily_config", lambda: {**real_daily(), "publish": {**real_daily().get("publish", {}), "start_day": DAY.isoformat()}})
+    code, out = runner.daily_run(DAY, only=["collect", "normalize", "observe", "publish"], reader_factory=lambda n: factory.create(n, None, src_cfg))
+    assert code == runner.EXIT_OK, out
+
+    w = work_key.resolve(conn, "console", ["CUSA-77"])["CUSA-77"]
+    conn.commit()
+    assert int(w) >= 1_000_000_000                                                                     # 新しい作品は既存と重ならない番号
+    assert conn.execute("SELECT title FROM game_profile WHERE appid = %s", (w,)).fetchone()[0] == "Lantern Tide"
+    assert conn.execute("SELECT count(*) FROM player_post WHERE appid = %s AND matched_by = 'source'", (w,)).fetchone()[0] == 2
+    assert public_document.get_document(conn, f"work/w{w}") is not None                                # 画面の作品詳細まで出る
+    assert work_key.external(conn, KS, [w]) == {} and work_key.external(conn, KS, ["2246340"]) == {"2246340": "2246340"}   # 既存の番号はそのまま
 
 
 def test_common_code_has_no_source_name_branches():
@@ -138,7 +190,8 @@ def test_posts_are_reidentified_when_the_title_dictionary_changes(conn):
                  "('forum_y', 'a', %s, %s, '{\"author\": \"u1\", \"text\": \"Hollow Knight Silksong is great\"}'), "
                  "('forum_y', 'b', %s, %s, '{\"author\": \"u2\", \"text\": \"fun\", \"appid\": \"10\"}')", (t, t, t, t))
     conn.commit()
-    cfg = {"game_only": True}
+    cfg = {"game_only": True, "work_keyspace": KS}
+    known_works(conn, ["10"])   # 移行の前からある作品（番号はそのまま）
     normalize.voices(conn, "forum_y", cfg)
     assert dict(conn.execute("SELECT item_id, appid FROM player_post WHERE source='forum_y'").fetchall()) == {"a": None, "b": "10"}
     conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', '1030300', now(), now(), '{}')")
@@ -214,8 +267,9 @@ def test_system_works_when_any_source_is_stopped_disabled_or_empty(conn, monkeyp
     conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) "
                  "VALUES ('2246340', 'steam_store', '2246340', 'Monster Hunter Wilds', '[\"アクション\"]', '[]', '[]', now())")
     conn.commit()
+    known_works(conn, ["2246340"])   # 移行の前からある作品（番号はそのまま）
     voices = "game_signal_scout.services.normalize:voices"
-    src_cfg = {"src_ok": {"adapter": "test_new_source_extension_db:FakeForum", "normalizer": voices, "game_only": True},
+    src_cfg = {"src_ok": {"adapter": "test_new_source_extension_db:FakeForum", "normalizer": voices, "game_only": True, "work_keyspace": KS},
                "src_down": {"adapter": "test_new_source_extension_db:FailingSource", "normalizer": voices},
                "src_empty": {"adapter": "test_new_source_extension_db:EmptySource", "normalizer": voices},
                "src_off": {"adapter": "test_new_source_extension_db:FailingSource", "normalizer": voices, "enabled": False}}
@@ -234,9 +288,12 @@ def test_system_works_when_any_source_is_stopped_disabled_or_empty(conn, monkeyp
     assert public_document.get_document(conn, f"day/{DAY.isoformat()}")["dashboard"]["works_today"] == 1   # 残りの取得元で画面の文書が成り立つ
 
 
-def test_common_normalizer_applies_the_same_rules_to_every_source(conn):
+def test_common_normalizer_applies_the_same_rules_to_every_source(conn, monkeypatch):
     """共通 Service（5 原則）: ストアのリンクからの作品の特定・宣伝などの印・言語の判定は、取得元の読み方ではなく共通の正規化が、どの取得元にも同じに当てる。"""
     from game_signal_scout.services import normalize
+    from game_signal_scout.sources import factory
+    monkeypatch.setattr(factory, "load_sources_config", lambda: {"catalog_x": {"work_keyspace": KS, "work_link": r"store\.steampowered\.com/app/(\d{1,10})"}})   # 作品のページへのリンクの形は取得元の記述から
+    known_works(conn, ["2246340"])
     t = day_range(DAY)[0] + timedelta(hours=1)
     for src in ("src_a", "src_b"):
         conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES "
@@ -250,7 +307,7 @@ def test_common_normalizer_applies_the_same_rules_to_every_source(conn):
         got[src] = {i: (a, m, "stream" in f, l) for i, a, m, f, l in conn.execute(
             "SELECT item_id, appid, matched_by, flags, lang FROM player_post WHERE source=%s", (src,))}
     assert got["src_a"] == got["src_b"]                                          # 取得元が違っても同じ結果
-    assert got["src_a"]["l"][:2] == ("2246340", "steam_link") and got["src_a"]["p"][2] is True and got["src_a"]["j"][3] == "ja"
+    assert got["src_a"]["l"][:2] == ("2246340", "link") and got["src_a"]["p"][2] is True and got["src_a"]["j"][3] == "ja"
 
 
 def test_non_fetch_contract_matches_anime_defaults():
@@ -294,7 +351,7 @@ def test_every_enabled_source_has_a_terms_record_and_prohibited_ones_are_not_rea
 
 # 作品の鍵が 1 つのストアの作品番号そのもの（#3 2026-11-11 の最終監査で記録した構造の不適合。作品の鍵を取得元に依らない形にするには本番の DB の作りを変える移行が要り、
 # オーナーの承認が要る）。それを説明する 4 ファイルと、画像の配信元を許す画面の安全設定（web/app.py）だけは、ストアの名前を書いてよい。直したらここから外す
-KNOWN_STORE_KEY_FILES = {"services/identify.py", "repositories/work.py", "ops/work.py", "web/app.py"}
+KNOWN_STORE_KEY_FILES: set[str] = set()   # 作品の鍵を取得元に依らない形にした（#3 段階 B。ARCHITECTURE §8）ので、例外はない
 
 
 def test_common_code_does_not_name_sources_even_in_descriptions():

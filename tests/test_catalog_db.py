@@ -10,7 +10,7 @@ from datetime import date, datetime, timezone
 
 import pytest
 
-from conftest import make_dump, report
+from conftest import KS, known_works, make_dump, report
 from game_signal_scout.ops import runner
 from game_signal_scout.repositories import public_document
 from game_signal_scout.sources import factory
@@ -47,11 +47,12 @@ def run(conn, tmp_path, monkeypatch):
     recs = [report("2246340", T0 + i * 3600, False, i) for i in range(8)]
     path = make_dump(tmp_path / "reports_nov1_2026.tar.gz", recs)
     cfg = {"protondb": {"adapter": "game_signal_scout.sources.protondb:ProtonDBDump", "local_path": str(path),
-                        "normalizer": "game_signal_scout.services.normalize:reports"},
-           "steam_charts": {"adapter": "game_signal_scout.sources.steam_charts:SteamCharts", "normalizer": "game_signal_scout.services.normalize:activity"},
-           "steam_store": {"adapter": "game_signal_scout.sources.steam_store:SteamStore", "normalizer": "game_signal_scout.services.normalize:profiles",
+                        "normalizer": "game_signal_scout.services.normalize:reports", "work_keyspace": KS},
+           "steam_charts": {"adapter": "game_signal_scout.sources.steam_charts:SteamCharts", "normalizer": "game_signal_scout.services.normalize:activity", "work_keyspace": KS},
+           "steam_store": {"adapter": "game_signal_scout.sources.steam_store:SteamStore", "normalizer": "game_signal_scout.services.normalize:profiles", "work_keyspace": KS,
                            "active_days": 100000, "max_games": 10, "refresh_days": 30, "batch_size": 1}}
     monkeypatch.setattr(factory, "load_sources_config", lambda: cfg)
+    known_works(conn, ["2246340", "730", "999"])   # 移行の前からある作品（番号はそのまま）
     http = FakeHttp({"GetMostPlayedGames": {"response": {"rollup_date": T0 + 7 * 86400, "ranks": [
                          {"rank": 1, "appid": 730, "last_week_rank": 1, "peak_in_game": 1300000},
                          {"rank": 2, "appid": 999, "last_week_rank": 3, "peak_in_game": 5000}]}},

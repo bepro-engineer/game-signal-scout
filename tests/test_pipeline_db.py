@@ -7,7 +7,7 @@ import psycopg
 import pytest
 from psycopg.conninfo import make_conninfo
 
-from conftest import ADMIN, make_dump, report
+from conftest import ADMIN, known_works, make_dump, report
 from game_signal_scout import config, db
 from game_signal_scout.ops import runner
 from game_signal_scout.repositories import source_item
@@ -32,6 +32,14 @@ def dump_records():
     reps += [report("A", T0 + i * DAY, True, 100 + i, note="anti-cheat blocks launch") for i in range(7)]
     reps += [report("C", T0 + i * 3600, False, i) for i in range(20)]
     return reps
+
+
+@pytest.fixture(autouse=True)
+def existing_works(request):
+    """移行の前からある作品（A・C。番号はそのまま。名前空間は記述の動作の報告の取得元のもの）。"""
+    if "conn" in request.fixturenames:
+        from game_signal_scout.sources import factory
+        known_works(request.getfixturevalue("conn"), ["A", "C"], factory.load_sources_config()["protondb"]["work_keyspace"])
 
 
 def reader_for(path, batch_size=4, fail_after=None):
@@ -143,7 +151,8 @@ def test_items_missing_from_the_next_dump_are_deleted(conn, tmp_path):
     reps = dump_records()
     collect_with(conn, make_dump(tmp_path / "reports_oct1_2026.tar.gz", reps))
     from game_signal_scout.services.normalize import normalize
-    normalize(conn, "protondb")
+    from game_signal_scout.sources import factory
+    normalize(conn, "protondb", settings=factory.load_sources_config()["protondb"])
     res = collect_with(conn, make_dump(tmp_path / "reports_nov1_2026.tar.gz", reps[2:]))   # 新しい月に 2 件が消えた
     assert (res.inserted, res.deleted, res.anomalies) == (0, 2, [])
     assert (count(conn, "source_item"), count(conn, "player_report")) == (35, 35)            # 正規化した行も一緒に消える

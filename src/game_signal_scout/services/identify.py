@@ -1,10 +1,11 @@
-"""作品の同定（Game 固有）: 発言 → Steam の app ID。
+"""作品の同定（Game 固有）: 発言 → 作品の番号（repositories/work_key。#3 段階 B）。
 
-1. Steam のストアのリンク（store.steampowered.com/app/<id>）があれば、その app ID（複数なら最初のもの）。
+1. 作品のページへのリンク（取得元の記述の work_link。どの取得元の記述も同じに読む）があれば、その作品（複数なら最初のもの。
+   リンクの番号から作品の番号への引き当ては正規化の Service が済ませ、payload の linked_works で渡す）。
 2. なければ題名の一致: 作品の辞書（作品の情報 game_profile にある作品の題名。repositories/post.known_titles）を、語の並び（NFKC・casefold の後の \\w+ の列）で照合し、最も長い一致を採る。
    2026-11-07 の実データ（2 分の受信・160 件）で、緩い規則は 65 件を同定し、目視ではほぼすべてが誤り（Back・Door・Pressure など
    1 語の題名、スポーツの "game"・"play"、ラジオの "Now playing"）だった。そのため次をすべて満たすときだけ採る:
-   - 題名が 2 語以上で、min_title_chars 以上（1 語の題名は辞書に入れない。Steam のリンクでだけ同定する）
+   - 題名が 2 語以上で、min_title_chars 以上（1 語の題名は辞書に入れない。作品のページへのリンクでだけ同定する）
    - 本文の中の大文字・小文字が題名と同じ（題名は固有名詞として書かれる）
    - 題名の部分の外に、ゲームに固有の文脈の語（title_context_words。"play"・"season" のようなスポーツと共通の語は入れない）がある
      （2 回目の測定で "Puzzle Game"・"Football Game" が題名の中の "game" で通ったため）
@@ -100,17 +101,17 @@ class TitleIndex:
 
 
 def identify(payload: dict, index: TitleIndex) -> tuple[str | None, str | None, str | None]:
-    """(appid, 題名, 方法)。同定できなければ (None, None, None)。"""
-    steam = payload.get("steam_appids") or []
-    if steam:
-        appid = str(steam[0])
-        return appid, index.title_of.get(appid), "steam_link"
+    """(作品の番号, 題名, 方法)。同定できなければ (None, None, None)。"""
+    linked = payload.get("linked_works") or []
+    if linked:
+        work = str(linked[0])
+        return work, index.title_of.get(work), "link"
     text = " ".join(x for x in (payload.get("text"), payload.get("link_title"), " ".join(payload.get("tags") or [])) if x)
     hit = index.match(text)
     return (hit[0], hit[1], "title") if hit else (None, None, None)
 
 
-def version(titles: list[tuple[str, str]], ambiguous: list[str], context_words: list[str], min_chars: int, game_only: bool) -> str:
+def version(titles: list[tuple[str, str]], ambiguous: list[str], context_words: list[str], min_chars: int, game_only: bool, links: list | None = None) -> str:
     """正規化の版: 同定の規則（このファイル）・印の規則・言語の判定・正規化の手順・作品の辞書・記述（曖昧な題名・文脈の語・最小の字数・ゲームだけの場か）の指紋。
     どれかが変われば、発言の行を作り直す（Anime の §5.3・§21）。"""
     import hashlib
@@ -122,4 +123,6 @@ def version(titles: list[tuple[str, str]], ambiguous: list[str], context_words: 
     for a, t in sorted((str(a), str(t)) for a, t in titles):
         h.update(f"{a}\t{t}\n".encode())
     h.update(repr((sorted(ambiguous), sorted(context_words), min_chars, game_only)).encode())
+    if links:   # 作品のページへのリンクの形（取得元の記述）
+        h.update(repr(sorted(links)).encode())
     return h.hexdigest()[:16]
