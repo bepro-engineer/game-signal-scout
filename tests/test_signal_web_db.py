@@ -67,7 +67,8 @@ def test_anime_pages_and_api_serve_game_documents(client):
         assert c.get(path).status_code == 200, path
     assert c.get("/api/days").json()["days"] == [last.isoformat()]               # 画面に出す日は観測を始めた日から（先月の日を出さない）
     d = c.get(f"/api/days/{last.isoformat()}").json()["dashboard"]
-    assert d["works_today"] == 2 and any(x["id"] == "w2246340" for x in d["checks"])   # 普段（2 人）から 12 人に増えた作品が「今チェック」に出る
+    assert d["works_today"] == 2 and (any(x["id"] == "w2246340" for x in d["checks"])   # 普段（2 人）から 12 人に増えた作品が「今チェック」に出る
+                                      or (d["lead"].get("work") == "w2246340" and d["checks_lead"] == 1))   # 見出しの主役なら今日の兆しで紹介し、今日の注目からは除く（#2 2026-11-11）
     assert {x["code"] for x in d["lang_obs"]["langs"]} >= {"en", "ja"}
     assert "https://*.steamstatic.com" in c.get("/").headers["content-security-policy"]
 
@@ -175,3 +176,40 @@ def test_todays_signal_separates_the_lead_title_from_the_others(client):
     js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/dashboard.js").read_text()
     for s_ in ('MAIN ? `<a class="g-cov" href="${A.workUrl(MAIN.id)}"', "ほかに、普段より話題が動いた作品", "ほかに、この日話題にした人が多かった作品"):
         assert s_ in js
+
+
+def test_todays_pick_does_not_repeat_the_lead_title():
+    """今日の注目（#2 2026-11-11 オーナー）: 見出しの主役は今日の兆しで紹介し、今日の注目には出さない。並びは検出の順のまま。
+    ほかに動いた作品がなければ空（ほかの作品で埋めない）。主役がいない・主役が動いた作品にない日は、そのまま。"""
+    from game_signal_scout.signal.content import checks_without_lead
+    ck = lambda *ids: [{"id": i} for i in ids]
+    ids = lambda xs: [x["id"] for x in xs]
+    shown, n = checks_without_lead(ck("w1", "w2", "w3"), {"work": "w2"})          # 重複あり: 主役だけ除き、順は保つ
+    assert ids(shown) == ["w1", "w3"] and n == 1
+    shown, n = checks_without_lead(ck("w1", "w3"), {"work": "w9"})                # 重複なし: そのまま
+    assert ids(shown) == ["w1", "w3"] and n == 0
+    assert checks_without_lead(ck("w2"), {"work": "w2"}) == ([], 1)               # 主役だけ: 空（埋めない）
+    assert checks_without_lead([], {"work": "w2"}) == ([], 0)                     # 候補なし
+    assert ids(checks_without_lead(ck("w1", "w2"), {})[0]) == ["w1", "w2"]       # 主役なし
+    assert ids(checks_without_lead(ck("w1", "w2"), None)[0]) == ["w1", "w2"]
+
+
+def test_published_days_never_show_the_lead_title_in_todays_pick(client):
+    """公開したすべての日（最新の日と古い日）で、主役は今日の注目にいない。除いた数は 0 か 1 で、主役がいた日だけ 1。"""
+    c, last, docs = client
+    from datetime import timedelta
+    seen = 0
+    for k in range(0, 40):
+        r = c.get(f"/api/days/{(last - timedelta(days=k)).isoformat()}")
+        if r.status_code != 200:
+            continue
+        d = r.json()["dashboard"]
+        w = (d.get("lead") or {}).get("work")
+        assert all(x["id"] != w for x in d["checks"]) and d["checks_lead"] in (0, 1)
+        assert d["checks_lead"] == 0 or w
+        seen += 1
+    assert seen >= 1
+    from pathlib import Path
+    js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/dashboard.js").read_text()
+    assert "cks.sort" not in (Path(__file__).parents[1] / "src/game_signal_scout/signal/content.py").read_text()
+    assert "今日の兆しで紹介した作品を除く" in js and "上の今日の兆しで紹介した作品のほかにはありませんでした" in js

@@ -388,13 +388,22 @@ def dashboard(ctx: Ctx, d: date) -> dict:
     # 今日の兆しの作品で、プレイヤーがしたこと・起きたこと（読み取りは直近の発言なので、最新の日だけ。面白さの上位 3 件）
     if lead.get("work") and ctx.pdays and d == ctx.pdays[-1] and (wf := work_finds(ctx).get(int(lead["work"][1:]))) and wf["good"]:
         lead["finds"] = {"good": wf["good"][:3], "window_days": wf["window_days"]}
-    if lead.get("work"):   # 「今日の注目」（大カード）も見出しの作品に（一覧にあるときだけ。docs/TODAYS-SIGNAL-PAGES.md §1）
-        cks.sort(key=lambda c: 0 if c["id"] == lead["work"] else 1)
+    # 「今チェックしておきたい作品」（今日の注目）は、見出しの主役を除いた作品（#2 2026-11-11 オーナー: 同じ作品を 2 度紹介しない。
+    # 主役は今日の兆しで紹介する）。並びは検出の順のまま。除いた作品の数は checks_lead に残す（見出しの作品が一覧にあった日だけ 1）
+    shown, ck_lead = checks_without_lead(cks, lead)
     return {"day": d.isoformat(), "label": dlabel(d), "complete": _complete(ctx, d), "obs_status": ctx.gobs.get(d, "none"),
             "dash_digest": {"enabled": bool(dd.get("enabled"))}, "lead": lead, "ui_next": bool(ctx.ui_next), "works_today": len(m), "featured": featured,
             "days": [{k: v for k, v in x.items() if k != "top"} for x in days], "shape": shape, "turnover": turns, "entrants": entrants,
-            "top1": t1, "top": top, "checks": cks, "lang_obs": lang_obs, "summary": summ, "movement": mv,
+            "top1": t1, "top": top, "checks": shown, "checks_lead": ck_lead, "lang_obs": lang_obs, "summary": summ, "movement": mv,
             "display": {k: int(v) for k, v in series.load_pages()["display"].items()}}   # Q1・Q2 の一覧の初めの件数と足す件数（common.js の moreList。#24）
+
+
+def checks_without_lead(cks: list[dict], lead: dict) -> tuple[list[dict], int]:
+    """今日の注目の作品 = 動いた作品から見出しの主役を除いたもの（並びは検出の順のまま）と、除いた数（0 か 1）。
+    主役がいない日・主役が動いた作品にない日は、そのまま。残りが空なら空（ほかの作品で埋めない）。"""
+    w = (lead or {}).get("work")
+    shown = [c for c in cks if not w or c["id"] != w]
+    return shown, len(cks) - len(shown)
 
 
 CLS = {"surge": "surge", "emergence": "new", "new_language": "overseas", "continuing": "cont"}

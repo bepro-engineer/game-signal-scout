@@ -208,7 +208,8 @@
 
   /* ---------- 今チェックしておきたい作品（本番のその日のカード。並びも本番のまま。順位ではない） ---------- */
   // 代表カード（ck1）には話題の言語圏の一覧（spread）を出さない（#7: 言語圏の多い作品でカードが縦長になる。言語圏ごとの反応は作品詳細・言語圏の広がりのページにある）
-  { const CK = G.checks;
+  // 見出しの主役は今日の兆しで紹介するので、ここには出さない（#2 2026-11-11。checks から除いてある。除いた数は checks_lead）
+  { const CK = G.checks, CKL = G.checks_lead || 0;
     const first = c => String((c.first || {})[L] || "").replace(/\s*\d+〜\d+時/, "").replace(/,\s*\d+–\d+h/, "");
     const grow = c => c.grow && c.grow[0] != null && c.grow[1] != null ? tr(`${c.grow[0]}人→${c.grow[1]}人`, `${c.grow[0]}→${c.grow[1]} people`) : "";
     const nl = c => (c.new_langs || []).map(x => x[L]).join(tr("・", ", "));
@@ -216,11 +217,13 @@
       ...(nl(c) ? [`${tr("新しい言語圏", "New language areas")}: ${nl(c)}`] : [])].join(tr(" ・ ", " · "));
     const small = c => `<li class="ck2" data-cls="${esc(c.cls || "")}">${link(c)}${art(c)}<div class="ck2-t">${wn(c.name, 1)}<span class="ck2-l"><i>${esc((c.label || {})[L] || "")}</i>${esc((c.line || {})[L] || "")}</span><span class="ck2-m" title="${esc(meta(c))}">${esc(meta(c))}</span></div></li>`;
     if (!CK.length) {
-      $("others").innerHTML = `<h2 class="g-h">${tr("今チェックしておきたい作品", "Worth a look now")}</h2><div class="rv-empty"><div><b>${tr("この日に動き始めた作品は見つかりませんでした", "No title started moving on this day")}</b></div></div>`;
+      $("others").innerHTML = `<h2 class="g-h">${tr("今チェックしておきたい作品", "Worth a look now")}</h2><div class="rv-empty"><div><b>${CKL
+        ? tr("この日に動き始めた作品は、上の今日の兆しで紹介した作品のほかにはありませんでした", "No other title started moving on this day besides the one in Today's signal above")
+        : tr("この日に動き始めた作品は見つかりませんでした", "No title started moving on this day")}</b></div></div>`;
     } else {
       const top = CK[0], rest = CK.slice(4);
       $("others").innerHTML = `
-      <h2 class="g-h">${tr("今チェックしておきたい作品", "Worth a look now")}<small>${tr(`それまで静かだった作品が、いま動き始めた（順位ではありません）。この日に見つかった${CK.length}作品から。`, `Titles that were quiet and just started moving (not a ranking). From ${CK.length} found on this day.`)}</small></h2>
+      <h2 class="g-h">${tr("今チェックしておきたい作品", "Worth a look now")}<small>${tr(`それまで静かだった作品が、いま動き始めた（順位ではありません）。この日に見つかった${CK.length + CKL}作品から${CKL ? "（今日の兆しで紹介した作品を除く）" : ""}。`, `Titles that were quiet and just started moving (not a ranking). From ${CK.length + CKL} found on this day${CKL ? ", except the one in Today's signal" : ""}.`)}</small></h2>
       <div class="ckg">
         <article class="ck1" data-cls="${esc(top.cls || "")}">${link(top)}<div class="ck1-bg">${art(top)}</div>
           <div class="ck1-t">
