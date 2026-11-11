@@ -12,11 +12,12 @@ main.g { gap: 14px; }
 .g-row .art { aspect-ratio: 3 / 4; border-radius: 12px; box-shadow: 0 2px 10px rgba(40,30,80,.14); }
 .g-row .wn { margin-top: 10px; font-size: 16px; line-height: 1.45; }
 /* 今日の兆しの主役とほかの作品（#2 2026-11-10）: 主役の表紙は見出しの横（押すと作品詳細）。ほかの作品は選んだ理由ごとの組で、主役より小さく */
-/* 主役の表紙と見出し・本文を 1 つのまとまりとしてカードの中央に置く（#2 2026-11-11 オーナー: 表紙が左端に寄りすぎ）。
-   まとまりの幅に上限を置いて左右の余白をそろえ、表紙は本文の縦の中央に。画像だけを動かさない。表紙がない日は本文だけを同じ幅で中央に */
-.g-main { display: grid; grid-template-columns: 184px minmax(0, 600px); justify-content: center; gap: 0 36px; align-items: center; }
-.g-main.nocov { grid-template-columns: minmax(0, 1fr); }
-.g-cov { display: block; margin-top: 8px; text-decoration: none; }
+/* 主役の表紙をカードの中央に（#2 2026-11-11 オーナー: 表紙が左に寄る・中央になっていない）。どの幅でも
+   表紙 → 作品名 → 見出しを中央にそろえて縦に並べ、本文は中央に置いた読みやすい幅の中で左そろえ。表紙がない日は本文だけを同じ形で */
+.g-main { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 0; }
+.g-main .g-txt { width: 100%; max-width: 720px; }
+.g-main .g-txt > h1, .g-main .g-txt > .g-headline { text-align: center; }
+.g-cov { display: block; width: 168px; margin-top: 4px; text-align: center; text-decoration: none; }
 .g-cov .art { aspect-ratio: 3 / 4; border-radius: 14px; box-shadow: 0 4px 16px rgba(40,30,80,.18); }
 .g-cov span { display: block; margin-top: 8px; font-size: 14px; font-weight: 700; color: var(--accent); }
 .g-oth { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px 28px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
@@ -26,12 +27,11 @@ main.g { gap: 14px; }
 .g-orow .wn { margin-top: 6px; font-size: 13px; line-height: 1.4; }
 .g-lb { display: inline-block; margin-top: 4px; padding: 0 6px; border-radius: 6px; font-size: 11px; font-weight: 700; line-height: 1.7; background: var(--accent-soft, #EFEEFC); color: var(--accent, #5B55D6); }
 .g-lb-n { background: #F1F2F6; color: var(--ink-3); }
-@media (max-width: 600px) {   /* スマホ: 見出しだけを表紙の横に、本文・根拠は下に全幅で */
+@media (max-width: 600px) {
   /* スマホ（#2 2026-11-11 オーナー: 表紙が左に寄る）: 表紙をカードの中央の上に、作品名もその下の中央に。本文は読みやすいよう左そろえ */
-  .g-main { grid-template-columns: minmax(0, 1fr); justify-content: stretch; gap: 0; }
-  .g-main .g-cov { width: 132px; margin: 4px auto 0; text-align: center; }
-  .g-main .g-txt > h1 { font-size: 24px; line-height: 1.4; margin-top: 10px; text-align: center; }
-  .g-main .g-txt > h1.g-short + .g-headline { text-align: left; } .g-cov span { font-size: 12px; } .g-orow { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .g-main .g-cov { width: 132px; }
+  .g-main .g-txt > h1 { font-size: 24px; line-height: 1.4; margin-top: 10px; }
+  .g-main .g-txt > .g-headline { text-align: left; } .g-cov span { font-size: 12px; } .g-orow { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .g-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
 .g-foot span { font-size: 14px; color: var(--ink-3); }
 .g-foot a { font-size: 16px; font-weight: 700; color: var(--accent); text-decoration: none; }
