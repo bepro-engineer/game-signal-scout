@@ -319,6 +319,6 @@ def test_intent_pages_open_with_their_own_catch_copy():
             "friends": ("一緒だから、もっと面白い。", "Better together.")}
     for k, (ja, en) in want.items():
         h = (root / f"templates/pages/{k}.html").read_text()
-        assert f'</h2><p class="it-copy" data-en="{en}">{ja}</p>' in h and "プレイヤーが書いた作品" not in h
+        assert f'</h2><p class="it-copy" data-en="{en}">' in h and ja in h.replace("<span>", "").replace("</span>", "") and "プレイヤーが書いた作品" not in h
     css = (root / "static/finds.css").read_text()
     assert "main.it .fd-title .it-copy { margin: 4px 0 2px; font-size: 22px; font-weight: 800" in css and ".it-why { margin: 0 0 10px; font-size: 13px" in css

@@ -113,4 +113,5 @@
 
 /* 4 つの遊ぶ目的のページの見出しの直下のキャッチコピー（#2 2026-11-11）: 見出しの次に目立つ大きさ・太さ。選び方の説明（.it-why）は小さな補足 */
 main.it .fd-title .it-copy { margin: 4px 0 2px; font-size: 22px; font-weight: 800; line-height: 1.45; letter-spacing: .02em; color: var(--accent, #5246c9); }
+main.it .fd-title .it-copy span { display: inline-block; }   /* 文の区切りで折り返す（語の途中で切らない） */
 @media (max-width: 600px) { main.it .fd-title .it-copy { font-size: 18px; } }
