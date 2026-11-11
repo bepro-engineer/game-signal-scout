@@ -42,12 +42,12 @@ class Page:
 PAGES: dict[str, Page] = {
     "index": Page("ダッシュボード", "Dashboard", CSS_BASE, "day", "dashboard.js", ("world.js",)),
     # Game: プレイヤーの発見（#2。「世界で広がる作品」の置き換え。古い spread.html は finds.html へ転送する）
-    "finds": Page("注目の作品", "Titles worth a look", CSS_BASE + ["finds.css"], "pages", "finds.js"),
-    # 遊びたい体験の入口（#2 2026-11-11 オーナー確定。services/intents が体験の読み取りで作品を選ぶ。部品は intent.js、見た目は注目の作品と同じ finds.css）
-    "deep": Page("じっくり没頭したい", "Get absorbed", CSS_BASE + ["finds.css"], "pages", "intent.js"),
-    "short": Page("短時間で楽しみたい", "Have fun in a short time", CSS_BASE + ["finds.css"], "pages", "intent.js"),
-    "novel": Page("新しい体験がしたい", "Try something new", CSS_BASE + ["finds.css"], "pages", "intent.js"),
-    "friends": Page("友達と遊びたい", "Play with friends", CSS_BASE + ["finds.css"], "pages", "intent.js"),
+    # 遊びたい体験の 4 つの入口は、注目の作品の上部「どんな体験を探す？」で選ぶ（#2 2026-11-11 オーナーの配置確定。結果の部品は intent.js）
+    "finds": Page("注目の作品", "Titles worth a look", CSS_BASE + ["finds.css"], "pages", "finds.js", ("intent.js",)),
+    # ゲームを知る: 賛否が分かれる作品（#2 2026-11-11。services/intents.divided。見た目は注目の作品と同じ finds.css）
+    "split": Page("賛否が分かれる作品", "Titles with divided opinions", CSS_BASE + ["finds.css"], "pages", "divided.js"),
+    # ゲームを見つける: まもなく発売（サイドバーの欄と同じ api/soon を全件）
+    "soon": Page("まもなく発売", "Coming soon", CSS_BASE + ["finds.css"], "", "soon.js"),
     "lang": Page("言語別の作品", "Titles by language", CSS_BASE, "day", "lang.js"),
     # 「再燃」はプレイヤーの発見の「いま変わったこと」（finds.html?view=changed）にまとめた（#2。アニメの放送後の前提は Game に合わない。古い URL は転送）
     "langspread": Page("言語圏の広がり", "Language spread", CSS_PAGE + ["langspread.css"], "pages", "langspread.js"),

@@ -73,3 +73,22 @@ def short_cautions(works: dict[int, dict]) -> list[dict]:
         if xs:
             out.append({"work": w, "voices": sorted(xs, key=lambda x: -(x.get("people") or 1))[:MAX_WARN], "people": long_voices(xs)})
     return sorted(out, key=lambda it: (-it["people"], it["work"]))
+
+
+DIVIDED_MIN = 2   # 面白いと書いた人・不満を書いた人が、どちらもこの数以上の作品だけ（ひとりずつの声では「分かれる」と言わない）
+
+
+def divided(works: dict[int, dict]) -> list[dict]:
+    """賛否が分かれる作品（#2 2026-11-11 オーナーの左メニューの候補。実データで成立を確かめて採用）: 同じ作品で、面白いと書いた人と
+    不満を書いた人がどちらも DIVIDED_MIN 人以上。人数はこちらで数えた体験の人数（面白い体験の反対の声も不満に数える）。賛否の混じる体験（mixed）は数えない。
+    返り値: [{work, fun, against, fun_xs, against_xs}]（両方の声の少ない側が多い順＝より割れている順）。"""
+    out = []
+    for w, wf in works.items():
+        xs = wf.get("xs") or []
+        fun_xs = sorted([x for x in xs if x.get("verdict") == "fun"], key=lambda x: -(x.get("people") or 1))
+        bad_xs = sorted([x for x in xs if x.get("verdict") == "frustration"], key=lambda x: -(x.get("people") or 1))
+        fun = sum(x.get("people") or 1 for x in fun_xs)
+        bad = sum(x.get("people") or 1 for x in bad_xs) + sum(x.get("against") or 0 for x in fun_xs)
+        if fun >= DIVIDED_MIN and bad >= DIVIDED_MIN and bad_xs:
+            out.append({"work": w, "fun": fun, "against": bad, "fun_xs": fun_xs[:MAX_WHY], "against_xs": bad_xs[:MAX_WHY]})
+    return sorted(out, key=lambda it: (-min(it["fun"], it["against"]), -(it["fun"] + it["against"]), it["work"]))

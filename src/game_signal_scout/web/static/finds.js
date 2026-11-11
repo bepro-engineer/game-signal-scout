@@ -5,7 +5,11 @@
 (() => {
   const A = window.ASS, { tr, esc, num, nm, tx } = A, FI = ((A.P || {}).finds || {}).items || [];
   const $ = id => document.getElementById(id);
-  const K = (() => { try { return new URLSearchParams(location.search).get("k") || ""; } catch (e) { return ""; } })();
+  const Q = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(""); } })();
+  // 選び方（#2 2026-11-11 オーナーの配置確定）: 主な入口は 4 つの遊びたい体験（i）。細かな面白さの種類（k）は、その下の小さな絞り込み
+  const IN = (A.INTENTS || []).map(x => x[0]), I = IN.includes(Q.get("i")) ? Q.get("i") : "";
+  const K = Q.get("k") || "";
+  const IP = ((A.P || {}).intents) || {};
   const KIND = { conquer: ["強敵を自力で乗り越える手応え", "Overcoming tough challenges"], explore: ["探して、見つける喜び", "The joy of exploring"],
     story: ["物語と世界に浸る", "Getting lost in the story"], grow: ["育てて、作り上げる楽しさ", "Building and growing"], team: ["仲間と作戦が決まる快感", "Teamwork that clicks"],
     versus: ["相手との読み合い・駆け引き", "Outplaying opponents"], feel: ["思いどおりに動かす気持ちよさ", "How good it feels to play"], surprise: ["予想外が起きる面白さ", "Surprises"] };
@@ -38,15 +42,22 @@
     .filter(Boolean).sort((a, b) => order(a.top, b.top));
   const kinds = Object.keys(KIND).map(k => [k, [...byWork.values()].filter(xs => xs.some(x => x.kind === k)).length]).filter(([, n]) => n);
   const ppl = n => n > 1 ? tr(`${num(n)}人が同じことを書いた`, `${num(n)} players wrote the same`) : tr("1人の体験", "1 player");
-  // 絞り込み（#7-A）: 見出しと補助文 → 「すべて」と件数 → 体験の種類（体験のある種類だけ・実際の作品数。段がそろう列数）→ いま表示している結果と解除。
-  // 日本語の印の凡例は絞り込みと混ぜず、カードの一覧の説明として下に置く。分類・件数・押したときの動きは変えない
-  const nK = kinds.length, cols = nK <= 4 ? nK : [4, 3].sort((x, y) => (Math.ceil(nK / x) * x - nK) - (Math.ceil(nK / y) * y - nK) || y - x)[0];
-  const shown = cardsOf.length;
+  // 選び方（#7-A を作り直し。#2 2026-11-11）: 見出し → 主な入口（すべて・4 つの遊びたい体験。件数つき）→ 細かな面白さの種類（入口に合う種類だけ。小さく）
+  // → いま表示している結果と解除。日本語の印の凡例は選び方と混ぜず、カードの一覧の説明として下に置く
+  const url = (i, k) => `finds.html${i || k ? `?${[i && `i=${i}`, k && `k=${k}`].filter(Boolean).join("&")}` : ""}`;
+  const nI = k => ((IP[k] || {}).items || []).length;
+  const sub = I ? kinds.filter(([k]) => (A.INTENT_KINDS[I] || []).includes(k)) : kinds;
+  const nKind = (k, n) => I ? ((IP[I] || {}).items || []).filter(w => w.why.some(x => x.kind === k)).length : n;
+  const NAMES = Object.fromEntries((A.INTENTS || []).map(([k, ja, en, dja, den]) => [k, [ja, en, dja, den]]));
+  const shown = I ? ((IP[I] || {}).items || []).filter(w => !K || w.why.some(x => x.kind === K)).length : cardsOf.length;
+  const nameOf = k => (KIND[k] || [k, k]);
   $("fd-note").innerHTML = good.length ? `<div class="fk-box"><div class="fk-h"><div><h3>${tr("どんな体験を探す？", "What kind of fun are you looking for?")}</h3>
-        <p>${tr("選ぶと、その面白さをプレイヤーが書いた作品だけを表示します。", "Pick one to show only titles where players wrote about it.")}</p></div>
-        <a href="finds.html" class="fk-all${!K ? " on" : ""}"${!K ? ' aria-current="true"' : ""}>${tr("すべての面白さ", "All kinds of fun")}<small>${tr(`${num(byWork.size)}作品`, `${num(byWork.size)} titles`)}</small></a></div>
-      <div class="fk" style="--c:${cols}" data-n="${nK}">${kinds.map(([k, n]) => `<a href="finds.html?k=${k}"${K === k ? ' class="on" aria-current="true"' : ""}><span>${esc(tr(...KIND[k]))}</span><small>${tr(`${num(n)}作品`, `${num(n)} titles`)}</small></a>`).join("")}</div>
-      ${K && KIND[K] ? `<p class="fk-now" role="status">${tr(`「${KIND[K][0]}」を書いた作品 ${num(shown)}作品を表示しています`, `Showing ${num(shown)} titles where players wrote about “${KIND[K][1]}”`)}<a href="finds.html">${tr("選択を解除してすべて表示", "Clear and show all")} ×</a></p>` : ""}</div>
+        <p>${tr("遊びたい気分を選ぶと、それを実際に遊んだプレイヤーが書いた作品だけを表示します。", "Pick what you feel like playing to see titles where players wrote about it.")}</p></div></div>
+      <div class="fi4" role="group" aria-label="${tr("遊びたい体験", "What you want to play")}">
+        <a href="${url("", "")}"${!I && !K ? ' class="on" aria-current="true"' : ""}><span>${tr("すべて", "All")}</span><small>${tr(`${num(byWork.size)}作品`, `${num(byWork.size)} titles`)}</small></a>
+        ${IN.map(k => `<a href="${url(k, "")}"${I === k && !K ? ' class="on" aria-current="true"' : I === k ? ' class="on"' : ""}><span>${esc(tr(NAMES[k][0], NAMES[k][1]))}</span><em>${esc(tr(NAMES[k][2], NAMES[k][3]))}</em><small>${tr(`${num(nI(k))}作品`, `${num(nI(k))} titles`)}</small></a>`).join("")}</div>
+      ${sub.length > 1 ? `<div class="fk2"><span>${I ? tr("さらに面白さの種類で絞る", "Narrow by kind of fun") : tr("細かな面白さの種類で絞る", "Or by kind of fun")}</span>${sub.map(([k, n]) => `<a href="${url(I, K === k ? "" : k)}"${K === k ? ' class="on" aria-current="true"' : ""}>${esc(tr(...nameOf(k)))}<small>${num(nKind(k, n))}</small></a>`).join("")}</div>` : ""}
+      ${I || (K && KIND[K]) ? `<p class="fk-now" role="status">${tr(`「${[I && NAMES[I][0], K && KIND[K] && KIND[K][0]].filter(Boolean).join("・")}」の作品 ${num(shown)}作品を表示しています`, `Showing ${num(shown)} titles for “${[I && NAMES[I][1], K && KIND[K] && KIND[K][1]].filter(Boolean).join(" · ")}”`)}<a href="finds.html">${tr("選択を解除してすべて表示", "Clear and show all")} ×</a></p>` : ""}</div>
     <div class="flg"><b>${tr("カードの日本語の印", "Japanese support on cards")}</b><span>${jp("voice")} ${tr("声・字幕・UI が日本語", "audio, subtitles and UI")}</span><span>${jp("sub")} ${tr("字幕・UI が日本語（声は外国語）", "subtitles and UI")}</span>
       <span>${jp("ui")} ${tr("メニュー等のみ日本語", "menus only")}</span><span>${jp("none")}</span><small>${tr("出典: 販売元のストアの対応言語", "Source: publisher's store listing")}</small>
       <small>${tr("価格は日本のストアの価格（円）。確かめた日はカードの価格に触れると表示。割引中は通常価格に線", "Prices are Japan store prices in yen; hover for the date checked. Discounts show the regular price struck through")}</small></div>` : "";
@@ -56,7 +67,7 @@
         ${rest.length ? `<ul class="fc-r">${rest.slice(0, 2).map(r => `<li>${esc(r.appeal)}<small>${r.people > 1 ? tr(`${num(r.people)}人`, `${num(r.people)} players`) : tr("1人", "1 player")}</small></li>`).join("")}</ul>` : ""}
         ${(WB.get(x.w.id) || []).length ? `<div class="fc-n"><span>${tr("買う前に知っておきたいこと", "Good to know before buying")}</span><ul>${WB.get(x.w.id).slice(0, 2).map(r => `<li>${r.caution ? `<em>${esc(tr(...CJ[r.caution]))}</em>` : ""}${esc(r.act)} → ${esc(r.result)}<small>${r.people > 1 ? tr(`${num(r.people)}人`, `${num(r.people)} players`) : tr("1人", "1 player")}</small></li>`).join("")}</ul></div>` : ""}
         <small><span>${ppl(x.people)}</span>${x.against ? `<span class="fc-w">${tr(`反対の声 ${num(x.against)}人`, `${num(x.against)} disagreed`)}</span>` : ""}${rest.length > 2 ? `<span>${tr(`ほかに${num(rest.length - 2)}件の面白さ`, `+${num(rest.length - 2)} more`)}</span>` : ""}${jp(lv(x.w))}${A.priceTag(x.w)}</small></div></a>`;
-  $("fd-list").innerHTML = !good.length
+  $("fd-list").innerHTML = I ? A.intentView(I, K) : !good.length
     ? `<div class="rv-empty"><div><b>${tr("まだプレイヤーの発言を読んだ作品がありません", "No titles have been read yet")}</b></div></div>`
     : `<div class="fcs" data-n="${cardsOf.length}" style="--n:${Math.min(3, cardsOf.length)}">${cardsOf.map(card).join("")}</div>
       <p class="fsrc">${tr("世界のプレイヤーが直近 7 日に書いた発言を、作品ごとに AI が読み、具体的な体験を取り出しました。人数はこちらで数えています（同じ人の複数の発言は 1 人）。原文は載せていません。",

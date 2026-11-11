@@ -187,7 +187,7 @@ def test_finds_filter_keeps_kinds_and_counts_and_shows_the_result():
     js = (Path(__file__).parents[1] / "src/game_signal_scout/web/static/finds.js").read_text()
     for k in ("conquer", "explore", "story", "grow", "team", "versus", "feel", "surprise"):
         assert f"{k}: [" in js                                                                        # 分類は変えない
-    assert 'href="finds.html?k=${k}"' in js and 'aria-current="true"' in js and 'class="fk-now" role="status"' in js
+    assert 'href="${url(I, K === k ? "" : k)}"' in js and 'aria-current="true"' in js and 'class="fk-now" role="status"' in js
     assert '<div class="fk-box">' in js and '<div class="flg">' in js and js.index('<div class="fk-box">') < js.index('<div class="flg">')
     assert "filter(xs => xs.some(x => x.kind === k)).length" in js                                    # 件数は実データの作品数
 

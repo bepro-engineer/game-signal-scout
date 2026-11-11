@@ -73,23 +73,52 @@ def test_anime_pages_and_api_serve_game_documents(client):
     assert "https://*.steamstatic.com" in c.get("/").headers["content-security-policy"]
 
 
-def test_menu_is_the_four_play_intents_and_keeps_the_other_pages():
-    """左のメニュー（#2 2026-11-11 オーナー確定）: ダッシュボード・注目の作品 → 遊びたい体験の 4 つの入口 → 作品を探す・このサイトについて。
-    メニューから外した言語圏の広がり・遊び方のページは消さず（URL もそのまま）、作品を探すと各遊び方のページから行ける。"""
+def test_menu_groups_content_and_intents_are_chosen_on_the_finds_page():
+    """左のメニュー（#2 2026-11-11 方針修正・配置確定）: ダッシュボード・注目の作品 → ゲームを見つける → ゲームを知る → 案内。
+    遊びたい体験の 4 つの入口はメニューに並べず、注目の作品の上部「どんな体験を探す？」で選ぶ（細かな面白さの種類は下に小さく）。
+    一時置いた deep.html などは finds.html?i=… へ転送する。遊び方・言語圏のページは消さない。"""
     from pathlib import Path
     root = Path(__file__).parents[1] / "src/game_signal_scout/web"
     js = (root / "static/common.js").read_text()
     nav = js[js.index("const NAV = ["):js.index("const NAV_OF")]
-    for name in ('"index", "ダッシュボード"', '"finds", "注目の作品"', "...INTENTS.map", '"search", "作品を探す"', '"about", "このサイトについて"'):
-        assert name in nav
-    for k, ja in (("deep", "じっくり没頭したい"), ("short", "短時間で楽しみたい"), ("novel", "新しい体験がしたい"), ("friends", "友達と遊びたい")):
-        assert f'["{k}", "{ja}"' in js and (root / f"templates/pages/{k}.html").exists()
-    for k in ("solo", "coop", "versus", "pad", "langspread"):
-        assert f'"{k}"' not in nav and (root / f"templates/pages/{k}.html").exists()
-        assert f'href="{k}.html"' in (root / "templates/pages/search.html").read_text()
+    order = ['"index", "ダッシュボード"', '"finds", "注目の作品"', '"h", "ゲームを見つける"', '"search", "作品を探す"', '"soon", "まもなく発売"',
+             '"h", "ゲームを知る"', '"split", "賛否が分かれる作品"', '"langspread", "言語圏の広がり"', '"h", "案内"', '"about", "このサイトについて"']
+    pos = [nav.index(x) for x in order]
+    assert pos == sorted(pos) and "INTENTS" not in nav
+    fj = (root / "static/finds.js").read_text()
+    assert "どんな体験を探す？" in fj and 'class="fi4"' in fj and "A.intentView(I, K)" in fj and "細かな面白さの種類で絞る" in fj
+    for k in ("solo", "coop", "versus", "pad", "langspread", "split", "soon"):
+        assert (root / f"templates/pages/{k}.html").exists()
+    for k in ("deep", "short", "novel", "friends"):
+        assert not (root / f"templates/pages/{k}.html").exists()
     from game_signal_scout.web.pages import PAGES
-    assert all(PAGES[k].script == "intent.js" and PAGES[k].data == "pages" for k in ("deep", "short", "novel", "friends"))
-    assert "放送後も熱い" not in js                                                  # Game にない放送のページは置かない
+    assert PAGES["finds"].extra_scripts == ("intent.js",) and PAGES["split"].script == "divided.js" and PAGES["soon"].script == "soon.js"
+    from game_signal_scout.services.intents import RULES
+    ij = (root / "static/intent.js").read_text()
+    for k, r in RULES.items():   # 画面の細かな種類の対応は、選び方（Service）と同じ
+        assert f'{k}: [{", ".join(chr(34) + x + chr(34) for x in sorted(r.get("kinds", ()), key=["explore", "story", "grow", "surprise", "team", "versus"].index))}]' in ij
+    assert "放送後も熱い" not in js
+
+
+def test_old_intent_urls_go_to_the_same_choice_on_the_finds_page(client):
+    c, last, docs = client
+    for k in ("deep", "short", "novel", "friends"):
+        r = c.get(f"/{k}.html", follow_redirects=False)
+        assert r.status_code == 308 and r.headers["location"] == f"finds.html?i={k}"
+    for k in ("split", "soon", "finds", "solo", "langspread"):
+        assert c.get(f"/{k}.html").status_code == 200
+
+
+def test_divided_titles_need_both_sides():
+    """賛否が分かれる作品: 面白いと書いた人・不満を書いた人がどちらも 2 人以上。賛否の混じる体験は数えない。より割れている順。"""
+    from game_signal_scout.services.intents import divided
+    x = lambda **k: {"verdict": "fun", "people": 1, "act": "a", "result": "r", "against": 0, **k}
+    works = {1: {"xs": [x(people=3), x(verdict="frustration", people=2)]},
+             2: {"xs": [x(people=5, against=1), x(verdict="frustration")]},       # 不満 1 + 反対の声 1 = 2
+             3: {"xs": [x(people=4), x(verdict="mixed", people=3)]},               # 不満がない
+             4: {"xs": [x(), x(verdict="frustration", people=4)]}}                # 面白いが 1 人
+    got = divided(works)
+    assert [it["work"] for it in got] == [2, 1] and got[1]["fun"] == 3 and got[1]["against"] == 2 and got[0]["against"] == 2   # 割れ方が同じなら声の多い順
 
 
 def test_intents_are_chosen_from_player_experiences_only():

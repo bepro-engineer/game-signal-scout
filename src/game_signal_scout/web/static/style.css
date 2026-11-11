@@ -282,3 +282,5 @@ details.how[open] summary { border-bottom: 1px solid var(--line); }
 .world { container-type: inline-size; }
 @container (max-width: 900px) { .world .grid { grid-template-columns: minmax(0, 1fr) !important; } }
 .intro > .ask { flex: 1 1 100%; min-width: 0; }   /* 入口はメインの幅いっぱいに（4 つのカードが左に寄らない） */
+/* 左メニューのまとまりの見出し（#2 2026-11-11: 何を調べられるサイトかが分かるように） */
+.side .nav-h { margin: 12px 12px 2px; font-size: 12px; font-weight: 800; letter-spacing: .04em; color: var(--ink-3, #57536f); }

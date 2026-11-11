@@ -2,10 +2,13 @@
 // 作品はプレイヤーの体験の読み取り（services/intents）で選んだもの。ジャンルやストアの表示で決めていない。カードは
 // 「この体験に合う根拠（実際に遊んだ人の体験と人数）→ 何をして何が起きたか → 向いている人 → 合わないかもしれない点（不満の体験・注意の人数）」。
 // 並びは注目の作品と同じく日本語で遊べる作品を先、その中は根拠の体験を書いた人の多い順。根拠のない入口は、そう書いて作品で埋めない。
+// 2026-11-11 オーナーの配置確定（6796603331）: 4 つの入口は「注目の作品」上部の「どんな体験を探す？」で選ぶ。この部品はその結果（カード）を描く。
+// A.intentView(入口, 細かな面白さの種類) → HTML。旧 deep.html などは finds.html?i=… へ転送する（同じデータ・同じ選び方）
 (() => {
-  const A = window.ASS, { tr, esc, num, nm, tx } = A, I = (A.P || {}).intents || {};
-  const $ = id => document.getElementById(id);
-  const PAGE = document.documentElement.dataset.page;
+  const A = window.ASS;
+  A.INTENT_KINDS = { deep: ["explore", "story", "grow"], short: [], novel: ["surprise"], friends: ["team", "versus"] };   // services/intents.RULES の kinds と同じ
+  A.intentView = (PAGE, K) => {
+  const { tr, esc, num, nm, tx } = A, I = (A.P || {}).intents || {};
   const META = {
     deep: { why: ["探索・物語・育成ややり込みを、プレイヤーが面白さとして書いた作品です。", "Titles where players wrote that exploring, the story, or building and growing was the fun."] },
     short: { why: ["1 回が短くても満足できたと、プレイヤーが書いた作品です。", "Titles where players wrote that short sessions were satisfying."] },
@@ -24,9 +27,7 @@
   const line = x => `${esc(tx(x, "act"))} → ${esc(tx(x, "result"))}`;
   const img = w => (w.shots || [])[0] || w.banner || w.header || w.cover || "";
 
-  // 入口の切り替え（4 つの入口。作品の数つき）
-  const tabs = `<nav class="it-tabs" aria-label="${tr("遊びたい体験", "What you want to play")}">${["deep", "short", "novel", "friends"].map(k => `<a href="${k}.html"${k === PAGE ? ' class="on" aria-current="page"' : ""}><span>${esc(tr(...(NAMES[k] || [k, k])))}</span><small>${tr(`${num(((I[k] || {}).items || []).length)}作品`, `${num(((I[k] || {}).items || []).length)} titles`)}</small></a>`).join("")}</nav>`;
-  const items = [...(((I[PAGE] || {}).items) || [])].sort((a, b) => playable(a) - playable(b) || b.why_people - a.why_people);
+  const items = [...(((I[PAGE] || {}).items) || [])].filter(w => !K || w.why.some(x => x.kind === K)).sort((a, b) => playable(a) - playable(b) || b.why_people - a.why_people);
   const basis = I.basis || {};
 
   const card = w => {
@@ -65,7 +66,8 @@
     body = `<div class="rv-empty"><div><b>${tr("この体験を書いたプレイヤーの声は、まだ見つかっていません", "No player has written about this yet")}</b></div></div>`;
   }
   const more = PAGE === "friends" ? `<p class="it-more">${tr("ストアの表示で協力・対戦できる作品をすべて見る:", "All titles the store lists as co-op or versus:")} <a href="coop.html">${tr("協力プレイで遊べる", "Co-op")}</a> ・ <a href="versus.html">${tr("対戦プレイで遊べる", "Versus")}</a></p>` : "";
-  $("it-body").innerHTML = `${tabs}${intro}${body}${more}
+  return `${intro}${body}${more}
     <p class="fsrc">${tr(`世界のプレイヤーが直近 7 日に書いた発言を、作品ごとに AI が読み、具体的な体験を取り出しました（読み取りのある作品 ${num(basis.read_works || 0)}作品）。人数はこちらで数えています（同じ人の複数の発言は 1 人）。原文は載せていません。`,
       `AI read each title's posts from the last 7 days and extracted concrete experiences (${num(basis.read_works || 0)} titles read). Counts are done separately. Original posts are not shown.`)}</p>`;
+  };
 })();

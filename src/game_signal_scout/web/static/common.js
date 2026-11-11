@@ -105,21 +105,22 @@
     solo: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/>',
     coop: '<circle cx="8" cy="8" r="3.5"/><circle cx="16.5" cy="9" r="3"/><path d="M2 20c.8-3.5 3.3-5.5 6-5.5s5.2 2 6 5.5M14 15c3 0 5.3 1.6 6.2 5"/>',
     versus: '<path d="M4 4l7 7M20 4l-7 7M6 18l-2 2M18 18l2 2M9 13l-4 4M15 13l4 4"/>',
-    deep: '<path d="M12 3c-4 4-6 7-6 10a6 6 0 0 0 12 0c0-3-2-6-6-10z"/><path d="M12 13v5"/>',
-    short: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
-    novel: '<path d="M12 2l2.4 6.6L21 9l-5 4.6L17.6 21 12 17.3 6.4 21 8 13.6 3 9l6.6-.4z"/>',
-    friends: '<circle cx="8" cy="8" r="3.5"/><circle cx="16.5" cy="9" r="3"/><path d="M2 20c.8-3.5 3.3-5.5 6-5.5s5.2 2 6 5.5M14 15c3 0 5.3 1.6 6.2 5"/>',
+    soon: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M12 13v4M10 15h4"/>',
+    split: '<path d="M12 3v18M5 8h5l-2.5 6zM14 8h5l-2.5 6z"/><path d="M4 14a3 3 0 0 0 6 0M14 14a3 3 0 0 0 6 0"/>',
     pad: '<path d="M7 9h10a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L14.5 15h-5l-1.1 1.8A3 3 0 0 1 3 15v-2a4 4 0 0 1 4-4z"/><path d="M8 11.5v3M6.5 13h3"/>' };
-  // 左のメニュー（#2 2026-11-11 オーナー確定）: ダッシュボード・注目の作品 → 遊びたい体験の 4 つの入口 → 作品を探す・このサイトについて。
-  // 言語圏の広がり・遊び方（ソロ・協力・対戦・コントローラ）のページは消さず、URL もそのまま（作品を探す・友達と遊びたいのページから行ける）
+  // 左のメニュー（#2 2026-11-11 オーナーの方針修正 6796364246・配置確定 6796603331）: 何を調べられるサイトかが分かる、内容ごとのまとまり。
+  // 遊びたい体験の 4 つの入口はメニューに並べず、注目の作品の上部「どんな体験を探す？」で選ぶ。["h", 見出し] はまとまりの見出し。
+  // 遊び方（ソロ・協力・対戦・コントローラ）のページは消さず、作品を探すから行ける。評価が変化した作品・動作の変化は、実データで成立しないので置かない（#2 の報告）
   const NAV = [["index", "ダッシュボード", "Dashboard"], ["finds", "注目の作品", "Titles worth a look"],
-    ...INTENTS.map(([k, ja, en]) => [k, ja, en]), ["search", "作品を探す", "Find titles"], ["about", "このサイトについて", "About"]];
-  const NAV_OF = { solo: "search", coop: "search", versus: "search", pad: "search", langspread: "index" };   // メニューにないページで、メニューのどこを選んだ印にするか
+    ["h", "ゲームを見つける", "Find games"], ["search", "作品を探す", "Find titles"], ["soon", "まもなく発売", "Coming soon"],
+    ["h", "ゲームを知る", "Know the games"], ["split", "賛否が分かれる作品", "Divided opinions"], ["langspread", "言語圏の広がり", "Language spread"],
+    ["h", "案内", "About"], ["about", "このサイトについて", "About this site"]];
+  const NAV_OF = { solo: "search", coop: "search", versus: "search", pad: "search" };   // メニューにないページで、メニューのどこを選んだ印にするか
   const page = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
   document.documentElement.dataset.page = page;   // ページごとのアクセントの色（palette.css）
   function renderNav() {
     const nav = document.getElementById("nav"); if (!nav) return;
-    nav.innerHTML = `${NAV.map(([k, ja, en]) => `<a${k === page ? ' class="on" aria-current="page"' : k === NAV_OF[page] ? ' class="on"' : ""} href="${k}.html"><svg class="i" viewBox="0 0 24 24">${ICO[k]}</svg>${tr(ja, en)}</a>`).join("")}
+    nav.innerHTML = `${NAV.map(([k, ja, en]) => k === "h" ? `<p class="nav-h">${tr(ja, en)}</p>` : `<a${k === page ? ' class="on" aria-current="page"' : k === NAV_OF[page] ? ' class="on"' : ""} href="${k}.html"><svg class="i" viewBox="0 0 24 24">${ICO[k]}</svg>${tr(ja, en)}</a>`).join("")}
       <div class="uiloc"><span>${tr("表示言語", "Language")}</span><div class="seg" role="group" aria-label="${tr("表示言語", "Language")}">
         <button type="button" data-lang="ja" class="${lang === "ja" ? "on" : ""}" aria-pressed="${lang === "ja"}">日本語</button>
         <button type="button" data-lang="en" class="${lang === "en" ? "on" : ""}" aria-pressed="${lang === "en"}">English</button></div></div>`;
