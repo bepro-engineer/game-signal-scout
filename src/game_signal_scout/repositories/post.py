@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 
-COLS = ("source", "item_id", "at", "author", "lang", "appid", "title", "matched_by", "flags", "text", "stance", "playtime_minutes", "url", "id_version")
+COLS = ("source", "item_id", "at", "author", "lang", "work_id", "title", "matched_by", "flags", "text", "stance", "playtime_minutes", "url", "id_version")
 
 
 def unnormalized(conn, source: str, limit: int):
@@ -21,8 +21,8 @@ def insert(conn, rows: list[dict]) -> int:
 
 
 def known_titles(conn) -> list[tuple[str, str]]:
-    """作品の辞書の材料: (appid, 題名)。作品の情報（game_profile）の題名と各言語の表示名だけ（観測の取得元の表は読まない。どの取得元がなくても同じ辞書）。"""
-    return conn.execute("SELECT appid, title FROM game_profile WHERE title IS NOT NULL UNION SELECT appid, n.value FROM game_profile, jsonb_each_text(names) n "
+    """作品の辞書の材料: (work_id, 題名)。作品の情報（game_profile）の題名と各言語の表示名だけ（観測の取得元の表は読まない。どの取得元がなくても同じ辞書）。"""
+    return conn.execute("SELECT work_id, title FROM game_profile WHERE title IS NOT NULL UNION SELECT work_id, n.value FROM game_profile, jsonb_each_text(names) n "
                         "WHERE names IS NOT NULL").fetchall()
 
 
@@ -31,37 +31,37 @@ EXCLUDE = ["affiliate", "promo", "stream", "autopost", "adult", "link_only", "ma
 
 def top_apps(conn, since, limit: int) -> list[dict]:
     """期間内に発言の多い作品（独立した投稿者の数の順。宣伝などの印の付いた発言は数えない）。"""
-    rows = conn.execute("SELECT appid, max(title), count(DISTINCT author), count(*) FROM player_post "
-                        "WHERE appid IS NOT NULL AND at >= %s AND NOT flags ?| %s GROUP BY appid ORDER BY 3 DESC, 4 DESC, appid LIMIT %s",
+    rows = conn.execute("SELECT work_id, max(title), count(DISTINCT author), count(*) FROM player_post "
+                        "WHERE work_id IS NOT NULL AND at >= %s AND NOT flags ?| %s GROUP BY work_id ORDER BY 3 DESC, 4 DESC, work_id LIMIT %s",
                         (since, EXCLUDE, limit)).fetchall()
-    return [{"appid": a, "title": t, "authors": n, "posts": p} for a, t, n, p in rows]
+    return [{"work_id": a, "title": t, "authors": n, "posts": p} for a, t, n, p in rows]
 
 
-def for_app(conn, appid: str, since, limit: int) -> list[dict]:
-    rows = conn.execute("SELECT at, lang, matched_by, text FROM player_post WHERE appid=%s AND at >= %s AND NOT flags ?| %s "
-                        "ORDER BY at DESC LIMIT %s", (appid, since, EXCLUDE, limit)).fetchall()
+def for_app(conn, work_id: str, since, limit: int) -> list[dict]:
+    rows = conn.execute("SELECT at, lang, matched_by, text FROM player_post WHERE work_id=%s AND at >= %s AND NOT flags ?| %s "
+                        "ORDER BY at DESC LIMIT %s", (work_id, since, EXCLUDE, limit)).fetchall()
     return [{"at": a, "lang": lg, "matched_by": m, "text": t} for a, lg, m, t in rows]
 
 
-def count_for_app(conn, appid: str, since) -> tuple[int, int]:
-    return conn.execute("SELECT count(DISTINCT author), count(*) FROM player_post WHERE appid=%s AND at >= %s AND NOT flags ?| %s",
-                        (appid, since, EXCLUDE)).fetchone()
+def count_for_app(conn, work_id: str, since) -> tuple[int, int]:
+    return conn.execute("SELECT count(DISTINCT author), count(*) FROM player_post WHERE work_id=%s AND at >= %s AND NOT flags ?| %s",
+                        (work_id, since, EXCLUDE)).fetchone()
 
 
 def newest_at(conn):
     return conn.execute("SELECT max(at) FROM player_post").fetchone()[0]
 
 
-def people_by_appid(conn, appids: list[str], start, end) -> dict[str, int]:
+def people_by_work(conn, work_ids: list[str], start, end) -> dict[str, int]:
     """期間に、その作品について書いた人（取得元ごとに数え、いちばん多い取得元の人数。取得元をまたいで足さない）。宣伝などの印のある発言は除く。"""
-    rows = conn.execute("SELECT appid, max(n) FROM (SELECT appid, source, count(DISTINCT author) n FROM player_post WHERE appid = ANY(%s) AND at >= %s AND at < %s "
-                        "AND NOT (flags ?| %s) GROUP BY appid, source) t GROUP BY appid", (list(appids), start, end, EXCLUDE)).fetchall()
+    rows = conn.execute("SELECT work_id, max(n) FROM (SELECT work_id, source, count(DISTINCT author) n FROM player_post WHERE work_id = ANY(%s) AND at >= %s AND at < %s "
+                        "AND NOT (flags ?| %s) GROUP BY work_id, source) t GROUP BY work_id", (list(work_ids), start, end, EXCLUDE)).fetchall()
     return {a: int(n) for a, n in rows}
 
 
 def day_rows(conn, source: str, start, end, same_text_min: int):
     """観測の集計の材料: 取得元の 1 日の発言 (ID, 投稿者, 言語, 見出し, 時刻, app ID, 同じ文の印, 宣伝などの印があるか)。"""
-    return conn.execute("SELECT item_id, author, lang, left(text, 30), at, appid, CASE WHEN length(text) >= %s THEN md5(text) END, flags ?| %s "
+    return conn.execute("SELECT item_id, author, lang, left(text, 30), at, work_id, CASE WHEN length(text) >= %s THEN md5(text) END, flags ?| %s "
                         "FROM player_post WHERE source = %s AND at >= %s AND at < %s", (same_text_min, EXCLUDE, source, start, end)).fetchall()
 
 

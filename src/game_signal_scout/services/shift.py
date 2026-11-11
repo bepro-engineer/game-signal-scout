@@ -15,7 +15,7 @@ DAY = 86400
 
 
 def detect(rows, start: datetime, end: datetime, p: dict) -> list[dict]:
-    """rows: (appid, 時刻の秒, 失敗か, 機材構成の hash, item_id)。窓の始まりは [start, end) の範囲。"""
+    """rows: (work_id, 時刻の秒, 失敗か, 機材構成の hash, item_id)。窓の始まりは [start, end) の範囲。"""
     w, prev = p["window_days"] * DAY, p["prev_days"] * DAY
     s, e = start.timestamp(), end.timestamp()
     by = defaultdict(list)
@@ -39,7 +39,7 @@ def detect(rows, start: datetime, end: datetime, p: dict) -> list[dict]:
                 sw, sp = sum(r[1] for r in win) / len(win), sum(r[1] for r in before) / len(before)
                 if (sw - sp if side == "fail" else sp - sw) < p["min_jump"]:
                     continue
-                ev = {"side": side, "appid": app, "start": t0, "n_key": len(key), "n_window": len(win), "share_prev": round(sp, 3),
+                ev = {"side": side, "work_id": app, "start": t0, "n_key": len(key), "n_window": len(win), "share_prev": round(sp, 3),
                       "share_window": round(sw, 3), "n_prev": len(before), "item_ids": [r[3] for r in key]}
                 if found and t0 < found[-1]["start"] + w:
                     if ev["n_key"] > found[-1]["n_key"]:
@@ -49,4 +49,4 @@ def detect(rows, start: datetime, end: datetime, p: dict) -> list[dict]:
             out.extend(found)
     for ev in out:
         ev["window_start"] = datetime.fromtimestamp(ev.pop("start"), timezone.utc)
-    return sorted(out, key=lambda ev: (-ev["n_key"], ev["appid"], ev["window_start"]))
+    return sorted(out, key=lambda ev: (-ev["n_key"], ev["work_id"], ev["window_start"]))

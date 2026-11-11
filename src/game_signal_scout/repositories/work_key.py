@@ -44,8 +44,8 @@ def own_ids(conn, keyspace: str, work_ids) -> list[str]:
 
 def adopt_existing(conn, keyspace: str) -> int:
     """既存の作品（移行の前からある番号。連番の範囲より小さい数字）の鍵を、その番号のまま名前空間 keyspace に入れる（一度だけの移行。ARCHITECTURE §8）。"""
-    union = " UNION ".join(f"SELECT appid FROM {t} WHERE appid IS NOT NULL" for t in TABLES)
-    conn.execute(f"INSERT INTO game_work (work_id) SELECT DISTINCT appid FROM ({union}) x WHERE appid ~ '^[0-9]{{1,9}}$' ON CONFLICT DO NOTHING")   # 移行の後に入った行も
+    union = " UNION ".join(f"SELECT work_id FROM {t} WHERE work_id IS NOT NULL" for t in TABLES)
+    conn.execute(f"INSERT INTO game_work (work_id) SELECT DISTINCT work_id FROM ({union}) x WHERE work_id ~ '^[0-9]{{1,9}}$' ON CONFLICT DO NOTHING")   # 移行の後に入った行も
     with conn.cursor() as cur:
         cur.execute("INSERT INTO game_work_key (keyspace, ext_id, work_id) SELECT %s, work_id, work_id FROM game_work "
                     "WHERE work_id ~ '^[0-9]{1,9}$' ON CONFLICT DO NOTHING", (keyspace,))

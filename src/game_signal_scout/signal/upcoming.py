@@ -26,23 +26,23 @@ def release(text: str | None) -> dict:
     return {"date": None, "ja": "発売日未定", "en": "TBA"}
 
 
-def people_7d(conn, appids: list[str], as_of: date) -> dict[str, int]:
+def people_7d(conn, work_ids: list[str], as_of: date) -> dict[str, int]:
     """直近 7 日（as_of まで）に、その作品について書いた人（取得元ごとに数え、いちばん多い取得元の人数。取得元をまたいで足さない）。"""
     from game_signal_scout.days import day_range
     from game_signal_scout.repositories import post
-    return post.people_by_appid(conn, appids, day_range(as_of - timedelta(days=6))[0], day_range(as_of)[1])
+    return post.people_by_work(conn, work_ids, day_range(as_of - timedelta(days=6))[0], day_range(as_of)[1])
 
 
 def soon(conn, as_of: date, works: set[int], limit: int = 60) -> dict:
     """文書 soon: dated（発売日が決まっていて今日から先。日付の順）と picks（ほかの近日発売。ストアの一覧の順）。作品詳細があれば id、なければストアの URL。"""
     from game_signal_scout.repositories import catalog
     rows = [r for r in catalog.upcoming(conn) if r.get("title") and r.get("coming_soon") is not False][:limit]
-    ppl = people_7d(conn, [r["appid"] for r in rows], as_of) if rows else {}
+    ppl = people_7d(conn, [r["work_id"] for r in rows], as_of) if rows else {}
     dated, picks = [], []
     for r in rows:
         rel = release(r.get("released"))
-        x = {"id": f"w{r['appid']}" if int(r["appid"]) in works else None, "store": r.get("store_url"), "name": {"ja": r["title"], "en": r["title"]},
-             "cover": r.get("image"), "rank": r["rank"], "release": rel, "people": ppl.get(r["appid"], 0),
+        x = {"id": f"w{r['work_id']}" if int(r["work_id"]) in works else None, "store": r.get("store_url"), "name": {"ja": r["title"], "en": r["title"]},
+             "cover": r.get("image"), "rank": r["rank"], "release": rel, "people": ppl.get(r["work_id"], 0),
              "genres": (r.get("genres") or [])[:2]}
         if rel["date"] and rel["date"] >= as_of.isoformat():
             dated.append(x)

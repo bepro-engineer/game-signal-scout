@@ -34,7 +34,7 @@ def run(conn, tmp_path, monkeypatch):
     works = (("2246340", "Monster Hunter Wilds"), ("252490", "Rust Console Edition"))
     for a, _ in works:
         conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('works', %s, %s, %s, '{}')", (a, at, at))
-    catalog.upsert(conn, [{"appid": a, "source": "works", "item_id": a, "title": t, "genres": [], "modes": [], "platforms": [], "fetched_at": at} for a, t in works])
+    catalog.upsert(conn, [{"work_id": a, "source": "works", "item_id": a, "title": t, "genres": [], "modes": [], "platforms": [], "fetched_at": at} for a, t in works])
     conn.commit()
     cfg = {"protondb": {"adapter": "game_signal_scout.sources.protondb:ProtonDBDump", "local_path": str(path),
                         "normalizer": "game_signal_scout.services.normalize:reports", "work_keyspace": KS, "work_link": r"store\.steampowered\.com/app/(\d{1,10})"},
@@ -60,7 +60,7 @@ def run(conn, tmp_path, monkeypatch):
 
 
 def posts(conn):
-    return conn.execute("SELECT item_id, appid, matched_by FROM player_post ORDER BY item_id").fetchall()
+    return conn.execute("SELECT item_id, work_id, matched_by FROM player_post ORDER BY item_id").fetchall()
 
 
 def test_two_sources_flow_to_normalized_posts_and_viewer_documents(run, conn, stub_screen_docs):

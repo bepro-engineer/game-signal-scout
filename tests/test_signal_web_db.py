@@ -16,7 +16,7 @@ def post(conn, appid, i, day, lang="en", stance="positive"):
     t = day_range(day)[0] + timedelta(hours=1, minutes=i)
     conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_reviews', %s, %s, %s, '{}') ON CONFLICT DO NOTHING",
                  (f"{appid}-{day}-{i}", t, t))
-    conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, appid, title, matched_by, flags, text, stance) "
+    conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, work_id, title, matched_by, flags, text, stance) "
                  "VALUES ('steam_reviews', %s, %s, %s, %s, %s, NULL, 'source', '[]', %s, %s)",
                  (f"{appid}-{day}-{i}", t, f"a{appid}{day}{i}", lang, appid, f"review {i} about the latest update and the boss fight balance", stance))
 
@@ -32,7 +32,7 @@ def client(conn, monkeypatch, tmp_path):
     last = default_day()
     for a, title in (("2246340", "モンスターハンターワイルズ"), ("1808500", "ARC Raiders")):
         conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', %s, now(), now(), '{}')", (a,))
-        conn.execute("INSERT INTO game_profile (appid, source, item_id, title, summary, image_url, genres, modes, platforms, fetched_at, about_ja, about_en) "
+        conn.execute("INSERT INTO game_profile (work_id, source, item_id, title, summary, image_url, genres, modes, platforms, fetched_at, about_ja, about_en) "
                      "VALUES (%s, 'steam_store', %s, %s, 's', %s, '[\"アクション\"]', %s, '[\"Windows\"]', now(), '狩りに出よう。', 'Go hunting.')",
                      (a, a, title, f"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{a}/header.jpg",
                       '["協力プレイ"]' if a == "1808500" else '["ひとりで遊べる"]'))
@@ -224,7 +224,7 @@ def test_non_game_software_is_not_a_work(conn):
     from game_signal_scout.ops.work import publishable_works
     for a, g in (("431960", '["カジュアル", "ユーティリティ", "写真編集"]'), ("1245620", '["アクション", "RPG"]')):
         conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', %s, now(), now(), '{}')", (a,))
-        conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) VALUES (%s, 'steam_store', %s, 'x', %s, '[]', '[]', now())", (a, a, g))
+        conn.execute("INSERT INTO game_profile (work_id, source, item_id, title, genres, modes, platforms, fetched_at) VALUES (%s, 'steam_store', %s, 'x', %s, '[]', '[]', now())", (a, a, g))
     assert publishable_works(conn, [431960, 1245620]) == {1245620}
 
 

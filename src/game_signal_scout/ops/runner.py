@@ -152,26 +152,26 @@ def job_insight(ctx: Context) -> JobResult:
     todo = sorted(todo, key=lambda a: rank(jp.get(a)))   # 同じ段階の中は発言の多い順のまま（sorted は安定）
     titles = {a: p["title"] for a, p in catalog.profiles(ctx.conn, todo).items()}
     done, failed, skipped = [], [], 0
-    for appid in todo:
+    for work_id in todo:
         if len(done) >= int(ic.get("max_per_run", 6)):
             break
-        prev = repo.get_body(ctx.conn, appid) or {}
+        prev = repo.get_body(ctx.conn, work_id) or {}
         try:
-            x = insight.read_game(ctx.conn, appid, titles.get(appid) or appid, ic["model"], ic, prev if prev.get("kind") == insight.KIND else None)
+            x = insight.read_game(ctx.conn, work_id, titles.get(work_id) or work_id, ic["model"], ic, prev if prev.get("kind") == insight.KIND else None)
         except Exception as e:  # noqa: BLE001 — 1 作品の失敗で止めない
             ctx.conn.rollback()
-            failed.append({"appid": appid, "error": f"{type(e).__name__}: {str(e)[:160]}"})
+            failed.append({"work_id": work_id, "error": f"{type(e).__name__}: {str(e)[:160]}"})
             continue
-        if x and prev.get("kind") == insight.KIND and repo.get_hash(ctx.conn, appid) == x["input_hash"]:
+        if x and prev.get("kind") == insight.KIND and repo.get_hash(ctx.conn, work_id) == x["input_hash"]:
             if len(x["body"].get("en") or {}) > len(prev.get("en") or {}):   # 材料は同じでも、訳せた文が増えたら訳だけ残す（#2）
-                repo.set_en(ctx.conn, appid, x["body"]["en"])
+                repo.set_en(ctx.conn, work_id, x["body"]["en"])
                 ctx.conn.commit()
             skipped += 1
             continue
         if x:
             repo.upsert(ctx.conn, x)
             ctx.conn.commit()
-            done.append(appid)
+            done.append(work_id)
     divided = divide_missing(ctx.conn, ic, int(ic.get("max_divide_per_run", 60)), failed)   # 同じ論点の賛否（#2 2026-11-11）。訳す前に作る（論点も訳す）
     translated = translate_missing(ctx.conn, ic, int(ic.get("max_translate_per_run", 400)), failed)
     return JobResult(input_count=len(todo), output_count=len(done), detail={"done": done, "unchanged": skipped, "failed": failed, "translated": translated, "divided": divided})
@@ -186,20 +186,20 @@ def divide_missing(conn, ic: dict, budget: int, failed: list) -> int:
     names = {a: p["title"] for a, p in catalog.profiles(conn, list(rows)).items()}
     conn.rollback()
     n = 0
-    for appid, body in rows.items():
+    for work_id, body in rows.items():
         if n >= budget:
             break
-        h = f"{repo.get_hash(conn, appid)}|{insight.DIVIDE_VERSION}"   # 材料か作り方の版が変われば作り直す
+        h = f"{repo.get_hash(conn, work_id)}|{insight.DIVIDE_VERSION}"   # 材料か作り方の版が変われば作り直す
         if body.get("kind") != insight.KIND or (body.get("divided_for") == h and "divided" in body):
             continue
         try:
-            d = insight.divide_game(conn, appid, names.get(appid) or appid, body, ic, insight_ask(ic))
-            repo.set_divided(conn, appid, d, h)
+            d = insight.divide_game(conn, work_id, names.get(work_id) or work_id, body, ic, insight_ask(ic))
+            repo.set_divided(conn, work_id, d, h)
             conn.commit()
             n += 1
         except Exception as e:  # noqa: BLE001 — 1 作品の失敗で止めない
             conn.rollback()
-            failed.append({"appid": appid, "stage": "divide", "error": f"{type(e).__name__}: {str(e)[:160]}"})
+            failed.append({"work_id": work_id, "stage": "divide", "error": f"{type(e).__name__}: {str(e)[:160]}"})
     return n
 
 
@@ -211,7 +211,7 @@ def translate_missing(conn, ic: dict, budget: int, failed: list) -> int:
     names = {a: p["title"] for a, p in catalog.profiles(conn, list(rows)).items()}
     conn.rollback()
     translated = 0
-    for appid, body in rows.items():
+    for work_id, body in rows.items():
         if budget <= 0:
             break
         if body.get("kind") != insight.KIND:
@@ -222,14 +222,14 @@ def translate_missing(conn, ic: dict, budget: int, failed: list) -> int:
         if not missing:
             continue
         try:
-            en = insight.translate_en(insight_ask(ic), names.get(appid) or appid, texts, have, limit=budget)
+            en = insight.translate_en(insight_ask(ic), names.get(work_id) or work_id, texts, have, limit=budget)
         except Exception as e:  # noqa: BLE001 — 1 作品の失敗で止めない
             conn.rollback()
-            failed.append({"appid": appid, "error": f"translate: {type(e).__name__}: {str(e)[:120]}"})
+            failed.append({"work_id": work_id, "error": f"translate: {type(e).__name__}: {str(e)[:120]}"})
             continue
         budget -= len(missing)
         if len(en) > len(have):
-            repo.set_en(conn, appid, en)
+            repo.set_en(conn, work_id, en)
             conn.commit()
             translated += len(en) - len(have)
     return translated

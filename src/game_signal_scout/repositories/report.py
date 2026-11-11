@@ -5,12 +5,12 @@ import json
 
 
 def normalize_new(conn, source: str, rows) -> int:
-    """正規化した行を入れる（同じ項目は入れない）。rows は (item_id, appid, title, at, failed, config_hash, proton, notes)。入れた数。"""
+    """正規化した行を入れる（同じ項目は入れない）。rows は (item_id, work_id, title, at, failed, config_hash, proton, notes)。入れた数。"""
     rows = [(source, *r) for r in rows]
     if not rows:
         return 0
     with conn.cursor() as cur:
-        cur.executemany("INSERT INTO player_report (source, item_id, appid, title, at, failed, config_hash, proton, notes) "
+        cur.executemany("INSERT INTO player_report (source, item_id, work_id, title, at, failed, config_hash, proton, notes) "
                         "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (source, item_id) DO NOTHING", rows)
         return cur.rowcount
 
@@ -22,30 +22,30 @@ def unnormalized(conn, source: str, limit: int):
 
 
 def reports_for_analysis(conn, since, until):
-    """分析の対象の報告（appid, 時刻の秒, 失敗か, 機材構成の hash, item_id）。"""
-    return conn.execute("SELECT appid, extract(epoch FROM at)::bigint, failed, config_hash, item_id FROM player_report "
-                        "WHERE at >= %s AND at < %s AND appid IS NOT NULL", (since, until)).fetchall()
+    """分析の対象の報告（work_id, 時刻の秒, 失敗か, 機材構成の hash, item_id）。"""
+    return conn.execute("SELECT work_id, extract(epoch FROM at)::bigint, failed, config_hash, item_id FROM player_report "
+                        "WHERE at >= %s AND at < %s AND work_id IS NOT NULL", (since, until)).fetchall()
 
 
 def replace_events(conn, version: str, events: list[dict]) -> None:
     """その規則の版の検出結果を置き換える（同じ入力・同じ版なら何度流しても同じ）。"""
     conn.execute("DELETE FROM shift_event WHERE version=%s", (version,))
     with conn.cursor() as cur:
-        cur.executemany("INSERT INTO shift_event (version, side, appid, window_start, n_key, n_window, share_prev, share_window, n_prev, item_ids) "
+        cur.executemany("INSERT INTO shift_event (version, side, work_id, window_start, n_key, n_window, share_prev, share_window, n_prev, item_ids) "
                         "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                        [(version, e["side"], e["appid"], e["window_start"], e["n_key"], e["n_window"], e["share_prev"], e["share_window"], e["n_prev"],
+                        [(version, e["side"], e["work_id"], e["window_start"], e["n_key"], e["n_window"], e["share_prev"], e["share_window"], e["n_prev"],
                           json.dumps(e["item_ids"])) for e in events])
 
 
 def events(conn, version: str, side: str):
-    return conn.execute("SELECT appid, window_start, n_key, n_window, share_prev, share_window FROM shift_event WHERE version=%s AND side=%s "
-                        "ORDER BY n_key DESC, appid, window_start", (version, side)).fetchall()
+    return conn.execute("SELECT work_id, window_start, n_key, n_window, share_prev, share_window FROM shift_event WHERE version=%s AND side=%s "
+                        "ORDER BY n_key DESC, work_id, window_start", (version, side)).fetchall()
 
 
 # --- Viewer が読む（読むだけ） ---
 
-_TITLE = "(SELECT title FROM player_report p WHERE p.appid = {} AND p.title IS NOT NULL ORDER BY p.at DESC LIMIT 1)"
-EVENT_COLS = ("side", "appid", "title", "window_start", "n_key", "n_window", "share_prev", "share_window", "n_prev")
+_TITLE = "(SELECT title FROM player_report p WHERE p.work_id = {} AND p.title IS NOT NULL ORDER BY p.at DESC LIMIT 1)"
+EVENT_COLS = ("side", "work_id", "title", "window_start", "n_key", "n_window", "share_prev", "share_window", "n_prev")
 
 
 def event_counts(conn, version: str) -> dict:

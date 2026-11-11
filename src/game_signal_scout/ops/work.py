@@ -15,6 +15,6 @@ def publishable_works(conn, work_ids) -> set[int]:
     if not ids:
         return set()
     from game_signal_scout.repositories import catalog
-    out = {int(a) for a in catalog.game_appids(conn, [str(i) for i in ids], NOT_GAME)}
+    out = {int(a) for a in catalog.game_works(conn, [str(i) for i in ids], NOT_GAME)}
     conn.rollback()
     return out

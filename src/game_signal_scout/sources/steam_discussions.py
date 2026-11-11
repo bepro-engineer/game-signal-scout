@@ -68,7 +68,7 @@ class SteamDiscussions(SourceReader):
         from game_signal_scout.repositories import catalog
         s = self.settings
         apps = [a for a, _ in catalog.active_apps(self.conn, int(s.get("active_days", 90)), int(s.get("max_games", 60)))]
-        up = catalog.upcoming_appids(self.conn, int(s.get("upcoming_games", 30)))
+        up = catalog.upcoming_works(self.conn, int(s.get("upcoming_games", 30)))
         return self.own_ids(apps + [a for a in up if a not in apps])
 
     def read(self, cursor: dict | None) -> Iterator[Batch]:

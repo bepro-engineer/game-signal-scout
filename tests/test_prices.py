@@ -71,7 +71,7 @@ def test_price_flows_from_store_item_to_public_work(conn):
     now = datetime.now(timezone.utc)
     for a in ("10", "20"):
         conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', %s, now(), now(), '{}')", (a,))
-        conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) VALUES (%s, 'steam_store', %s, 'x', '[]', '[]', '[]', now())", (a, a))
+        conn.execute("INSERT INTO game_profile (work_id, source, item_id, title, genres, modes, platforms, fetched_at) VALUES (%s, 'steam_store', %s, 'x', '[]', '[]', '[]', now())", (a, a))
     p = {"appid": "10", "price": price_value("10", PO(400000, 200000, 50), None, "JP", now.isoformat())}
     conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload, version) VALUES ('steam_prices', '10', now(), now(), %s, 'v')", (json.dumps(p),))
     conn.commit()

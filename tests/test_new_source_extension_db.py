@@ -31,7 +31,7 @@ def test_a_new_source_flows_to_documents_without_changing_common_code(conn, monk
     from game_signal_scout.repositories import public_document
     from game_signal_scout.sources import factory
     conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', '2246340', now(), now(), '{}')")
-    conn.execute("INSERT INTO game_profile (appid, source, item_id, title, image_url, genres, modes, platforms, fetched_at, names) VALUES "
+    conn.execute("INSERT INTO game_profile (work_id, source, item_id, title, image_url, genres, modes, platforms, fetched_at, names) VALUES "
                  "('2246340', 'steam_store', '2246340', 'モンスターハンターワイルズ', 'https://shared.akamai.steamstatic.com/x.jpg', '[\"アクション\"]', '[]', '[]', now(), "
                  "'{\"en\": \"Monster Hunter Wilds\"}')")
     conn.commit()
@@ -49,7 +49,7 @@ def test_a_new_source_flows_to_documents_without_changing_common_code(conn, monk
     assert code == runner.EXIT_OK, out
 
     # 共通の保存と正規化: 作品の掲示板の 3 件は取得元で、総合の板の 1 件は本文の題名（英語の題名）で同定
-    rows = conn.execute("SELECT item_id, appid, matched_by, lang FROM player_post WHERE source = 'fake_forum' ORDER BY item_id").fetchall()
+    rows = conn.execute("SELECT item_id, work_id, matched_by, lang FROM player_post WHERE source = 'fake_forum' ORDER BY item_id").fetchall()
     assert rows == [("g1", "2246340", "title", "en"), ("p0", "2246340", "source", "de"), ("p1", "2246340", "source", "de"), ("p2", "2246340", "source", "de")]
     # 観測の集計: 取得元ごと・言語ごとの人数（取得元をまたいで足さない）
     obs = dict(conn.execute("SELECT lang, persons FROM obs_work_lang_day WHERE source = 'fake_forum' AND target_day = %s AND work_id = 2246340", (DAY,)).fetchall())
@@ -107,8 +107,8 @@ def test_a_title_known_only_to_a_new_source_becomes_a_work_and_reaches_the_scree
     w = work_key.resolve(conn, "console", ["CUSA-77"])["CUSA-77"]
     conn.commit()
     assert int(w) >= 1_000_000_000                                                                     # 新しい作品は既存と重ならない番号
-    assert conn.execute("SELECT title FROM game_profile WHERE appid = %s", (w,)).fetchone()[0] == "Lantern Tide"
-    assert conn.execute("SELECT count(*) FROM player_post WHERE appid = %s AND matched_by = 'source'", (w,)).fetchone()[0] == 2
+    assert conn.execute("SELECT title FROM game_profile WHERE work_id = %s", (w,)).fetchone()[0] == "Lantern Tide"
+    assert conn.execute("SELECT count(*) FROM player_post WHERE work_id = %s AND matched_by = 'source'", (w,)).fetchone()[0] == 2
     assert public_document.get_document(conn, f"work/w{w}") is not None                                # 画面の作品詳細まで出る
     assert work_key.external(conn, KS, [w]) == {} and work_key.external(conn, KS, ["2246340"]) == {"2246340": "2246340"}   # 既存の番号はそのまま
 
@@ -193,13 +193,13 @@ def test_posts_are_reidentified_when_the_title_dictionary_changes(conn):
     cfg = {"game_only": True, "work_keyspace": KS}
     known_works(conn, ["10"])   # 移行の前からある作品（番号はそのまま）
     normalize.voices(conn, "forum_y", cfg)
-    assert dict(conn.execute("SELECT item_id, appid FROM player_post WHERE source='forum_y'").fetchall()) == {"a": None, "b": "10"}
+    assert dict(conn.execute("SELECT item_id, work_id FROM player_post WHERE source='forum_y'").fetchall()) == {"a": None, "b": "10"}
     conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', '1030300', now(), now(), '{}')")
-    conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) "
+    conn.execute("INSERT INTO game_profile (work_id, source, item_id, title, genres, modes, platforms, fetched_at) "
                  "VALUES ('1030300', 'steam_store', '1030300', 'Hollow Knight: Silksong', '[]', '[]', '[]', now())")
     conn.commit()
     normalize.voices(conn, "forum_y", cfg)                       # 辞書が変わった: 今の版で作り直す（取得元で決まる発言は同じ結果）
-    assert dict(conn.execute("SELECT item_id, appid FROM player_post WHERE source='forum_y'").fetchall()) == {"a": "1030300", "b": "10"}
+    assert dict(conn.execute("SELECT item_id, work_id FROM player_post WHERE source='forum_y'").fetchall()) == {"a": "1030300", "b": "10"}
 
 
 def test_every_observed_source_is_optional(monkeypatch):
@@ -264,7 +264,7 @@ def test_system_works_when_any_source_is_stopped_disabled_or_empty(conn, monkeyp
     from game_signal_scout.repositories import public_document
     from game_signal_scout.sources import factory
     conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('steam_store', '2246340', now(), now(), '{}')")
-    conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) "
+    conn.execute("INSERT INTO game_profile (work_id, source, item_id, title, genres, modes, platforms, fetched_at) "
                  "VALUES ('2246340', 'steam_store', '2246340', 'Monster Hunter Wilds', '[\"アクション\"]', '[]', '[]', now())")
     conn.commit()
     known_works(conn, ["2246340"])   # 移行の前からある作品（番号はそのまま）
@@ -284,7 +284,7 @@ def test_system_works_when_any_source_is_stopped_disabled_or_empty(conn, monkeyp
     collect = out["jobs"][0]["detail"]
     assert collect["src_down"]["error_type"] and "src_off" not in collect                         # 止まった取得元は記録に残り、無効の取得元は読まない
     assert conn.execute("SELECT last_error_type IS NOT NULL FROM source_state WHERE source='src_down'").fetchone()[0]
-    assert conn.execute("SELECT count(*) FROM player_post WHERE source='src_ok' AND appid='2246340'").fetchone()[0] == 4
+    assert conn.execute("SELECT count(*) FROM player_post WHERE source='src_ok' AND work_id='2246340'").fetchone()[0] == 4
     assert public_document.get_document(conn, f"day/{DAY.isoformat()}")["dashboard"]["works_today"] == 1   # 残りの取得元で画面の文書が成り立つ
 
 
@@ -305,7 +305,7 @@ def test_common_normalizer_applies_the_same_rules_to_every_source(conn, monkeypa
     for src in ("src_a", "src_b"):
         normalize.voices(conn, src, {})
         got[src] = {i: (a, m, "stream" in f, l) for i, a, m, f, l in conn.execute(
-            "SELECT item_id, appid, matched_by, flags, lang FROM player_post WHERE source=%s", (src,))}
+            "SELECT item_id, work_id, matched_by, flags, lang FROM player_post WHERE source=%s", (src,))}
     assert got["src_a"] == got["src_b"]                                          # 取得元が違っても同じ結果
     assert got["src_a"]["l"][:2] == ("2246340", "link") and got["src_a"]["p"][2] is True and got["src_a"]["j"][3] == "ja"
 

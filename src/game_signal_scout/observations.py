@@ -84,8 +84,8 @@ def read_foundation(conn, source: str, day: date, prof: dict) -> DayResult:
     rows = post.day_rows(conn, source, start, end, SAME_TEXT_MIN_CHARS)
     conn.rollback()
     obs = []
-    for uid, actor, lang, head, at, appid, same, flagged in rows:
-        wid = int(appid) if appid and str(appid).isdigit() else None
+    for uid, actor, lang, head, at, work_id, same, flagged in rows:
+        wid = int(work_id) if work_id and str(work_id).isdigit() else None
         obs.append(Obs(uid, actor, day, lang, wid, "excluded" if flagged or wid is None else "counted", head, True, at, same))
     done = day <= default_day()
     return DayResult(obs, done, None if done else "fetch_hours", f"{AGG_VERSION}|player_post", {"units": len(rows)})

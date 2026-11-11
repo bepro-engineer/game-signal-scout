@@ -88,5 +88,5 @@ def main(argv=None) -> int:
             return 0
         version = config.load_daily_config()["analysis"]["version"]
         for row in report.events(conn, version, a.side)[: a.limit]:
-            print(json.dumps(dict(zip(("appid", "window_start", "n_key", "n_window", "share_prev", "share_window"), row)), default=str))
+            print(json.dumps(dict(zip(("work_id", "window_start", "n_key", "n_window", "share_prev", "share_window"), row)), default=str))
     return 0

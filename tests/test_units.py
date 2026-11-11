@@ -108,7 +108,7 @@ def test_shift_detects_breakage_and_merges_overlapping_windows():
     reps += [report("B", T0 - 50 * DAY + i * DAY, False, i) for i in range(10)]
     reps += [report("B", T0 + i * DAY, True, 1) for i in range(7)]                        # 失敗は多いが機材が 1 種類 → 事象にしない
     ev = shift.detect(_rows(reps), datetime(2026, 5, 1, tzinfo=timezone.utc), datetime(2026, 11, 1, tzinfo=timezone.utc), P)
-    assert [(e["side"], e["appid"], e["n_key"]) for e in ev] == [("fail", "A", 7)]
+    assert [(e["side"], e["work_id"], e["n_key"]) for e in ev] == [("fail", "A", 7)]
     assert ev[0]["share_prev"] == 0 and ev[0]["share_window"] == 1
 
 

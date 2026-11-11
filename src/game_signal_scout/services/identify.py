@@ -40,15 +40,15 @@ class TitleIndex:
         self.by_cjk: dict[str, tuple[str, str]] = {}     # 空白で区切らない言語の題名（部分の文字列で照合する）
         self.title_of = {str(a): t for a, t in titles}
         self.game_only = game_only                       # ゲームだけの掲示板・部屋（文脈の語を求めない）
-        for appid, title in titles:
+        for work_id, title in titles:
             w = words(title)
             if CJK.search(title or ""):
                 key = "".join(w)
                 if len(key) >= CJK_MIN:
-                    self.by_cjk.setdefault(key, (str(appid), title))
+                    self.by_cjk.setdefault(key, (str(work_id), title))
                 continue
             if 2 <= len(w) <= MAX_WORDS and len(" ".join(w)) >= min_chars:
-                self.by_words.setdefault(w, (str(appid), title))
+                self.by_words.setdefault(w, (str(work_id), title))
         self.ambiguous = {words(t) for t in ambiguous}
         self.context = {w for t in context_words for w in [words(t)] if w}
         self.cjk_context = [normalize(t) for t in context_words if not t.isascii()]

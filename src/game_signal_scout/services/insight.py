@@ -306,7 +306,7 @@ def input_hash(rows: list[dict]) -> str:
     return hashlib.sha256("|".join(sorted(r["item_id"] for r in rows)).encode()).hexdigest()[:16]
 
 
-def read_game(conn, appid: str, title: str, model: str, cfg: dict, prev_body: dict | None = None, ask=None) -> dict | None:
+def read_game(conn, work_id: str, title: str, model: str, cfg: dict, prev_body: dict | None = None, ask=None) -> dict | None:
     """作品 1 つの発見。prev_body（前の回の body）の reads を使い、新しい発言だけを読む。"""
     from game_signal_scout.repositories import insight as repo
     days = int(cfg.get("window_days", 7))
@@ -314,7 +314,7 @@ def read_game(conn, appid: str, title: str, model: str, cfg: dict, prev_body: di
     since = now - timedelta(days=days)
     from game_signal_scout import observations
     srcs = list(observations.sources())   # 集計に入れている取得元（有効で、利用条件で止まっていないもの。保留・停止の取得元の保存済みの発言は使わない）
-    rows = repo.statements_by_author(conn, appid, days * 2, int(cfg.get("max_per_window", 60)), since, srcs)
+    rows = repo.statements_by_author(conn, work_id, days * 2, int(cfg.get("max_per_window", 60)), since, srcs)
     if not rows:
         return None
     if ask is None:
@@ -338,18 +338,18 @@ def read_game(conn, appid: str, title: str, model: str, cfg: dict, prev_body: di
     body_public = {"finds": finds, "singles": singles(posts, exps, members, since)}
     # 英語の表示（#2 2026-11-09 オーナー）: 画面に出す日本語の文の英訳。前の回に訳した文は訳し直さない
     en = translate_en(ask, title, public_texts(body_public), (prev_body or {}).get("en"))
-    return {"appid": appid, "generated_at": now, "model": model, "input_hash": input_hash(rows),
+    return {"work_id": work_id, "generated_at": now, "model": model, "input_hash": input_hash(rows),
             "body": {"kind": KIND, "en": en, "window_days": days, "since": since.isoformat(), "read_people": n_cur, "min_people": mp,
                      "experiences": cur_exps, "finds": finds, "singles": body_public["singles"], "stages": stages, "reads": reads}}
 
 
-def divide_game(conn, appid: str, title: str, body: dict, cfg: dict, ask) -> list[dict]:
+def divide_game(conn, work_id: str, title: str, body: dict, cfg: dict, ask) -> list[dict]:
     """保存済みの読み取り（body の reads）から、同じ論点で賛否が分かれた体験を作る（読み直さない）。窓は読み取りを作ったときの直近の窓（body の since）。"""
     from game_signal_scout.repositories import insight as repo
     from game_signal_scout import observations
     since = datetime.fromisoformat(body["since"]) if body.get("since") else datetime.now(timezone.utc) - timedelta(days=int(cfg.get("window_days", 7)))
     days = int(body.get("window_days") or cfg.get("window_days", 7))
-    rows = repo.statements_by_author(conn, appid, days * 2, int(cfg.get("max_per_window", 60)), since, list(observations.sources()))
+    rows = repo.statements_by_author(conn, work_id, days * 2, int(cfg.get("max_per_window", 60)), since, list(observations.sources()))
     posts = {r["item_id"]: r for r in rows}
     exps = sorted([(k, v) for k, v in (body.get("reads") or {}).items() if v and k in posts and posts[k]["at"] >= since], key=lambda kv: posts[kv[0]]["at"])
     return divide(ask, title, exps, {k: posts[k]["author"] for k in posts})

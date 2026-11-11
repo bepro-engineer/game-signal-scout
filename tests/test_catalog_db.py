@@ -72,16 +72,16 @@ def test_profiles_and_activity_flow_to_cards_and_game_documents(run, conn, stub_
     go, http = run
     go()                                       # 1 回目: 順位が入る（作品の情報の対象はまだ ProtonDB の作品だけ）
     go()                                       # 2 回目: 順位の上位の作品も作品の情報の対象になる
-    rows = dict(conn.execute("SELECT appid, title FROM game_profile").fetchall())
+    rows = dict(conn.execute("SELECT work_id, title FROM game_profile").fetchall())
     assert rows == {"2246340": "モンスターハンターワイルズ", "730": "Counter-Strike 2"}          # 作品でない app ID（999）は作らない
     assert sum("appids=2246340&l=japanese" in u for u in http.calls) == 1                          # 取った作品は次の回に取り直さない
     # ゲーム内容（あらすじの代わり）: 日本語の取得の文（HTML を文に）と英語の取得の文
-    assert conn.execute("SELECT about_ja, about_en FROM game_profile WHERE appid='2246340'").fetchone() == ("モンスターハンターワイルズ\n狩りに出よう。\n仲間と&一人で。", "Hunt & explore.")
-    modes = dict(conn.execute("SELECT appid, modes FROM game_profile").fetchall())
+    assert conn.execute("SELECT about_ja, about_en FROM game_profile WHERE work_id='2246340'").fetchone() == ("モンスターハンターワイルズ\n狩りに出よう。\n仲間と&一人で。", "Hunt & explore.")
+    modes = dict(conn.execute("SELECT work_id, modes FROM game_profile").fetchall())
     assert modes["730"] == ["みんなで遊べる", "対戦", "オンラインで対戦"] and modes["2246340"] == ["ひとりで遊べる", "協力プレイ"]
-    prof = conn.execute("SELECT platforms, ja_text, ja_voice, image_url FROM game_profile WHERE appid='2246340'").fetchone()
+    prof = conn.execute("SELECT platforms, ja_text, ja_voice, image_url FROM game_profile WHERE work_id='2246340'").fetchone()
     assert prof[0] == ["Windows", "Linux・Steam Deck"] and prof[1] is True and prof[2] is True
-    assert conn.execute("SELECT peak_players FROM game_activity WHERE appid='730' ORDER BY day DESC LIMIT 1").fetchone()[0] == 1300000
+    assert conn.execute("SELECT peak_players FROM game_activity WHERE work_id='730' ORDER BY day DESC LIMIT 1").fetchone()[0] == 1300000
     assert public_document.get_document(conn, "overview") is None                   # 古い文書は作らない（#3 2026-11-11）
 
 
@@ -89,10 +89,10 @@ def test_publish_input_changes_when_profiles_are_rebuilt_from_the_same_fetch(con
     """作品の情報を同じ取得の応答から作り直したとき（取得の時刻は同じ）も、公開の材料の版が変わって作り直される（#2 2026-11-11）。"""
     from game_signal_scout.repositories import catalog
     conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('x', '1', now(), now(), '{}')")
-    conn.execute("INSERT INTO game_profile (appid, source, item_id, title, genres, modes, platforms, fetched_at) "
+    conn.execute("INSERT INTO game_profile (work_id, source, item_id, title, genres, modes, platforms, fetched_at) "
                  "VALUES ('1', 'x', '1', 't', '[]', '[\"対戦\"]', '[]', '2026-11-01T00:00:00Z')")
     v1 = catalog.newest_catalog_at(conn)
-    conn.execute("UPDATE game_profile SET modes = '[\"対戦\", \"オンラインで対戦\"]' WHERE appid = '1'")
+    conn.execute("UPDATE game_profile SET modes = '[\"対戦\", \"オンラインで対戦\"]' WHERE work_id = '1'")
     v2 = catalog.newest_catalog_at(conn)
     assert v1 != v2 and v1.split("|")[0] == v2.split("|")[0]
     conn.rollback()

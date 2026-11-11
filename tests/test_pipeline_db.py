@@ -80,7 +80,7 @@ def test_daily_run_one_cycle_and_idempotent_rerun(conn, tmp_path, stub_screen_do
     assert [j["job"] for j in out["jobs"]] == ["collect", "normalize", "observe", "analyze", "insight", "digest", "publish"]
     assert out["jobs"][6]["detail"]["status"] == "published" and out["jobs"][6]["output"] >= 2
     assert (count(conn, "source_item"), count(conn, "player_report")) == (37, 37)
-    ev = conn.execute("SELECT side, appid, n_key FROM shift_event").fetchall()
+    ev = conn.execute("SELECT side, work_id, n_key FROM shift_event").fetchall()
     assert ev == [("fail", "A", 7)]
     # もう一度流しても同じ結果（重複しない・同じ版の検出は置き換え）
     code, out = runner.daily_run(TARGET, reader_factory=lambda name: reader_for(path))

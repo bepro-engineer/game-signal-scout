@@ -52,7 +52,7 @@ def test_statements_are_one_per_author_in_each_window(conn):
     rows = [("i1", "a", now - timedelta(days=1), "x" * 80), ("i2", "a", now - timedelta(days=2), "y" * 120), ("i3", "a", now - timedelta(days=9), "z" * 90),
             ("i4", "b", now - timedelta(days=1), "w" * 70)]
     for i, au, at, text in rows:
-        conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, appid, matched_by, flags, text) VALUES ('f', %s, %s, %s, 'en', '7', 'source', '[]', %s)",
+        conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, work_id, matched_by, flags, text) VALUES ('f', %s, %s, %s, 'en', '7', 'source', '[]', %s)",
                      (i, at, au, text))
     conn.commit()
     got = repo.statements_by_author(conn, "7", 14, 60, now - timedelta(days=7), ["f"])
@@ -114,7 +114,7 @@ def test_material_is_taken_from_every_source_in_turn(conn):
                  "FROM (VALUES ('big'), ('small')) v(s), generate_series(1, 5) g")
     for s, n in (("big", 5), ("small", 2)):
         for g in range(1, n + 1):
-            conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, appid, matched_by, flags, text) VALUES (%s, %s, %s, %s, 'en', '9', 'source', '[]', %s)",
+            conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, work_id, matched_by, flags, text) VALUES (%s, %s, %s, %s, 'en', '9', 'source', '[]', %s)",
                          (s, f"{s}{g}", now - timedelta(days=1), f"{s}-a{g}", "x" * (100 + g)))
     conn.commit()
     got = repo.statements_by_author(conn, "9", 14, 3, now - timedelta(days=7), ["big", "small"])
@@ -128,7 +128,7 @@ def test_posts_of_sources_not_in_use_are_marked_and_unmarked(conn):
     now = datetime.now(timezone.utc)
     conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES ('on', '1', now(), now(), '{}'), ('off', '1', now(), now(), '{}')")
     for s in ("on", "off"):
-        conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, appid, matched_by, flags, text) VALUES (%s, '1', %s, 'a', 'en', '9', 'source', '[]', 'x')", (s, now))
+        conn.execute("INSERT INTO player_post (source, item_id, at, author, lang, work_id, matched_by, flags, text) VALUES (%s, '1', %s, 'a', 'en', '9', 'source', '[]', 'x')", (s, now))
     assert post_repo.mark_not_in_use(conn, ["on"]) == 1
     flags = dict(conn.execute("SELECT source, flags FROM player_post").fetchall())
     assert flags["off"] == ["not_in_use"] and flags["on"] == []
@@ -239,7 +239,7 @@ def test_attributes_are_rebuilt_when_the_item_is_fetched_again(conn):
     from game_signal_scout.repositories import catalog
     conn.execute("INSERT INTO source_item (source, item_id, occurred_at, received_at, payload) VALUES "
                  "('s', 'old', now(), now() - interval '2 days', '{}'), ('s', 'new', now(), now(), '{}'), ('s', 'none', now(), now(), '{}')")
-    conn.execute("INSERT INTO game_attribute (appid, key, source, item_id, value, fetched_at) VALUES "
+    conn.execute("INSERT INTO game_attribute (work_id, key, source, item_id, value, fetched_at) VALUES "
                  "('1', 'k', 's', 'old', '[]', now() - interval '2 days'), ('2', 'k', 's', 'new', '[]', now() - interval '2 days')")
     assert sorted(r[0] for r in catalog.attribute_rows(conn, "s", 10)) == ["new", "none"]
 

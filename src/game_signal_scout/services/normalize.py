@@ -149,9 +149,9 @@ def voices(conn, source: str, settings: dict | None = None, batch: int = 2000) -
             lang = p.get("lang") or detect_lang(text)
             # 作品が取得元で決まる発言（作品ごとの掲示板・作品のページのコメント）は、その作品。ほかは本文から同定する
             wid = _work_of(p, works)
-            appid, title, how = (wid, None, "source") if wid else identify(p, index)
+            work_id, title, how = (wid, None, "source") if wid else identify(p, index)
             out.append({"source": source, "item_id": item_id, "at": occurred_at, "author": p.get("author") or "", "lang": lang,
-                        "appid": appid, "title": title, "matched_by": how, "flags": flags, "text": text,
+                        "work_id": work_id, "title": title, "matched_by": how, "flags": flags, "text": text,
                         "url": p.get("url") if str(p.get("url") or "").startswith("https://") else None, "id_version": ver,
                         "stance": p.get("stance"), "playtime_minutes": p.get("playtime_minutes")})
         with conn.transaction():
@@ -173,8 +173,8 @@ def profiles(conn, source: str, settings: dict | None = None, batch: int = 500) 
                 shaped.append({**row, "source": source})
         with conn.transaction():
             works = _works(conn, settings, shaped)
-            out = [{**r, "appid": _work_of(r, works)} for r in shaped]
-            out = [{k: v for k, v in r.items() if k != "work_id"} for r in out if r["appid"]]
+            out = [{**{k: v for k, v in r.items() if k != "appid"}, "work_id": _work_of(r, works)} for r in shaped]   # 取得元の番号 → 作品の番号
+            out = [r for r in out if r["work_id"]]
             total += catalog.upsert(conn, out)
         conn.commit()
     return total

@@ -44,7 +44,7 @@ class SteamRatings(SourceReader):
 
     def read(self, cursor: dict | None) -> Iterator[Batch]:
         from game_signal_scout.repositories import catalog
-        apps = [str(a) for a in self.settings.get("appids") or []] or (catalog.all_appids(self.conn, self.settings.get("work_keyspace") or "") if self.conn is not None else [])
+        apps = [str(a) for a in self.settings.get("appids") or []] or (catalog.profiled_own_ids(self.conn, self.settings.get("work_keyspace") or "") if self.conn is not None else [])
         size = int(self.settings.get("batch_size", 50))
         for i in range(0, len(apps), size):
             chunk = apps[i:i + size]
