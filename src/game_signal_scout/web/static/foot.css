@@ -8,3 +8,9 @@
 .site-foot p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--ink-3, #57536f); }
 .site-foot .to-top { margin-left: auto; font: inherit; font-size: 14px; font-weight: 700; color: var(--accent, #5246c9); background: var(--accent-soft, #efeefc); border: 0; border-radius: 999px; padding: 6px 16px; cursor: pointer; }
 .site-foot .to-top:hover { text-decoration: underline; } .site-foot .to-top:focus-visible { outline: 3px solid var(--accent, #5246c9); outline-offset: 2px; }
+/* 長いページの途中から上へ戻る右下のボタン（foot.js。#2）。画面の右下の隅に重ね、本文の幅・高さは変えない */
+.to-top-fab { position: fixed; z-index: 20; right: calc(12px + env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  width: 48px; height: 48px; border-radius: 50%; border: 2px solid #fff; background: var(--accent, #5246c9); color: #fff;
+  font: 800 22px/1 system-ui, sans-serif; cursor: pointer; box-shadow: 0 4px 14px rgba(29, 26, 58, .28); display: grid; place-items: center; padding: 0; }
+.to-top-fab[hidden] { display: none; }
+.to-top-fab:hover { background: #4239b0; } .to-top-fab:focus-visible { outline: 3px solid var(--ink, #1d1a3a); outline-offset: 2px; }

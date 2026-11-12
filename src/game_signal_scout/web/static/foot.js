@@ -10,5 +10,18 @@
       "Game Signal Scout analyzes how game players around the world react, using local AI. Rights in titles, images and the like belong to their respective owners. Title information and images: Steam")}</p>
   </footer>`);
   // 一番下まで読んだあと上に戻りやすくする（2026-10-15 のユーザーの指示。リンクの行の右端。新しい段は足さない）
-  document.getElementById("to-top").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+  const toTop = () => window.scrollTo({ top: 0, behavior: still.matches ? "auto" : "smooth" });
+  document.getElementById("to-top").addEventListener("click", toTop);
+  // 長いページの途中から上のメニューへ戻る右下のボタン（2026-11-12 のオーナーの指示。#2。Anime と同じ操作感）。先頭付近と、最下部の「上へ移動」が見えている間は隠す
+  const foot = document.getElementById("site-foot"), name = tr("ページの先頭（メニュー）へ戻る", "Back to top (menu)");
+  document.body.insertAdjacentHTML("beforeend", `<button type="button" class="to-top-fab" id="to-top-fab" aria-label="${name}" title="${name}" hidden><span aria-hidden="true">↑</span></button>`);
+  const fab = document.getElementById("to-top-fab");
+  let footSeen = false, queued = false;
+  const update = () => { queued = false; fab.hidden = footSeen || window.scrollY < window.innerHeight; };
+  const later = () => { if (!queued) { queued = true; requestAnimationFrame(update); } };
+  new IntersectionObserver(([e]) => { footSeen = e.isIntersecting; later(); }).observe(foot);
+  addEventListener("scroll", later, { passive: true }); addEventListener("resize", later);
+  fab.addEventListener("click", () => { toTop(); document.getElementById("nav")?.querySelector("a")?.focus({ preventScroll: true }); });
+  update();
 })();
