@@ -22,6 +22,7 @@
   const later = () => { if (!queued) { queued = true; requestAnimationFrame(update); } };
   new IntersectionObserver(([e]) => { footSeen = e.isIntersecting; later(); }).observe(foot);
   addEventListener("scroll", later, { passive: true }); addEventListener("resize", later);
-  fab.addEventListener("click", () => { toTop(); document.getElementById("nav")?.querySelector("a")?.focus({ preventScroll: true }); });
+  // 戻ったあと、キーボードで続けて操作できるよう、見えているメニューの先頭（たたんだ幅ではメニューのボタン）に移る
+  fab.addEventListener("click", () => { toTop(); [...document.querySelectorAll("#nav a, #navbtn")].find(e => e.getClientRects().length)?.focus({ preventScroll: true }); });
   update();
 })();
